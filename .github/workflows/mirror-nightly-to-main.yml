@@ -1,0 +1,43 @@
+﻿name: Mirror
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  mirror:
+    if: >
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref == 'nightly'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DEST_ORG: EpitechPGE3-2025
+      DEST_REPO: G-CPP-500-PAR-5-1-rtype-2
+
+    steps:
+      - name: Checkout repo (full history for safety)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mirror all branches & tags (prune deletions)
+        run: |
+          set -euo pipefail
+          git remote add mirror "https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/${DEST_ORG}/${DEST_REPO}.git"
+          # Nettoie le header supplémentaire éventuellement injecté
+          git config --global http.https://github.com/.extraheader ""
+
+          # Récupère toutes les branches distantes et tags du repo source
+          git fetch origin --prune --tags
+          git fetch origin "+refs/heads/*:refs/remotes/origin/*"
+
+          # Miroir des BRANCHES : toutes les origin/* vers heads/* côté destination (avec prune)
+          git push mirror --prune "refs/remotes/origin/*:refs/heads/*"
+
+          # Miroir des TAGS : tous les tags (avec prune)
+          git push mirror --prune "refs/tags/*:refs/tags/*"
