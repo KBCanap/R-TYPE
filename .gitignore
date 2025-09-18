@@ -76,6 +76,11 @@ _install/
 /build/*/
 /build-*/
 *.dir/
+/out/
+/out/build/
+/build/
+/CMakeFiles/
+/CMakeCache.txt
 
 # ==========================================
 # CPM cache (dependencies)
@@ -89,10 +94,3 @@ _install/
 # ==========================================
 *.log
 
-# ==========================================
-# Project-specific
-# ==========================================
-# Ignore compiled test executables inside tests/
-tests/*
-!tests/*.cpp
-!tests/*.h
