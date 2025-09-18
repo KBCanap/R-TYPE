@@ -1,99 +1,238 @@
 cmake_minimum_required(VERSION 3.20)
 project(RTYPE LANGUAGES CXX)
 
+# ==== Langage & outils ====
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Sortie des binaires prévisible: build/<platform>/bin/<config>
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+foreach(cfg IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
+  string(TOUPPER ${cfg} CFGU)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CFGU} ${CMAKE_BINARY_DIR}/bin/${cfg})
+endforeach()
 
-include_directories(/home/dylanadghar/delivery/tek_3/r-type/asio-1.36.0/include)
+# ==== Options ====
+option(RTYPE_WERROR "Treat warnings as errors" OFF)
+option(RTYPE_CI_BUILD "Enable CI build optimizations" OFF)
+option(RTYPE_BUILD_TESTS "Build unit tests" OFF)
 
+# Configuration CI/CD
+if(RTYPE_CI_BUILD)
+  message(STATUS "CI build mode enabled")
+  set(CPM_USE_LOCAL_PACKAGES ON CACHE BOOL "Use local packages when available")
+  set(RTYPE_WERROR ON CACHE BOOL "Enable warnings as errors in CI" FORCE)
+endif()
+
+# Warnings as errors
+if(RTYPE_WERROR)
+  message(STATUS "Treating warnings as errors")
+  if(MSVC)
+    add_compile_options(/WX)
+  else()
+    add_compile_options(-Werror)
+  endif()
+endif()
+
+# Cache CPM optimisé
+if(DEFINED ENV{CPM_SOURCE_CACHE})
+  set(CPM_SOURCE_CACHE "$ENV{CPM_SOURCE_CACHE}" CACHE PATH "CPM cache from environment")
+else()
+  set(CPM_SOURCE_CACHE "${CMAKE_SOURCE_DIR}/.cache/CPM" CACHE PATH "CPM cache")
+endif()
+
+# ==== Dépendances via CPM ====
 include(cmake/CPM.cmake)
 
-# Asio (standalone version)
+# Asio (standalone, header-only)
 CPMAddPackage(
-    NAME asio
-    VERSION 1.28.0
-    GITHUB_REPOSITORY "chriskohlhoff/asio"
-    GIT_TAG "asio-1-28-0"
-    OPTIONS "ASIO_USE_BOOST OFF"
+  NAME asio
+  VERSION 1.28.0
+  GITHUB_REPOSITORY chriskohlhoff/asio
+  GIT_TAG asio-1-28-0
+  OPTIONS
+    "ASIO_NO_DEPRECATED ON"
 )
 
-# SFML
+# SFML avec options optimisées
 CPMAddPackage(
-    NAME SFML
-    VERSION 2.6.0
-    GITHUB_REPOSITORY "SFML/SFML"
-    GIT_TAG "2.6.0"
-    OPTIONS
-        "SFML_BUILD_AUDIO ON"
-        "SFML_BUILD_GRAPHICS ON"
-        "SFML_BUILD_WINDOW ON"
-        "SFML_BUILD_SYSTEM ON"
-        "SFML_BUILD_NETWORK ON"
-        "SFML_USE_SYSTEM_DEPENDENCIES OFF"
+  NAME SFML
+  VERSION 2.6.0
+  GITHUB_REPOSITORY SFML/SFML
+  GIT_TAG 2.6.0
+  OPTIONS
+    "SFML_BUILD_AUDIO ON"
+    "SFML_BUILD_GRAPHICS ON"
+    "SFML_BUILD_WINDOW ON"
+    "SFML_BUILD_SYSTEM ON"
+    "SFML_BUILD_NETWORK ON"
+    "SFML_USE_SYSTEM_DEPENDENCIES OFF"
+    "SFML_BUILD_EXAMPLES OFF"
+    "SFML_BUILD_DOC OFF"
 )
 
-# Server target
+# Interface pour exposer proprement l'include Asio
+add_library(asio_interface INTERFACE)
+if(asio_ADDED)
+  target_include_directories(asio_interface INTERFACE ${asio_SOURCE_DIR}/asio/include)
+else()
+  # Fallback si Asio est déjà installé sur le système
+  find_package(asio REQUIRED)
+  target_link_libraries(asio_interface INTERFACE asio::asio)
+endif()
+
+# Définitions communes
+add_compile_definitions(ASIO_STANDALONE ASIO_NO_DEPRECATED)
+
+# Configuration spécifique Windows
+if(WIN32)
+  # Cibler Windows 10+ (0x0A00)
+  add_compile_definitions(_WIN32_WINNT=0x0A00)
+  # Éviter les conflits avec les macros Windows
+  add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
+endif()
+
+# ==== Fonction utilitaire pour configuration des targets ====
+function(setup_target_warnings target)
+  if(MSVC)
+    target_compile_options(${target} PRIVATE 
+      /W4                   # Niveau d'avertissements élevé
+      /w14640               # Thread unsafe static member initialization
+      /w14826               # Conversion signedness warning
+      /w14905               # Wide string literal cast
+      /w14906               # String literal cast
+    )
+  else()
+    target_compile_options(${target} PRIVATE 
+      -Wall -Wextra -Wpedantic
+      -Wconversion          # Conversions implicites
+      -Wsign-conversion     # Conversions de signe
+      -Wold-style-cast      # Cast style C
+      -Woverloaded-virtual  # Virtual function masking
+      -Wnull-dereference    # Null pointer dereference
+    )
+    # Lien avec les threads sur Unix
+    find_package(Threads REQUIRED)
+    target_link_libraries(${target} PRIVATE Threads::Threads)
+  endif()
+endfunction()
+
+# ==== Cibles principales ====
+# Server
 set(SERVER_SOURCES
-    Server/src/main.cpp
+  Server/src/main.cpp
+  # Ajoutez ici d'autres fichiers server
 )
 
 add_executable(r-type_server ${SERVER_SOURCES})
-
 target_include_directories(r-type_server PRIVATE
-    Server/include
-    ${asio_SOURCE_DIR}/asio/include
+  Server/include
+)
+target_link_libraries(r-type_server PRIVATE
+  asio_interface
 )
 
-# Définitions nécessaires pour Asio
-target_compile_definitions(r-type_server PRIVATE
-    ASIO_STANDALONE
-    ASIO_NO_DEPRECATED
+# Configuration warnings et debug
+setup_target_warnings(r-type_server)
+target_compile_definitions(r-type_server PRIVATE 
+  $<$<CONFIG:Debug>:DEBUG>
+  $<$<CONFIG:Debug>:RTYPE_DEBUG>
 )
 
-# Client target
+# Client
 set(CLIENT_SOURCES
-    Client/src/main.cpp
+  Client/src/main.cpp
+  # Ajoutez ici d'autres fichiers client
 )
 
 add_executable(r-type_client ${CLIENT_SOURCES})
-
 target_include_directories(r-type_client PRIVATE
-    Client/include
-    ${asio_SOURCE_DIR}/asio/include
+  Client/include
 )
-
 target_link_libraries(r-type_client PRIVATE
-    sfml-graphics
-    sfml-window
-    sfml-system
-    sfml-audio
-    sfml-network
+  asio_interface
+  sfml-graphics
+  sfml-window
+  sfml-system
+  sfml-audio
+  sfml-network
 )
 
-# Définitions nécessaires pour Asio côté client aussi
-target_compile_definitions(r-type_client PRIVATE
-    ASIO_STANDALONE
-    ASIO_NO_DEPRECATED
+# Configuration warnings et debug
+setup_target_warnings(r-type_client)
+target_compile_definitions(r-type_client PRIVATE 
+  $<$<CONFIG:Debug>:DEBUG>
+  $<$<CONFIG:Debug>:RTYPE_DEBUG>
 )
 
-# Configuration spécifique par plateforme
-if(MSVC)
-    target_compile_options(r-type_client PRIVATE /W4)
-    target_compile_options(r-type_server PRIVATE /W4)
-    target_compile_definitions(r-type_server PRIVATE _WIN32_WINNT=0x0A00)
-    target_compile_definitions(r-type_client PRIVATE _WIN32_WINNT=0x0A00)
+# ==== Tests unitaires (optionnel) ====
+if(RTYPE_BUILD_TESTS)
+  enable_testing()
+  
+  # Catch2 via CPM (v3)
+  CPMAddPackage(
+    NAME Catch2
+    GITHUB_REPOSITORY catchorg/Catch2
+    VERSION 3.5.3
+    OPTIONS
+      "CATCH_INSTALL_DOCS OFF"
+      "CATCH_INSTALL_EXTRAS ON" # pour include(Catch) et catch_discover_tests
+  )
+  if(Catch2_ADDED)
+    list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/extras)
+  endif()
+
+  # Ici vous pourrez ajouter vos tests
+  add_subdirectory(tests)
+  
+  message(STATUS "Unit tests enabled")
+endif()
+
+# ==== Optimisations par configuration (corrigé pour multi-config) ====
+# On évite CMAKE_BUILD_TYPE ici et on utilise des generator expressions :
+# - MSVC : /O2 seulement en Release
+# - Autres : -O3 -DNDEBUG seulement en Release
+target_compile_options(r-type_server PRIVATE
+  $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2>
+  $<$<AND:$<NOT:$<CXX_COMPILER_ID:MSVC>>,$<CONFIG:Release>>:-O3 -DNDEBUG>
+)
+target_compile_options(r-type_client PRIVATE
+  $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2>
+  $<$<AND:$<NOT:$<CXX_COMPILER_ID:MSVC>>,$<CONFIG:Release>>:-O3 -DNDEBUG>
+)
+
+# ==== Installation (pour packaging/déploiement) ====
+include(GNUInstallDirs)
+
+install(TARGETS r-type_client r-type_server
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT Runtime
+)
+
+# Configuration CPack pour packaging
+set(CPACK_PACKAGE_NAME "R-Type")
+set(CPACK_PACKAGE_VERSION "1.0.0")
+set(CPACK_PACKAGE_DESCRIPTION "R-Type multiplayer game")
+set(CPACK_PACKAGE_CONTACT "your-email@domain.com")
+
+# Configuration spécifique par OS
+if(WIN32)
+  set(CPACK_GENERATOR "ZIP;NSIS")
 else()
-    target_compile_options(r-type_client PRIVATE -Wall -Wextra -Wpedantic)
-    target_compile_options(r-type_server PRIVATE -Wall -Wextra -Wpedantic)
-    # Lier pthread sur Linux/Unix
-    find_package(Threads REQUIRED)
-    target_link_libraries(r-type_server PRIVATE Threads::Threads)
+  set(CPACK_GENERATOR "TGZ;DEB")
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libgcc-s1, libstdc++6")
 endif()
 
-# Mode Debug/Release
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_definitions(r-type_server PRIVATE DEBUG)
-    target_compile_definitions(r-type_client PRIVATE DEBUG)
-endif()
+include(CPack)
+
+# ==== Informations de build ====
+message(STATUS "=== R-Type Build Configuration ===")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "CPM cache: ${CPM_SOURCE_CACHE}")
+message(STATUS "Warnings as errors: ${RTYPE_WERROR}")
+message(STATUS "CI build: ${RTYPE_CI_BUILD}")
+message(STATUS "Build tests: ${RTYPE_BUILD_TESTS}")
+message(STATUS "===================================")
