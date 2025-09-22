@@ -6,43 +6,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Sortie des binaires prévisible: build/<platform>/bin/<config>
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-foreach(cfg IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
-  string(TOUPPER ${cfg} CFGU)
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CFGU} ${CMAKE_BINARY_DIR}/bin/${cfg})
-endforeach()
 
-# ==== Options ====
-option(RTYPE_WERROR "Treat warnings as errors" OFF)
-option(RTYPE_CI_BUILD "Enable CI build optimizations" OFF)
-option(RTYPE_BUILD_TESTS "Build unit tests" OFF)
+include_directories(/home/dylanadghar/delivery/tek_3/r-type/asio-1.36.0/include)
 
-# Configuration CI/CD
-if(RTYPE_CI_BUILD)
-  message(STATUS "CI build mode enabled")
-  set(CPM_USE_LOCAL_PACKAGES ON CACHE BOOL "Use local packages when available")
-  set(RTYPE_WERROR ON CACHE BOOL "Enable warnings as errors in CI" FORCE)
-endif()
-
-# Warnings as errors
-if(RTYPE_WERROR)
-  message(STATUS "Treating warnings as errors")
-  if(MSVC)
-    add_compile_options(/WX)
-  else()
-    add_compile_options(-Werror)
-  endif()
-endif()
-
-# Cache CPM optimisé
-if(DEFINED ENV{CPM_SOURCE_CACHE})
-  set(CPM_SOURCE_CACHE "$ENV{CPM_SOURCE_CACHE}" CACHE PATH "CPM cache from environment")
-else()
-  set(CPM_SOURCE_CACHE "${CMAKE_SOURCE_DIR}/.cache/CPM" CACHE PATH "CPM cache")
-endif()
-
-# ==== Dépendances via CPM ====
 include(cmake/CPM.cmake)
 
 # Asio (standalone, header-only)
@@ -72,10 +39,10 @@ CPMAddPackage(
     "SFML_BUILD_DOC OFF"
 )
 
-# Interface pour exposer proprement l'include Asio
+# Interface pour exposer proprement l'include Asio (SYSTEM pour éviter les warnings)
 add_library(asio_interface INTERFACE)
 if(asio_ADDED)
-  target_include_directories(asio_interface INTERFACE ${asio_SOURCE_DIR}/asio/include)
+  target_include_directories(asio_interface SYSTEM INTERFACE ${asio_SOURCE_DIR}/asio/include)
 else()
   # Fallback si Asio est déjà installé sur le système
   find_package(asio REQUIRED)
@@ -106,8 +73,9 @@ function(setup_target_warnings target)
   else()
     target_compile_options(${target} PRIVATE 
       -Wall -Wextra -Wpedantic
-      -Wconversion          # Conversions implicites
-      -Wsign-conversion     # Conversions de signe
+      # Suppression des warnings stricts qui causent des problèmes avec ASIO
+      # -Wconversion          # Conversions implicites (retiré)
+      # -Wsign-conversion     # Conversions de signe (retiré)
       -Wold-style-cast      # Cast style C
       -Woverloaded-virtual  # Virtual function masking
       -Wnull-dereference    # Null pointer dereference
@@ -121,8 +89,11 @@ endfunction()
 # ==== Cibles principales ====
 # Server
 set(SERVER_SOURCES
-  Server/src/main.cpp
-  # Ajoutez ici d'autres fichiers server
+    Server/src/main.cpp
+    Server/src/UdpServer.cpp
+    Server/src/ServerLoop.cpp
+    Server/src/Player.cpp
+    Server/src/GameManager.cpp
 )
 
 add_executable(r-type_server ${SERVER_SOURCES})

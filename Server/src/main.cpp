@@ -5,28 +5,43 @@
 ** created by dylan adg
 */
 
+#include "ServerLoop.hpp"
 #include <iostream>
-#include "asio.hpp"
 
-int main() {
-    try {
-        asio::io_context io_context;
-        
-        std::cout << "R-Type Server démarré !" << std::endl;
-        std::cout << "Version Asio: " << ASIO_VERSION << std::endl;
-        
-        // Test basique d'un acceptor
-        asio::ip::tcp::acceptor acceptor(io_context, 
-            asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 8080));
-        
-        std::cout << "Serveur en écoute sur le port 8080" << std::endl;
-        std::cout << "Appuyez sur Ctrl+C pour arrêter" << std::endl;
-        
-        io_context.run();
-        
-    } catch (std::exception& e) {
-        std::cerr << "Erreur: " << e.what() << std::endl;
+static void show_helper()
+{
+    std::cout << "USAGE:" << std::endl;
+    std::cout << "./r-type_server [-p] <port_number>" << std::endl;
+    std::cout << "Example: ./r-type_server -p 8080" << std::endl;
+}
+
+bool is_a_valid_port(char *str)
+{
+    if (str == nullptr || *str == '\0')
+        return false;
+
+    for (int i = 0; str[i]; ++i) {
+        if (!std::isdigit(str[i]))
+            return false;
     }
-    
+
+    int port = std::atoi(str);
+    return port >= 1024 && port <= 65535;
+}
+
+int main(int ac, char **av)
+{
+    if (ac == 1 || (ac == 2 && std::strcmp("-h", av[1]) == 0)) {
+        show_helper();
+        return 0;
+    } else if (ac == 3 && std::strcmp("-p", av[1]) == 0 && is_a_valid_port(av[2])) {
+        int port = std::atoi(av[2]);
+        asio::io_context io_context;
+        ServerLoop serverLoop(port, io_context);
+        return serverLoop.run();
+    } else {
+        show_helper();
+        return 84;
+    }
     return 0;
 }
