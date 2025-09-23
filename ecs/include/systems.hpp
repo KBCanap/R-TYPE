@@ -46,4 +46,8 @@ namespace systems {
     void ai_input_system(registry& r,
                          sparse_array<component::ai_input>& ai_inputs,
                          float dt);
+
+    void score_system(registry& r,
+                      sparse_array<component::score>& scores,
+                      float dt);
 }

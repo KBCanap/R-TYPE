@@ -12,6 +12,7 @@ set(APP_SOURCES
     src/game_menu.cpp
     src/audio_manager.cpp
     src/game.cpp
+    src/tick_system.cpp
 )
 
 # Création de l'exécutable client

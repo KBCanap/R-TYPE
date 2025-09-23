@@ -6,7 +6,7 @@
 #include <ctime>
 
 Game::Game(registry& reg, sf::RenderWindow& win, AudioManager& audioMgr)
-    : _registry(reg), _window(win), _audioManager(audioMgr), _gameOverMenu(win, audioMgr)
+    : _registry(reg), _window(win), _audioManager(audioMgr), _gameOverMenu(win, audioMgr), _tickSystem(60.0)
 {
     // Reset the window view to default after menu potentially modified it
     sf::Vector2u window_size = _window.getSize();
@@ -23,12 +23,17 @@ Game::Game(registry& reg, sf::RenderWindow& win, AudioManager& audioMgr)
     std::srand(static_cast<unsigned>(std::time(nullptr)));
     // Crée le background
     _background = _registry.spawn_entity();
-    auto& bg_component = _registry.add_component<component::background>(*_background, component::background(100.f));
+    auto& bg_component = _registry.add_component<component::background>(*_background, component::background(30.f));
     if (!bg_component->texture.loadFromFile("assets/background.jpg")) {
         // Fallback si le fichier n'existe pas
         sf::Image fallback_image;
         fallback_image.create(800, 600, sf::Color(20, 20, 80));
         bg_component->texture.loadFromImage(fallback_image);
+    }
+
+    // Load r-type font for score display
+    if (!_scoreFont.loadFromFile("assets/r-type.otf")) {
+        // If loading fails, use default font (no action needed, SFML will use default)
     }
 
     // Crée le player via le registry
@@ -44,9 +49,10 @@ Game::Game(registry& reg, sf::RenderWindow& win, AudioManager& audioMgr)
                          sf::IntRect(60, 353, 12, 12)));
     _registry.add_component<component::hitbox>(*_player, component::hitbox(66.0f, 34.0f, 15.0f, 0.0f)); // Hitbox du joueur avec offset à droite
     _registry.add_component<component::input>(*_player, component::input()); // Composant input du joueur
+    _registry.add_component<component::score>(*_player, component::score(0)); // Composant score du joueur
 
     // Add player animation with 5 phases
-    auto& player_anim = _registry.add_component<component::animation>(*_player, component::animation(0.1f, true));
+    auto& player_anim = _registry.add_component<component::animation>(*_player, component::animation(0.2f, true));
     player_anim->frames.push_back(sf::IntRect(0, 0, 33, 17));     // Phase 1: neutral up
     player_anim->frames.push_back(sf::IntRect(33, 0, 33, 17));    // Phase 2: slight up
     player_anim->frames.push_back(sf::IntRect(66, 0, 33, 17));    // Phase 3: middle/neutral
@@ -61,6 +67,7 @@ void Game::handleEvents(bool& running, float /*dt*/) {
     while (_window.pollEvent(event)) {
         if (event.type == sf::Event::Closed) {
             running = false;
+            _shouldExit = true;
             return;
         }
 
@@ -104,6 +111,7 @@ void Game::handleEvents(bool& running, float /*dt*/) {
                     break;
                 case MenuAction::QUIT:
                     running = false;
+                    _shouldExit = true;
                     break;
                 case MenuAction::NONE:
                     break;
@@ -160,6 +168,12 @@ void Game::update(float dt) {
     if (!_gameOver) {
         auto& hitboxes = _registry.get_components<component::hitbox>();
         systems::collision_system(_registry, positions, drawables, projectiles, hitboxes);
+    }
+
+    // Score system - only update if game is not over
+    if (!_gameOver) {
+        auto& scores = _registry.get_components<component::score>();
+        systems::score_system(_registry, scores, dt);
     }
 
     // Audio system
@@ -222,7 +236,7 @@ void Game::update(float dt) {
             _registry.add_component<component::ai_input>(enemy, component::ai_input(true, fire_interval, movement_pattern));
 
             // Add enemy animation frames - different for each enemy type
-            auto& anim = _registry.add_component<component::animation>(enemy, component::animation(0.15f, true));
+            auto& anim = _registry.add_component<component::animation>(enemy, component::animation(0.5f, true));
             if (weapon_type == 3) { // Zigzag enemy - 12 frame animation from spritesheet3 (205x18 pixels, 12 frames)
                 // 12 frames arranged in a row, each frame is 17x18 pixels
                 anim->frames.push_back(sf::IntRect(0, 0, 17, 18));      // Frame 1
@@ -267,6 +281,28 @@ void Game::render(float dt) {
     auto& drawables = _registry.get_components<component::drawable>();
     systems::draw_system(_registry, positions, drawables, _window, dt);
 
+    // Draw score in top-right corner
+    if (_player) {
+        auto& scores = _registry.get_components<component::score>();
+        if (*_player < scores.size() && scores[*_player]) {
+            auto& player_score = scores[*_player];
+
+            // Create score text
+            sf::Text score_text;
+            score_text.setFont(_scoreFont);
+            score_text.setString("Score " + std::to_string(player_score->current_score));
+            score_text.setCharacterSize(24);
+            score_text.setFillColor(sf::Color::White);
+
+            // Position in top-right corner
+            sf::Vector2u window_size = _window.getSize();
+            sf::FloatRect text_bounds = score_text.getLocalBounds();
+            score_text.setPosition(window_size.x - text_bounds.width - 20, 20);
+
+            _window.draw(score_text);
+        }
+    }
+
 #ifdef DEBUG_MODE
     // Draw debug hitboxes when built with debug flags
     {
@@ -308,15 +344,24 @@ void Game::run() {
     _audioManager.loadMusic(MusicType::IN_GAME, "assets/audio/in_game.ogg");
     _audioManager.playMusic(MusicType::IN_GAME, true);
 
-    bool running = true;
-    sf::Clock clock;
+    _shouldExit = false;
+    _tickSystem.reset();
 
-    while (running) {
-        float dt = clock.restart().asSeconds();
-        handleEvents(running, dt);
-        update(dt);
-        render(dt);
-    }
+    auto should_continue = [this]() -> bool {
+        return !_shouldExit;
+    };
+
+    auto update_func = [this](double dt) -> void {
+        bool dummy_running = true;
+        handleEvents(dummy_running, static_cast<float>(dt));
+        update(static_cast<float>(dt));
+    };
+
+    auto render_func = [this](double interpolation) -> void {
+        render(static_cast<float>(_tickSystem.getTickDelta()));
+    };
+
+    _tickSystem.run(should_continue, update_func, render_func);
 }
 
 
@@ -360,7 +405,7 @@ void Game::resetGame() {
 
     // Recreate background
     _background = _registry.spawn_entity();
-    auto& bg_component = _registry.add_component<component::background>(*_background, component::background(100.f));
+    auto& bg_component = _registry.add_component<component::background>(*_background, component::background(30.f));
     if (!bg_component->texture.loadFromFile("assets/background.jpg")) {
         sf::Image fallback_image;
         fallback_image.create(800, 600, sf::Color(20, 20, 80));
@@ -380,9 +425,10 @@ void Game::resetGame() {
                          sf::IntRect(60, 353, 12, 12)));
     _registry.add_component<component::hitbox>(*_player, component::hitbox(66.0f, 34.0f, 15.0f, 0.0f)); // Hitbox du joueur avec offset à droite
     _registry.add_component<component::input>(*_player, component::input()); // Composant input du joueur
+    _registry.add_component<component::score>(*_player, component::score(0)); // Composant score du joueur
 
     // Add player animation with 5 phases
-    auto& player_anim = _registry.add_component<component::animation>(*_player, component::animation(0.1f, true));
+    auto& player_anim = _registry.add_component<component::animation>(*_player, component::animation(0.2f, true));
     player_anim->frames.push_back(sf::IntRect(0, 0, 33, 17));     // Phase 1: neutral up
     player_anim->frames.push_back(sf::IntRect(33, 0, 33, 17));    // Phase 2: slight up
     player_anim->frames.push_back(sf::IntRect(66, 0, 33, 17));    // Phase 3: middle/neutral

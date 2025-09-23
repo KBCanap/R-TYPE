@@ -5,13 +5,14 @@
 #include "components.hpp"
 #include "game_menu.hpp"
 #include "audio_manager.hpp"
+#include "tick_system.hpp"
 #include <vector>
 
 class Game {
 public:
     Game(registry& reg, sf::RenderWindow& win, AudioManager& audioMgr);
 
-    void run();  // Boucle principale du jeu
+    void run();  // Boucle principale du jeu avec système de tick
 
 private:
     void handleEvents(bool& running, float dt);
@@ -63,4 +64,9 @@ private:
 
     GameOverMenu _gameOverMenu;
     bool _gameOver = false;
+
+    TickSystem _tickSystem;
+    bool _shouldExit = false;
+
+    sf::Font _scoreFont;  // Font for displaying score using r-type.otf
 };

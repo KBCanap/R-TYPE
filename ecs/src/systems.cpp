@@ -309,6 +309,7 @@ void collision_system(registry& r,
                       sparse_array<component::hitbox>& hitboxes) {
     std::vector<size_t> entities_to_kill;
     std::vector<std::pair<float, float>> explosion_positions;
+    auto& scores = r.get_components<component::score>();
 
     for (size_t proj_idx = 0; proj_idx < projectiles.size(); ++proj_idx) {
         auto& projectile = projectiles[proj_idx];
@@ -366,6 +367,19 @@ void collision_system(registry& r,
                 bool is_enemy = target_drawable->tag == "enemy" || target_drawable->tag == "enemy_zigzag";
 
                 if ((projectile->friendly && is_enemy) || (!projectile->friendly && is_player)) {
+                    // Award points if a friendly projectile killed an enemy
+                    if (projectile->friendly && is_enemy) {
+                        // Find the player entity and award 5 points for enemy kill
+                        for (size_t score_idx = 0; score_idx < scores.size(); ++score_idx) {
+                            auto& score = scores[score_idx];
+                            if (score && score_idx < drawables.size() && drawables[score_idx] && drawables[score_idx]->tag == "player") {
+                                score->current_score += 5;
+                                score->enemies_killed += 1;
+                                break;
+                            }
+                        }
+                    }
+
                     // Handle piercing projectiles
                     if (projectile->piercing) {
                         projectile->hits++;
@@ -630,6 +644,24 @@ void ai_input_system(registry& r,
                 auto& vel = velocities[i];
 
                 ai_input->movement_pattern.apply_pattern(vel->vx, vel->vy, pos->x, pos->y, dt);
+            }
+        }
+    }
+}
+
+void score_system(registry& r,
+                  sparse_array<component::score>& scores,
+                  float dt) {
+    for (size_t i = 0; i < scores.size(); ++i) {
+        auto& score = scores[i];
+        if (score) {
+            // Update survival time
+            score->survival_time += dt;
+
+            // Award 1 point every second for survival
+            if (score->survival_time - score->last_time_point_awarded >= 1.0f) {
+                score->current_score += 1;
+                score->last_time_point_awarded = score->survival_time;
             }
         }
     }

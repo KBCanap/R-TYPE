@@ -246,4 +246,14 @@ namespace component {
                  const ai_movement_pattern& pattern = ai_movement_pattern::straight())
             : fire(auto_fire), fire_timer(0.0f), fire_interval(interval), movement_pattern(pattern) {}
     };
+
+    struct score {
+        int current_score;
+        int enemies_killed;
+        float survival_time;
+        float last_time_point_awarded;
+
+        score(int initial_score = 0)
+            : current_score(initial_score), enemies_killed(0), survival_time(0.0f), last_time_point_awarded(0.0f) {}
+    };
 }
