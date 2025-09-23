@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-include_directories(/home/dylanadghar/delivery/tek_3/r-type/asio-1.36.0/include)
+# include_directories(/home/dylanadghar/delivery/tek_3/r-type/asio-1.36.0/include) # Removed hardcoded path - using CPM instead
 
 include(cmake/CPM.cmake)
 
@@ -22,22 +22,18 @@ CPMAddPackage(
     "ASIO_NO_DEPRECATED ON"
 )
 
-# SFML avec options optimisées
-CPMAddPackage(
-  NAME SFML
-  VERSION 2.6.0
-  GITHUB_REPOSITORY SFML/SFML
-  GIT_TAG 2.6.0
-  OPTIONS
-    "SFML_BUILD_AUDIO ON"
-    "SFML_BUILD_GRAPHICS ON"
-    "SFML_BUILD_WINDOW ON"
-    "SFML_BUILD_SYSTEM ON"
-    "SFML_BUILD_NETWORK ON"
-    "SFML_USE_SYSTEM_DEPENDENCIES OFF"
-    "SFML_BUILD_EXAMPLES OFF"
-    "SFML_BUILD_DOC OFF"
-)
+# Recherche de SFML
+find_package(sfml-graphics QUIET)
+find_package(sfml-window QUIET)
+find_package(sfml-system QUIET)
+find_package(sfml-audio QUIET)
+find_package(sfml-network QUIET)
+
+# Si SFML n'est pas trouvé via find_package, essayer pkg-config
+if(NOT sfml-graphics_FOUND OR NOT sfml-window_FOUND OR NOT sfml-system_FOUND OR NOT sfml-audio_FOUND)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(SFML REQUIRED sfml-graphics>=2.5 sfml-window>=2.5 sfml-system>=2.5 sfml-audio>=2.5 sfml-network>=2.5)
+endif()
 
 # Interface pour exposer proprement l'include Asio (SYSTEM pour éviter les warnings)
 add_library(asio_interface INTERFACE)
@@ -86,6 +82,13 @@ function(setup_target_warnings target)
   endif()
 endfunction()
 
+# ==== Sous-projets ====
+# ECS Library
+add_subdirectory(ecs)
+
+# App (R-Type client with ECS)
+add_subdirectory(app)
+
 # ==== Cibles principales ====
 # Server
 set(SERVER_SOURCES
@@ -111,31 +114,7 @@ target_compile_definitions(r-type_server PRIVATE
   $<$<CONFIG:Debug>:RTYPE_DEBUG>
 )
 
-# Client
-set(CLIENT_SOURCES
-  Client/src/main.cpp
-  # Ajoutez ici d'autres fichiers client
-)
-
-add_executable(r-type_client ${CLIENT_SOURCES})
-target_include_directories(r-type_client PRIVATE
-  Client/include
-)
-target_link_libraries(r-type_client PRIVATE
-  asio_interface
-  sfml-graphics
-  sfml-window
-  sfml-system
-  sfml-audio
-  sfml-network
-)
-
-# Configuration warnings et debug
-setup_target_warnings(r-type_client)
-target_compile_definitions(r-type_client PRIVATE 
-  $<$<CONFIG:Debug>:DEBUG>
-  $<$<CONFIG:Debug>:RTYPE_DEBUG>
-)
+# Client is now handled by the app module
 
 # ==== Tests unitaires (optionnel) ====
 if(RTYPE_BUILD_TESTS)
@@ -168,15 +147,11 @@ target_compile_options(r-type_server PRIVATE
   $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2>
   $<$<AND:$<NOT:$<CXX_COMPILER_ID:MSVC>>,$<CONFIG:Release>>:-O3 -DNDEBUG>
 )
-target_compile_options(r-type_client PRIVATE
-  $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2>
-  $<$<AND:$<NOT:$<CXX_COMPILER_ID:MSVC>>,$<CONFIG:Release>>:-O3 -DNDEBUG>
-)
 
 # ==== Installation (pour packaging/déploiement) ====
 include(GNUInstallDirs)
 
-install(TARGETS r-type_client r-type_server
+install(TARGETS r-type_app r-type_server
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   COMPONENT Runtime
 )

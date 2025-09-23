@@ -1,0 +1,263 @@
+#include "../include/menu.hpp"
+#include <cmath>
+#include <stdexcept>
+
+Menu::Menu(registry& reg, sf::RenderWindow& win, AudioManager& audioMgr)
+    : _registry(reg), _window(win), _audioManager(audioMgr)
+{
+    _baseWindowSize = _window.getSize();
+    _windowSize = _baseWindowSize;
+
+    // Load background
+    if (!_bgTexture.loadFromFile("assets/background.jpg"))
+        throw std::runtime_error("Failed to load background.jpg");
+
+    _bgSprite1.setTexture(_bgTexture);
+    _bgSprite2.setTexture(_bgTexture);
+
+    // Scale background
+    float scaleX = static_cast<float>(_windowSize.x) / _bgTexture.getSize().x;
+    float scaleY = static_cast<float>(_windowSize.y) / _bgTexture.getSize().y;
+    _bgSprite1.setScale(scaleX, scaleY);
+    _bgSprite2.setScale(scaleX, scaleY);
+    _bgSprite2.setPosition(static_cast<float>(_windowSize.x), 0.f);
+
+    // Load font
+    if (!_font.loadFromFile("assets/r-type.otf"))
+        throw std::runtime_error("Failed to load r-type.otf");
+
+    createButtons();
+    createEnemies();
+
+    _audioManager.loadMusic(MusicType::MAIN_MENU, "assets/audio/main_music.ogg");
+    _audioManager.playMusic(MusicType::MAIN_MENU, true);
+}
+
+void Menu::createButtons() {
+    _buttons.clear();
+    _buttonTexts.clear();
+
+    std::vector<std::string> labels = {"Play", "Options", "Quit"};
+
+    // Utiliser les dimensions actuelles de la fenêtre au lieu des dimensions de base
+    float btnWidth = _windowSize.x * 0.25f;
+    float btnHeight = _windowSize.y * 0.08f;
+    float startY = _windowSize.y * 0.6f;
+    float spacing = btnHeight * 1.3f;
+
+    for (size_t i = 0; i < labels.size(); ++i) {
+        sf::RectangleShape btn(sf::Vector2f(btnWidth, btnHeight));
+        btn.setFillColor(sf::Color(100 + i*50, 150, 200));
+        btn.setPosition((_windowSize.x - btnWidth)/2.f, startY + i*spacing);
+        _buttons.push_back(btn);
+
+        sf::Text text;
+        text.setFont(_font);
+        text.setString(labels[i]);
+        text.setCharacterSize(static_cast<unsigned int>(btnHeight * 0.5f));
+        text.setFillColor(sf::Color::White);
+
+        sf::FloatRect bounds = text.getLocalBounds();
+        text.setOrigin(bounds.left + bounds.width/2.f, bounds.top + bounds.height/2.f);
+        text.setPosition(btn.getPosition().x + btnWidth/2.f, btn.getPosition().y + btnHeight/2.f);
+
+        _buttonTexts.push_back(text);
+    }
+}
+
+void Menu::updateButtonScale() {
+    // Recréer les boutons avec les nouvelles dimensions au lieu de les redimensionner
+    createButtons();
+    
+    // Repositionner les ennemis proportionnellement à la nouvelle taille de fenêtre
+    updateEnemyPositions();
+}
+
+void Menu::updateEnemyPositions() {
+    auto& positions = _registry.get_components<component::position>();
+    auto& drawables = _registry.get_components<component::drawable>();
+    
+    for (size_t i = 0; i < _enemies.size(); ++i) {
+        auto& pos = positions[_enemies[i]];
+        auto& draw = drawables[_enemies[i]];
+        
+        if (pos) {
+            // Recalculer les positions de base proportionnellement
+            float x = _windowSize.x * 0.1f + i * (_windowSize.x * 0.15f);
+            float y = _windowSize.y * 0.1f + (i % 2) * (_windowSize.y * 0.08f);
+            
+            pos->x = x;
+            pos->y = y;
+            
+            // Mettre à jour les positions de départ
+            _enemyStartPositions[i] = {x, y};
+        }
+        
+        if (draw) {
+            // Recalculer la taille proportionnellement
+            float enemySize = std::min(_windowSize.x, _windowSize.y) * 0.04f;
+            draw->size = enemySize;
+        }
+    }
+}
+
+void Menu::createEnemies() {
+    _enemies.clear();
+    _enemyStartPositions.clear();
+
+    for (int i = 0; i < 5; ++i) {
+        auto e = _registry.spawn_entity();
+        
+        // Calculer les positions en fonction de la taille actuelle de la fenêtre
+        float x = _windowSize.x * 0.1f + i * (_windowSize.x * 0.15f);
+        float y = _windowSize.y * 0.1f + (i % 2) * (_windowSize.y * 0.08f);
+        
+        _registry.add_component<component::position>(e, component::position(x, y));
+        _registry.add_component<component::velocity>(e, component::velocity(50.f, 0.f));
+        
+        // Taille de l'ennemi proportionnelle à la fenêtre
+        float enemySize = std::min(_windowSize.x, _windowSize.y) * 0.04f;
+        _registry.add_component<component::drawable>(e, component::drawable(sf::Color::Red, enemySize));
+
+        _enemies.push_back(e);
+        _enemyStartPositions.push_back({x, y});
+    }
+}
+
+void Menu::resetEnemies() {
+    auto& positions = _registry.get_components<component::position>();
+    auto& velocities = _registry.get_components<component::velocity>();
+
+    for (size_t i = 0; i < _enemies.size(); ++i) {
+        auto& pos = positions[_enemies[i]];
+        auto& vel = velocities[_enemies[i]];
+
+        if (pos) {
+            pos->x = _enemyStartPositions[i].x;
+            pos->y = _enemyStartPositions[i].y;
+        }
+        if (vel) {
+            vel->vx = 50.f;
+            vel->vy = 0.f;
+        }
+    }
+}
+
+MenuResult Menu::run() {
+    bool running = true;
+    sf::Clock clock;
+
+    while (running) {
+        float dt = clock.restart().asSeconds();
+
+        sf::Event event;
+        while (_window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                return MenuResult::Quit;
+
+            if (event.type == sf::Event::MouseButtonPressed) {
+                sf::Vector2f mousePos(sf::Mouse::getPosition(_window));
+                for (size_t i = 0; i < _buttons.size(); ++i) {
+                    if (_buttons[i].getGlobalBounds().contains(mousePos)) {
+                        switch(i) {
+                            case 0:
+                                // Supprimer tous les ennemis du menu avant de lancer le jeu
+                                for (auto enemy : _enemies) {
+                                    _registry.kill_entity(enemy);
+                                }
+                                _enemies.clear();
+                                _enemyStartPositions.clear();
+                                return MenuResult::Play;
+                            case 1: break; // Options placeholder
+                            case 2: return MenuResult::Quit;
+                        }
+                    }
+                }
+            }
+
+            if (event.type == sf::Event::Resized) {
+                _windowSize = {event.size.width, event.size.height};
+                
+                // CRUCIAL: Mettre à jour la vue de la fenêtre
+                sf::View view;
+                view.setSize(static_cast<float>(_windowSize.x), static_cast<float>(_windowSize.y));
+                view.setCenter(static_cast<float>(_windowSize.x) / 2.f, static_cast<float>(_windowSize.y) / 2.f);
+                _window.setView(view);
+                
+                // Redimensionner et repositionner le background correctement
+                float scaleX = static_cast<float>(_windowSize.x) / _bgTexture.getSize().x;
+                float scaleY = static_cast<float>(_windowSize.y) / _bgTexture.getSize().y;
+                _bgSprite1.setScale(scaleX, scaleY);
+                _bgSprite2.setScale(scaleX, scaleY);
+                
+                // Repositionner les sprites en gardant leur logique de défilement
+                // Si le premier sprite est encore visible, on garde sa position relative
+                float currentBg1X = _bgSprite1.getPosition().x;
+                float currentBg2X = _bgSprite2.getPosition().x;
+                
+                // Recalculer les positions en gardant l'état de défilement
+                if (currentBg1X <= 0 && currentBg1X > -static_cast<float>(_windowSize.x)) {
+                    // bg1 est le sprite principal visible
+                    _bgSprite1.setPosition(currentBg1X * (_windowSize.x / static_cast<float>(_baseWindowSize.x)), 0.f);
+                    _bgSprite2.setPosition(_bgSprite1.getPosition().x + static_cast<float>(_windowSize.x), 0.f);
+                } else {
+                    // bg2 est le sprite principal visible
+                    _bgSprite2.setPosition(currentBg2X * (_windowSize.x / static_cast<float>(_baseWindowSize.x)), 0.f);
+                    _bgSprite1.setPosition(_bgSprite2.getPosition().x + static_cast<float>(_windowSize.x), 0.f);
+                }
+
+                // Recréer les boutons et repositionner les ennemis
+                updateButtonScale();
+                
+                // Ajuster la vitesse de scroll du background proportionnellement
+                _bgScrollSpeed = _windowSize.x * 0.125f; // 100/800 = 0.125
+                
+                // Mettre à jour la taille de base pour les futurs calculs
+                _baseWindowSize = _windowSize;
+            }
+        }
+
+        // Background scroll
+        _bgSprite1.move(-_bgScrollSpeed * dt, 0.f);
+        _bgSprite2.move(-_bgScrollSpeed * dt, 0.f);
+        if (_bgSprite1.getPosition().x + _windowSize.x < 0)
+            _bgSprite1.setPosition(_bgSprite2.getPosition().x + _windowSize.x, 0.f);
+        if (_bgSprite2.getPosition().x + _windowSize.x < 0)
+            _bgSprite2.setPosition(_bgSprite1.getPosition().x + _windowSize.x, 0.f);
+
+        // Enemy movement
+        auto& positions = _registry.get_components<component::position>();
+        auto& velocities = _registry.get_components<component::velocity>();
+        for (size_t i = 0; i < _enemies.size(); ++i) {
+            auto& pos = positions[_enemies[i]];
+            auto& vel = velocities[_enemies[i]];
+            if (pos && vel) {
+                pos->x += vel->vx * dt;
+                pos->y = _enemyStartPositions[i].y + 20.f * std::sin(pos->x / 50.f);
+            }
+        }
+
+        // Render
+        _window.clear();
+        _window.draw(_bgSprite1);
+        _window.draw(_bgSprite2);
+        for (auto& btn : _buttons) _window.draw(btn);
+        for (auto& txt : _buttonTexts) _window.draw(txt);
+
+        auto& drawables = _registry.get_components<component::drawable>();
+        for (auto& e : _enemies) {
+            auto& pos = positions[e];
+            auto& draw = drawables[e];
+            if (pos && draw) {
+                sf::RectangleShape shape(sf::Vector2f(draw->size, draw->size));
+                shape.setPosition(pos->x, pos->y);
+                shape.setFillColor(draw->color);
+                _window.draw(shape);
+            }
+        }
+
+        _window.display();
+    }
+
+    return MenuResult::None;
+}
