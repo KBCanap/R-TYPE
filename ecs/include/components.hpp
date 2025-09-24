@@ -182,7 +182,6 @@ namespace component {
               trigger_on_death(on_death), triggered(false) {}
     };
 
-
     struct projectile_behavior {
         projectile_pattern pattern;
 
@@ -256,4 +255,14 @@ namespace component {
         score(int initial_score = 0)
             : current_score(initial_score), enemies_killed(0), survival_time(0.0f), last_time_point_awarded(0.0f) {}
     };
+
+    struct health {
+        int current_hp;
+        int max_hp;
+        bool invulnerable;
+
+        health(int hp = 100, bool invuln = false)
+            : current_hp(hp), max_hp(hp), invulnerable(invuln) {}
+    };
+
 }

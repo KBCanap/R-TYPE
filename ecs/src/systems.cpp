@@ -118,6 +118,23 @@ void position_system(registry& r,
         }
     }
 
+    // Handle boss bounce movement with drawable tag check
+    auto& drawables = r.get_components<component::drawable>();
+    for (size_t i = 0; i < std::min({drawables.size(), positions.size(), velocities.size()}); ++i) {
+        auto& drawable = drawables[i];
+        auto& pos = positions[i];
+        auto& vel = velocities[i];
+
+        if (drawable && drawable->tag == "boss" && pos && vel) {
+            // Check bounds and reverse direction
+            if (pos->y <= 50.0f) {
+                vel->vy = std::abs(vel->vy);
+            } else if (pos->y >= static_cast<float>(window_size.y) - 100.0f) {
+                vel->vy = -std::abs(vel->vy);
+            }
+        }
+    }
+
     // Handle position updates and projectile cleanup
     for (size_t i = 0; i < std::min(positions.size(), velocities.size()); ++i) {
         auto& pos = positions[i];
@@ -274,6 +291,7 @@ void draw_system(registry& r,
     for (size_t i = 0; i < std::min(positions.size(), drawables.size()); ++i) {
         auto& pos = positions[i];
         auto& draw = drawables[i];
+
         if (pos && draw) {
             if (draw->use_sprite && draw->texture.getSize().x > 0) {
                 sf::Sprite sprite(draw->texture);
@@ -310,6 +328,7 @@ void collision_system(registry& r,
     std::vector<size_t> entities_to_kill;
     std::vector<std::pair<float, float>> explosion_positions;
     auto& scores = r.get_components<component::score>();
+    auto& healths = r.get_components<component::health>();
 
     for (size_t proj_idx = 0; proj_idx < projectiles.size(); ++proj_idx) {
         auto& projectile = projectiles[proj_idx];
@@ -364,34 +383,66 @@ void collision_system(registry& r,
             if (collision) {
                 // Check if this is a valid collision (friendly fire rules)
                 bool is_player = target_drawable->tag == "player";
-                bool is_enemy = target_drawable->tag == "enemy" || target_drawable->tag == "enemy_zigzag";
+                bool is_enemy = target_drawable->tag == "enemy" || target_drawable->tag == "enemy_zigzag" || target_drawable->tag == "boss";
 
                 if ((projectile->friendly && is_enemy) || (!projectile->friendly && is_player)) {
-                    // Award points if a friendly projectile killed an enemy
-                    if (projectile->friendly && is_enemy) {
-                        // Find the player entity and award 5 points for enemy kill
-                        for (size_t score_idx = 0; score_idx < scores.size(); ++score_idx) {
-                            auto& score = scores[score_idx];
-                            if (score && score_idx < drawables.size() && drawables[score_idx] && drawables[score_idx]->tag == "player") {
-                                score->current_score += 5;
-                                score->enemies_killed += 1;
-                                break;
+                    // Apply damage if target has health component
+                    if (target_idx < healths.size() && healths[target_idx]) {
+                        auto& target_health = healths[target_idx];
+                        if (!target_health->invulnerable) {
+                            target_health->current_hp -= static_cast<int>(projectile->damage);
+
+                            // Create explosion on hit
+                            auto explosion_entity = r.spawn_entity();
+                            r.add_component<component::position>(explosion_entity, component::position(target_pos->x, target_pos->y));
+                            r.add_component<component::drawable>(explosion_entity, component::drawable("assets/sprites/r-typesheet1.gif", sf::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
+                            auto& anim = r.add_component<component::animation>(explosion_entity, component::animation(0.1f, false, true));
+                            anim->frames.push_back(sf::IntRect(70, 290, 36, 32));
+                            anim->frames.push_back(sf::IntRect(106, 290, 36, 32));
+                            anim->frames.push_back(sf::IntRect(142, 290, 36, 32));
+                            anim->frames.push_back(sf::IntRect(178, 290, 35, 32));
+                            anim->playing = true;
+                            anim->current_frame = 0;
+
+                            if (target_health->current_hp <= 0) {
+                                entities_to_kill.push_back(target_idx);
+
+                                // Award points if a friendly projectile killed an enemy
+                                if (projectile->friendly && is_enemy) {
+                                    for (size_t score_idx = 0; score_idx < scores.size(); ++score_idx) {
+                                        auto& score = scores[score_idx];
+                                        if (score && score_idx < drawables.size() && drawables[score_idx] && drawables[score_idx]->tag == "player") {
+                                            score->current_score += 5;
+                                            score->enemies_killed += 1;
+                                            break;
+                                        }
+                                    }
+                                }
                             }
                         }
+                    } else {
+                        // No health component, kill immediately (old behavior)
+                        if (projectile->friendly && is_enemy) {
+                            for (size_t score_idx = 0; score_idx < scores.size(); ++score_idx) {
+                                auto& score = scores[score_idx];
+                                if (score && score_idx < drawables.size() && drawables[score_idx] && drawables[score_idx]->tag == "player") {
+                                    score->current_score += 5;
+                                    score->enemies_killed += 1;
+                                    break;
+                                }
+                            }
+                        }
+                        entities_to_kill.push_back(target_idx);
+                        explosion_positions.push_back({target_pos->x, target_pos->y});
                     }
 
                     // Handle piercing projectiles
                     if (projectile->piercing) {
                         projectile->hits++;
-                        // Only kill target, keep projectile alive until max hits reached
-                        entities_to_kill.push_back(target_idx);
-                        explosion_positions.push_back({target_pos->x, target_pos->y});
                         // Don't break - piercing projectiles can hit multiple targets in one frame
                     } else {
                         // Non-piercing projectiles are destroyed on impact
                         entities_to_kill.push_back(proj_idx);
-                        entities_to_kill.push_back(target_idx);
-                        explosion_positions.push_back({target_pos->x, target_pos->y});
                         break;
                     }
                 }
@@ -413,7 +464,7 @@ void collision_system(registry& r,
             auto& enemy_hitbox = hitboxes[enemy_idx];
 
             if (!enemy_pos || !enemy_drawable || !enemy_hitbox ||
-                (enemy_drawable->tag != "enemy" && enemy_drawable->tag != "enemy_zigzag")) continue;
+                (enemy_drawable->tag != "enemy" && enemy_drawable->tag != "enemy_zigzag" && enemy_drawable->tag != "boss")) continue;
             if (enemy_idx == player_idx) continue;
 
             // AABB collision detection using hitboxes
@@ -433,10 +484,47 @@ void collision_system(registry& r,
                              player_bottom > enemy_top);
 
             if (collision) {
-                entities_to_kill.push_back(player_idx);
-                entities_to_kill.push_back(enemy_idx);
-                explosion_positions.push_back({player_pos->x, player_pos->y});
-                explosion_positions.push_back({enemy_pos->x, enemy_pos->y});
+                // Apply damage to both entities if they have health
+                if (player_idx < healths.size() && healths[player_idx]) {
+                    auto& player_health = healths[player_idx];
+
+                    if (!player_health->invulnerable) {
+                        player_health->current_hp -= 50;
+
+                        // Create explosion on player
+                        auto explosion_entity = r.spawn_entity();
+                        r.add_component<component::position>(explosion_entity, component::position(player_pos->x, player_pos->y));
+                        r.add_component<component::drawable>(explosion_entity, component::drawable("assets/sprites/r-typesheet1.gif", sf::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
+                        auto& anim = r.add_component<component::animation>(explosion_entity, component::animation(0.1f, false, true));
+                        anim->frames.push_back(sf::IntRect(70, 290, 36, 32));
+                        anim->frames.push_back(sf::IntRect(106, 290, 36, 32));
+                        anim->frames.push_back(sf::IntRect(142, 290, 36, 32));
+                        anim->frames.push_back(sf::IntRect(178, 290, 35, 32));
+                        anim->playing = true;
+                        anim->current_frame = 0;
+
+                        if (player_health->current_hp <= 0) {
+                            entities_to_kill.push_back(player_idx);
+                        }
+                    }
+                } else {
+                    entities_to_kill.push_back(player_idx);
+                    explosion_positions.push_back({player_pos->x, player_pos->y});
+                }
+
+                if (enemy_idx < healths.size() && healths[enemy_idx]) {
+                    auto& enemy_health = healths[enemy_idx];
+                    if (!enemy_health->invulnerable) {
+                        enemy_health->current_hp -= 50;
+                        if (enemy_health->current_hp <= 0) {
+                            entities_to_kill.push_back(enemy_idx);
+                            explosion_positions.push_back({enemy_pos->x, enemy_pos->y});
+                        }
+                    }
+                } else {
+                    entities_to_kill.push_back(enemy_idx);
+                    explosion_positions.push_back({enemy_pos->x, enemy_pos->y});
+                }
                 break;
             }
         }
@@ -454,7 +542,7 @@ void collision_system(registry& r,
     for (const auto& explosion_pos : explosion_positions) {
         auto explosion_entity = r.spawn_entity();
         r.add_component<component::position>(explosion_entity, component::position(explosion_pos.first, explosion_pos.second));
-        r.add_component<component::drawable>(explosion_entity, component::drawable("assets/sprites/r-typesheet1.gif", sf::IntRect(), 2.0f, "explosion"));
+        r.add_component<component::drawable>(explosion_entity, component::drawable("assets/sprites/r-typesheet1.gif", sf::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
 
         // Set up explosion animation frames with auto-destruction
         auto& anim = r.add_component<component::animation>(explosion_entity, component::animation(0.1f, false, true));
@@ -462,6 +550,8 @@ void collision_system(registry& r,
         anim->frames.push_back(sf::IntRect(106, 290, 36, 32));
         anim->frames.push_back(sf::IntRect(142, 290, 36, 32));
         anim->frames.push_back(sf::IntRect(178, 290, 35, 32));
+        anim->playing = true;
+        anim->current_frame = 0;
     }
 }
 
@@ -643,7 +733,10 @@ void ai_input_system(registry& r,
                 auto& pos = positions[i];
                 auto& vel = velocities[i];
 
-                ai_input->movement_pattern.apply_pattern(vel->vx, vel->vy, pos->x, pos->y, dt);
+                // Only apply movement if base_speed is not zero (avoid overriding boss bounce)
+                if (ai_input->movement_pattern.base_speed != 0.0f) {
+                    ai_input->movement_pattern.apply_pattern(vel->vx, vel->vy, pos->x, pos->y, dt);
+                }
             }
         }
     }

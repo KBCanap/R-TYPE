@@ -52,6 +52,7 @@ private:
     std::optional<entity> _player;       // Player créé via spawn_entity()
     std::optional<entity> _background;   // Background entity
     std::vector<entity> _enemies;        // Ennemis
+    std::optional<entity> _boss;         // Boss entity
 
     float _playerSpeed = 300.f;
     float _enemySpawnTimer = 0.f;

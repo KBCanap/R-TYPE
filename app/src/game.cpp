@@ -45,11 +45,12 @@ Game::Game(registry& reg, sf::RenderWindow& win, AudioManager& audioMgr)
     // Arme RAPID : cadence élevée, dégâts faibles, projectile unique
     _registry.add_component<component::weapon>(*_player,
         component::weapon(8.0f, true, 1, 0.0f, component::projectile_pattern::straight(),
-                         10.0f, 600.0f, 5.0f, false, 1, false, 3, 0.1f,
+                         25.0f, 600.0f, 5.0f, false, 1, false, 3, 0.1f,
                          sf::IntRect(60, 353, 12, 12)));
     _registry.add_component<component::hitbox>(*_player, component::hitbox(66.0f, 34.0f, 15.0f, 0.0f)); // Hitbox du joueur avec offset à droite
     _registry.add_component<component::input>(*_player, component::input()); // Composant input du joueur
     _registry.add_component<component::score>(*_player, component::score(0)); // Composant score du joueur
+    _registry.add_component<component::health>(*_player, component::health(100, false)); // Player has 100 HP
 
     // Add player animation with 5 phases
     auto& player_anim = _registry.add_component<component::animation>(*_player, component::animation(0.2f, true));
@@ -190,8 +191,46 @@ void Game::update(float dt) {
         _audioManager.playMusic(MusicType::GAME_OVER, false);
     }
 
-    // Spawn enemies - only if game is not over
-    if (!_gameOver) {
+    // Check score and spawn boss at 150 points
+    if (!_gameOver && !_boss && _player) {
+        auto& scores = _registry.get_components<component::score>();
+        if (*_player < scores.size() && scores[*_player]) {
+            auto& player_score = scores[*_player];
+            if (player_score->current_score >= 100) {
+                // Spawn boss
+                _boss = _registry.spawn_entity();
+                sf::Vector2u window_size = _window.getSize();
+                float boss_x = static_cast<float>(window_size.x) - 150.0f; // Stay on right edge
+                float boss_y = static_cast<float>(window_size.y) / 2.0f; // Start in middle
+
+                _registry.add_component<component::position>(*_boss, component::position(boss_x, boss_y));
+                _registry.add_component<component::velocity>(*_boss, component::velocity(0.f, 100.0f));
+                _registry.add_component<component::drawable>(*_boss, component::drawable("assets/sprites/r-typesheet17.gif", sf::IntRect(), 2.0f, "boss"));
+                _registry.add_component<component::hitbox>(*_boss, component::hitbox(130.0f, 220.0f, 0.0f, 0.0f));
+                _registry.add_component<component::health>(*_boss, component::health(1000, false)); // Boss has 1000 HP
+
+                // Boss weapon: spread pattern with high fire rate
+                _registry.add_component<component::weapon>(*_boss,
+                    component::weapon(2.0f, false, 5, 15.0f, component::projectile_pattern::straight(),
+                                     25.0f, 250.0f, 5.0f, false, 1, false, 3, 0.1f,
+                                     sf::IntRect(249, 103, 16, 12)));
+
+                // Boss AI input - no movement pattern (bounce is handled by position_system)
+                auto boss_ai = _registry.add_component<component::ai_input>(*_boss, component::ai_input(true, 0.5f, component::ai_movement_pattern::straight(0.0f)));
+                // Disable AI movement so it doesn't override the bounce behavior
+                boss_ai->movement_pattern.base_speed = 0.0f;
+
+                // Boss animation: 8 frames from 522x132 sprite (each frame is 522/8 = 65.25 pixels wide, 132 pixels high)
+                auto& boss_anim = _registry.add_component<component::animation>(*_boss, component::animation(0.1f, true));
+                for (int i = 0; i < 8; ++i) {
+                    boss_anim->frames.push_back(sf::IntRect(i * 65, 0, 65, 132));
+                }
+            }
+        }
+    }
+
+    // Spawn enemies - only if game is not over AND boss hasn't spawned yet
+    if (!_gameOver && !_boss) {
         _enemySpawnTimer += dt;
         if (_enemySpawnTimer >= _enemySpawnInterval) {
             _enemySpawnTimer = 0.f;
@@ -222,6 +261,8 @@ void Game::update(float dt) {
                 _registry.add_component<component::hitbox>(enemy, component::hitbox(50.0f, 58.0f, 0.0f, 00.0f));
             }
 
+            _registry.add_component<component::health>(enemy, component::health(25, false)); // Enemies have 25 HP
+
             // Add AI input component for enemy automatic firing with movement pattern
             float fire_interval = 1.0f + (rand() % 100) / 100.0f; // Random interval between 1.0 and 2.0 seconds
 
@@ -229,7 +270,7 @@ void Game::update(float dt) {
             component::ai_movement_pattern movement_pattern;
             if (weapon_type == 3) { // Zigzag enemy with spread weapon
                 movement_pattern = component::ai_movement_pattern::zigzag(60.0f, 0.015f, 130.0f);
-            } else { // Wave enemies with other weapons
+            } else { // Wave enemies - other weapons
                 movement_pattern = component::ai_movement_pattern::wave(50.0f, 0.01f, 120.0f);
             }
 
@@ -281,13 +322,29 @@ void Game::render(float dt) {
     auto& drawables = _registry.get_components<component::drawable>();
     systems::draw_system(_registry, positions, drawables, _window, dt);
 
-    // Draw score in top-right corner
+    // Draw HP in top-left corner and score in top-right corner
     if (_player) {
+        auto& healths = _registry.get_components<component::health>();
         auto& scores = _registry.get_components<component::score>();
+
+        // Draw HP
+        if (*_player < healths.size() && healths[*_player]) {
+            auto& player_health = healths[*_player];
+
+            sf::Text hp_text;
+            hp_text.setFont(_scoreFont);
+            hp_text.setString("HP " + std::to_string(player_health->current_hp) + "/" + std::to_string(player_health->max_hp));
+            hp_text.setCharacterSize(24);
+            hp_text.setFillColor(sf::Color::White);
+            hp_text.setPosition(20, 20);
+
+            _window.draw(hp_text);
+        }
+
+        // Draw Score
         if (*_player < scores.size() && scores[*_player]) {
             auto& player_score = scores[*_player];
 
-            // Create score text
             sf::Text score_text;
             score_text.setFont(_scoreFont);
             score_text.setString("Score " + std::to_string(player_score->current_score));
@@ -304,7 +361,7 @@ void Game::render(float dt) {
     }
 
 #ifdef DEBUG_MODE
-    // Draw debug hitboxes when built with debug flags
+    // Draw debug hitboxes
     {
         auto& hitboxes = _registry.get_components<component::hitbox>();
 
@@ -321,7 +378,7 @@ void Game::render(float dt) {
                 // Different colors for different entity types
                 if (drawables[i] && drawables[i]->tag == "player") {
                     hitbox_outline.setOutlineColor(sf::Color::Green);
-                } else if (drawables[i] && (drawables[i]->tag == "enemy" || drawables[i]->tag == "enemy_zigzag")) {
+                } else if (drawables[i] && (drawables[i]->tag == "enemy" || drawables[i]->tag == "enemy_zigzag" || drawables[i]->tag == "boss")) {
                     hitbox_outline.setOutlineColor(sf::Color::Red);
                 } else {
                     hitbox_outline.setOutlineColor(sf::Color::Yellow);
@@ -390,6 +447,10 @@ void Game::resetGame() {
         _registry.kill_entity(*_background);
         _background.reset();
     }
+    if (_boss) {
+        _registry.kill_entity(*_boss);
+        _boss.reset();
+    }
     for (const auto& enemy : _enemies) {
         _registry.kill_entity(enemy);
     }
@@ -421,11 +482,12 @@ void Game::resetGame() {
     // Arme RAPID par défaut lors du reset
     _registry.add_component<component::weapon>(*_player,
         component::weapon(8.0f, true, 1, 0.0f, component::projectile_pattern::straight(),
-                         10.0f, 600.0f, 5.0f, false, 1, false, 3, 0.1f,
+                         25.0f, 600.0f, 5.0f, false, 1, false, 3, 0.1f,
                          sf::IntRect(60, 353, 12, 12)));
     _registry.add_component<component::hitbox>(*_player, component::hitbox(66.0f, 34.0f, 15.0f, 0.0f)); // Hitbox du joueur avec offset à droite
     _registry.add_component<component::input>(*_player, component::input()); // Composant input du joueur
     _registry.add_component<component::score>(*_player, component::score(0)); // Composant score du joueur
+    _registry.add_component<component::health>(*_player, component::health(100, false)); // Player has 100 HP
 
     // Add player animation with 5 phases
     auto& player_anim = _registry.add_component<component::animation>(*_player, component::animation(0.2f, true));
@@ -480,7 +542,7 @@ void Game::changePlayerWeaponToSingle() {
 
     float last_shot_time = player_weapon->last_shot_time;
     *player_weapon = component::weapon(2.0f, true, 1, 0.0f, component::projectile_pattern::straight(),
-                                     20.0f, 500.0f, 5.0f, false, 1, false, 3, 0.1f,
+                                     25.0f, 500.0f, 5.0f, false, 1, false, 3, 0.1f,
                                      sf::IntRect(60, 353, 12, 12));
     player_weapon->last_shot_time = last_shot_time;
 }
@@ -493,7 +555,7 @@ void Game::changePlayerWeaponToRapid() {
 
     float last_shot_time = player_weapon->last_shot_time;
     *player_weapon = component::weapon(8.0f, true, 1, 0.0f, component::projectile_pattern::straight(),
-                                     10.0f, 600.0f, 5.0f, false, 1, false, 3, 0.1f,
+                                     25.0f, 600.0f, 5.0f, false, 1, false, 3, 0.1f,
                                      sf::IntRect(60, 353, 12, 12));
     player_weapon->last_shot_time = last_shot_time;
 }
@@ -506,7 +568,7 @@ void Game::changePlayerWeaponToBurst() {
 
     float last_shot_time = player_weapon->last_shot_time;
     *player_weapon = component::weapon(2.0f, true, 1, 0.0f, component::projectile_pattern::straight(),
-                                     15.0f, 550.0f, 5.0f, false, 1, true, 3, 0.1f,
+                                     25.0f, 550.0f, 5.0f, false, 1, true, 3, 0.1f,
                                      sf::IntRect(60, 353, 12, 12));
     player_weapon->last_shot_time = last_shot_time;
 }
@@ -519,31 +581,31 @@ void Game::changePlayerWeaponToSpread() {
 
     float last_shot_time = player_weapon->last_shot_time;
     *player_weapon = component::weapon(1.5f, true, 5, 12.0f, component::projectile_pattern::straight(),
-                                     12.0f, 450.0f, 5.0f, false, 1, false, 3, 0.1f,
+                                     25.0f, 450.0f, 5.0f, false, 1, false, 3, 0.1f,
                                      sf::IntRect(60, 353, 12, 12));
     player_weapon->last_shot_time = last_shot_time;
 }
 
 component::weapon Game::createEnemySingleWeapon() {
     return component::weapon(1.0f, false, 1, 0.0f,
-        component::projectile_pattern::straight(), 8.0f, 200.0f, 5.0f, false, 1,
+        component::projectile_pattern::straight(), 25.0f, 200.0f, 5.0f, false, 1,
         false, 3, 0.1f, sf::IntRect(249, 103, 16, 12));
 }
 
 component::weapon Game::createEnemyBurstWeapon() {
     return component::weapon(1.5f, false, 1, 0.0f,
-        component::projectile_pattern::straight(), 8.0f, 300.0f, 5.0f, false, 1,
+        component::projectile_pattern::straight(), 25.0f, 300.0f, 5.0f, false, 1,
         true, 4, 0.15f, sf::IntRect(249, 103, 16, 12));
 }
 
 component::weapon Game::createEnemySpreadWeapon() {
     return component::weapon(0.8f, false, 3, 20.0f,
-        component::projectile_pattern::straight(), 6.0f, 180.0f, 5.0f, false, 1,
+        component::projectile_pattern::straight(), 25.0f, 180.0f, 5.0f, false, 1,
         false, 3, 0.1f, sf::IntRect(249, 103, 16, 12));
 }
 
 component::weapon Game::createEnemyZigzagSpreadWeapon() {
     return component::weapon(1.2f, false, 5, 25.0f,
-        component::projectile_pattern::spread(25.0f), 10.0f, 220.0f, 4.0f, false, 1,
+        component::projectile_pattern::spread(25.0f), 25.0f, 220.0f, 4.0f, false, 1,
         false, 3, 0.1f, sf::IntRect(249, 115, 16, 12));
 }

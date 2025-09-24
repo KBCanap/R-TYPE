@@ -56,6 +56,7 @@ endif()
 target_compile_definitions(r-type_app PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
     $<$<CONFIG:Debug>:RTYPE_DEBUG>
+    $<$<CONFIG:Debug>:DEBUG_MODE>
 )
 
 # Optimisations par configuration
