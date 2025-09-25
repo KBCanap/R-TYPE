@@ -13,6 +13,10 @@ set(APP_SOURCES
     src/audio_manager.cpp
     src/game.cpp
     src/tick_system.cpp
+    src/options_menu.cpp
+    src/player_manager.cpp
+    src/enemy_manager.cpp
+    src/boss_manager.cpp
 )
 
 # Création de l'exécutable client
@@ -56,6 +60,7 @@ endif()
 target_compile_definitions(r-type_app PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
     $<$<CONFIG:Debug>:RTYPE_DEBUG>
+    $<$<CONFIG:Debug>:DEBUG_MODE>
 )
 
 # Optimisations par configuration

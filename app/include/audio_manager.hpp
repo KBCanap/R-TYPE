@@ -20,6 +20,7 @@ public:
     void pauseMusic();
     void resumeMusic();
     void setMusicVolume(float volume);
+    void setMasterVolume(float volume);
     bool isMusicPlaying() const;
 
 private:
