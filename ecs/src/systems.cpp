@@ -389,36 +389,12 @@ void collision_system(registry& r,
                     // Apply damage if target has health component
                     if (target_idx < healths.size() && healths[target_idx]) {
                         auto& target_health = healths[target_idx];
-                        if (!target_health->invulnerable) {
-                            target_health->current_hp -= static_cast<int>(projectile->damage);
+                        // Mark damage to be applied by health_system
+                        target_health->pending_damage += static_cast<int>(projectile->damage);
 
-                            // Create explosion on hit
-                            auto explosion_entity = r.spawn_entity();
-                            r.add_component<component::position>(explosion_entity, component::position(target_pos->x, target_pos->y));
-                            r.add_component<component::drawable>(explosion_entity, component::drawable("assets/sprites/r-typesheet1.gif", sf::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
-                            auto& anim = r.add_component<component::animation>(explosion_entity, component::animation(0.1f, false, true));
-                            anim->frames.push_back(sf::IntRect(70, 290, 36, 32));
-                            anim->frames.push_back(sf::IntRect(106, 290, 36, 32));
-                            anim->frames.push_back(sf::IntRect(142, 290, 36, 32));
-                            anim->frames.push_back(sf::IntRect(178, 290, 35, 32));
-                            anim->playing = true;
-                            anim->current_frame = 0;
-
-                            if (target_health->current_hp <= 0) {
-                                entities_to_kill.push_back(target_idx);
-
-                                // Award points if a friendly projectile killed an enemy
-                                if (projectile->friendly && is_enemy) {
-                                    for (size_t score_idx = 0; score_idx < scores.size(); ++score_idx) {
-                                        auto& score = scores[score_idx];
-                                        if (score && score_idx < drawables.size() && drawables[score_idx] && drawables[score_idx]->tag == "player") {
-                                            score->current_score += 5;
-                                            score->enemies_killed += 1;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
+                        // Create explosion effect when player is hit
+                        if (is_player) {
+                            explosion_positions.push_back({target_pos->x, target_pos->y});
                         }
                     } else {
                         // No health component, kill immediately (old behavior)
@@ -487,26 +463,8 @@ void collision_system(registry& r,
                 // Apply damage to both entities if they have health
                 if (player_idx < healths.size() && healths[player_idx]) {
                     auto& player_health = healths[player_idx];
-
-                    if (!player_health->invulnerable) {
-                        player_health->current_hp -= 50;
-
-                        // Create explosion on player
-                        auto explosion_entity = r.spawn_entity();
-                        r.add_component<component::position>(explosion_entity, component::position(player_pos->x, player_pos->y));
-                        r.add_component<component::drawable>(explosion_entity, component::drawable("assets/sprites/r-typesheet1.gif", sf::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
-                        auto& anim = r.add_component<component::animation>(explosion_entity, component::animation(0.1f, false, true));
-                        anim->frames.push_back(sf::IntRect(70, 290, 36, 32));
-                        anim->frames.push_back(sf::IntRect(106, 290, 36, 32));
-                        anim->frames.push_back(sf::IntRect(142, 290, 36, 32));
-                        anim->frames.push_back(sf::IntRect(178, 290, 35, 32));
-                        anim->playing = true;
-                        anim->current_frame = 0;
-
-                        if (player_health->current_hp <= 0) {
-                            entities_to_kill.push_back(player_idx);
-                        }
-                    }
+                    // Mark damage to be applied by health_system
+                    player_health->pending_damage += 50;
                 } else {
                     entities_to_kill.push_back(player_idx);
                     explosion_positions.push_back({player_pos->x, player_pos->y});
@@ -514,13 +472,8 @@ void collision_system(registry& r,
 
                 if (enemy_idx < healths.size() && healths[enemy_idx]) {
                     auto& enemy_health = healths[enemy_idx];
-                    if (!enemy_health->invulnerable) {
-                        enemy_health->current_hp -= 50;
-                        if (enemy_health->current_hp <= 0) {
-                            entities_to_kill.push_back(enemy_idx);
-                            explosion_positions.push_back({enemy_pos->x, enemy_pos->y});
-                        }
-                    }
+                    // Mark damage to be applied by health_system
+                    enemy_health->pending_damage += 50;
                 } else {
                     entities_to_kill.push_back(enemy_idx);
                     explosion_positions.push_back({enemy_pos->x, enemy_pos->y});
@@ -757,6 +710,71 @@ void score_system(registry& r,
                 score->last_time_point_awarded = score->survival_time;
             }
         }
+    }
+}
+
+void health_system(registry& r,
+                   sparse_array<component::health>& healths,
+                   float dt) {
+    std::vector<size_t> entities_to_kill;
+    auto& positions = r.get_components<component::position>();
+    auto& drawables = r.get_components<component::drawable>();
+    auto& scores = r.get_components<component::score>();
+
+    for (size_t i = 0; i < healths.size(); ++i) {
+        auto& health = healths[i];
+        if (health) {
+            // Apply pending damage
+            if (health->pending_damage > 0) {
+                health->current_hp -= health->pending_damage;
+            }
+            health->pending_damage = 0; // Reset pending damage
+
+            // Check if entity should die
+            if (health->current_hp <= 0) {
+                entities_to_kill.push_back(i);
+
+                // Create explosion effect
+                if (i < positions.size() && positions[i]) {
+                    auto explosion_entity = r.spawn_entity();
+                    r.add_component<component::position>(explosion_entity,
+                        component::position(positions[i]->x, positions[i]->y));
+                    r.add_component<component::drawable>(explosion_entity,
+                        component::drawable("assets/sprites/r-typesheet1.gif",
+                                          sf::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
+                    auto& anim = r.add_component<component::animation>(explosion_entity,
+                        component::animation(0.1f, false, true));
+                    anim->frames.push_back(sf::IntRect(70, 290, 36, 32));
+                    anim->frames.push_back(sf::IntRect(106, 290, 36, 32));
+                    anim->frames.push_back(sf::IntRect(142, 290, 36, 32));
+                    anim->frames.push_back(sf::IntRect(178, 290, 35, 32));
+                    anim->playing = true;
+                    anim->current_frame = 0;
+                }
+
+                // Award points if an enemy died and there's a player
+                if (i < drawables.size() && drawables[i] &&
+                    (drawables[i]->tag == "enemy" || drawables[i]->tag == "enemy_zigzag" || drawables[i]->tag == "boss")) {
+                    for (size_t score_idx = 0; score_idx < scores.size(); ++score_idx) {
+                        auto& score = scores[score_idx];
+                        if (score && score_idx < drawables.size() && drawables[score_idx] &&
+                            drawables[score_idx]->tag == "player") {
+                            score->current_score += 5;
+                            score->enemies_killed += 1;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Clamp health between 0 and max_hp
+            health->current_hp = std::max(0, std::min(health->current_hp, health->max_hp));
+        }
+    }
+
+    // Kill entities that should die
+    for (auto entity_idx : entities_to_kill) {
+        r.kill_entity(entity(entity_idx));
     }
 }
 

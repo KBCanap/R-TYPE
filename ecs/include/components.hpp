@@ -259,10 +259,10 @@ namespace component {
     struct health {
         int current_hp;
         int max_hp;
-        bool invulnerable;
+        int pending_damage;  // Damage to be applied this frame
 
-        health(int hp = 100, bool invuln = false)
-            : current_hp(hp), max_hp(hp), invulnerable(invuln) {}
+        health(int hp = 100)
+            : current_hp(hp), max_hp(hp), pending_damage(0) {}
     };
 
 }

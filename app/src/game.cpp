@@ -50,7 +50,7 @@ Game::Game(registry& reg, sf::RenderWindow& win, AudioManager& audioMgr)
     _registry.add_component<component::hitbox>(*_player, component::hitbox(66.0f, 34.0f, 15.0f, 0.0f)); // Hitbox du joueur avec offset à droite
     _registry.add_component<component::input>(*_player, component::input()); // Composant input du joueur
     _registry.add_component<component::score>(*_player, component::score(0)); // Composant score du joueur
-    _registry.add_component<component::health>(*_player, component::health(100, false)); // Player has 100 HP
+    _registry.add_component<component::health>(*_player, component::health(100)); // Player has 100 HP
 
     // Add player animation with 5 phases
     auto& player_anim = _registry.add_component<component::animation>(*_player, component::animation(0.2f, true));
@@ -171,6 +171,10 @@ void Game::update(float dt) {
         systems::collision_system(_registry, positions, drawables, projectiles, hitboxes);
     }
 
+    // Health system - process damage and handle entity death
+    auto& healths = _registry.get_components<component::health>();
+    systems::health_system(_registry, healths, dt);
+
     // Score system - only update if game is not over
     if (!_gameOver) {
         auto& scores = _registry.get_components<component::score>();
@@ -207,7 +211,7 @@ void Game::update(float dt) {
                 _registry.add_component<component::velocity>(*_boss, component::velocity(0.f, 100.0f));
                 _registry.add_component<component::drawable>(*_boss, component::drawable("assets/sprites/r-typesheet17.gif", sf::IntRect(), 2.0f, "boss"));
                 _registry.add_component<component::hitbox>(*_boss, component::hitbox(130.0f, 220.0f, 0.0f, 0.0f));
-                _registry.add_component<component::health>(*_boss, component::health(1000, false)); // Boss has 1000 HP
+                _registry.add_component<component::health>(*_boss, component::health(1000)); // Boss has 1000 HP
 
                 // Boss weapon: spread pattern with high fire rate
                 _registry.add_component<component::weapon>(*_boss,
@@ -261,7 +265,7 @@ void Game::update(float dt) {
                 _registry.add_component<component::hitbox>(enemy, component::hitbox(50.0f, 58.0f, 0.0f, 00.0f));
             }
 
-            _registry.add_component<component::health>(enemy, component::health(25, false)); // Enemies have 25 HP
+            _registry.add_component<component::health>(enemy, component::health(25)); // Enemies have 25 HP
 
             // Add AI input component for enemy automatic firing with movement pattern
             float fire_interval = 1.0f + (rand() % 100) / 100.0f; // Random interval between 1.0 and 2.0 seconds
@@ -487,7 +491,7 @@ void Game::resetGame() {
     _registry.add_component<component::hitbox>(*_player, component::hitbox(66.0f, 34.0f, 15.0f, 0.0f)); // Hitbox du joueur avec offset à droite
     _registry.add_component<component::input>(*_player, component::input()); // Composant input du joueur
     _registry.add_component<component::score>(*_player, component::score(0)); // Composant score du joueur
-    _registry.add_component<component::health>(*_player, component::health(100, false)); // Player has 100 HP
+    _registry.add_component<component::health>(*_player, component::health(100)); // Player has 100 HP
 
     // Add player animation with 5 phases
     auto& player_anim = _registry.add_component<component::animation>(*_player, component::animation(0.2f, true));

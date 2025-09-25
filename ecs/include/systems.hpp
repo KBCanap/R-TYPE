@@ -50,4 +50,8 @@ namespace systems {
     void score_system(registry& r,
                       sparse_array<component::score>& scores,
                       float dt);
+
+    void health_system(registry& r,
+                       sparse_array<component::health>& healths,
+                       float dt);
 }
