@@ -6,6 +6,9 @@
 #include "game_menu.hpp"
 #include "audio_manager.hpp"
 #include "tick_system.hpp"
+#include "player_manager.hpp"
+#include "enemy_manager.hpp"
+#include "boss_manager.hpp"
 #include <vector>
 
 class Game {
@@ -21,33 +24,17 @@ private:
     void resetGame();
     bool isPlayerAlive() const;
 
-    // Utility methods for responsive positioning
-    float getRelativeX(float relativeX) const;
-    float getRelativeY(float relativeY) const;
-    void updatePlayerPosition();
-    void updateEnemyPositions();
-    void changePlayerWeaponToSingle();
-    void changePlayerWeaponToRapid();
-    void changePlayerWeaponToBurst();
-    void changePlayerWeaponToSpread();
-
-    // Enemy weapon creation functions
-    component::weapon createEnemySingleWeapon();
-    component::weapon createEnemyBurstWeapon();
-    component::weapon createEnemySpreadWeapon();
-    component::weapon createEnemyZigzagSpreadWeapon();
-
-    // Function pointer type for enemy weapon creators
-    using EnemyWeaponCreator = component::weapon (Game::*)();
-
-    // Array of function pointers for enemy weapons
-    static constexpr int NUM_ENEMY_WEAPON_TYPES = 4;
-    EnemyWeaponCreator enemyWeaponCreators[NUM_ENEMY_WEAPON_TYPES];
+    // Core game logic only - details moved to managers
 
 private:
     registry& _registry;
     sf::RenderWindow& _window;
     AudioManager& _audioManager;
+
+    // Managers for different game aspects
+    PlayerManager _playerManager;
+    EnemyManager _enemyManager;
+    BossManager _bossManager;
 
     std::optional<entity> _player;       // Player créé via spawn_entity()
     std::optional<entity> _background;   // Background entity

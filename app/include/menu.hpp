@@ -3,6 +3,7 @@
 #include "registery.hpp"
 #include "components.hpp"
 #include "audio_manager.hpp"
+#include "options_menu.hpp"
 
 enum class MenuResult { None, Play, Options, Quit };
 

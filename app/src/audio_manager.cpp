@@ -52,6 +52,10 @@ void AudioManager::setMusicVolume(float volume) {
     }
 }
 
+void AudioManager::setMasterVolume(float volume) {
+    setMusicVolume(volume);
+}
+
 bool AudioManager::isMusicPlaying() const {
     auto it = _musicTracks.find(_currentMusic);
     return it != _musicTracks.end() && it->second.getStatus() == sf::Music::Playing;

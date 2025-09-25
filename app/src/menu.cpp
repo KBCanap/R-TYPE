@@ -70,7 +70,20 @@ void Menu::createButtons() {
 void Menu::updateButtonScale() {
     // Recréer les boutons avec les nouvelles dimensions au lieu de les redimensionner
     createButtons();
-    
+
+    // Redimensionner le background après changement de résolution
+    float scaleX = static_cast<float>(_windowSize.x) / _bgTexture.getSize().x;
+    float scaleY = static_cast<float>(_windowSize.y) / _bgTexture.getSize().y;
+    _bgSprite1.setScale(scaleX, scaleY);
+    _bgSprite2.setScale(scaleX, scaleY);
+
+    // Ajuster la vitesse de scroll proportionnellement
+    _bgScrollSpeed = _windowSize.x * 0.125f;
+
+    // Repositionner les sprites de background
+    _bgSprite1.setPosition(0.f, 0.f);
+    _bgSprite2.setPosition(static_cast<float>(_windowSize.x), 0.f);
+
     // Repositionner les ennemis proportionnellement à la nouvelle taille de fenêtre
     updateEnemyPositions();
 }
@@ -170,7 +183,14 @@ MenuResult Menu::run() {
                                 _enemies.clear();
                                 _enemyStartPositions.clear();
                                 return MenuResult::Play;
-                            case 1: break; // Options placeholder
+                            case 1: {
+                                OptionsMenu optionsMenu(_window, _audioManager);
+                                optionsMenu.run();
+                                // Update window size in case resolution changed
+                                _windowSize = _window.getSize();
+                                updateButtonScale();
+                                break;
+                            }
                             case 2: return MenuResult::Quit;
                         }
                     }

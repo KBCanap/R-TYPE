@@ -396,6 +396,10 @@ void collision_system(registry& r,
                         if (is_player) {
                             explosion_positions.push_back({target_pos->x, target_pos->y});
                         }
+                        // Create explosion effect when player projectile hits boss
+                        else if (projectile->friendly && target_drawable->tag == "boss") {
+                            explosion_positions.push_back({target_pos->x, target_pos->y});
+                        }
                     } else {
                         // No health component, kill immediately (old behavior)
                         if (projectile->friendly && is_enemy) {
