@@ -1,0 +1,491 @@
+Network Working Group                                         D. Adghar
+Request for Comments: XXXX                                  P-E. Henry
+Category: Standards Track                                   A. Harkati
+ISSN: 2070-1721                                         E. Layle-eveno
+                                                               Epitech
+                                                          September 2025
+
+
+                            R-Type TCP Protocol
+
+Abstract
+
+   This document defines the R-Type TCP Connection Protocol, which
+   handles the initial connection phase between R-Type clients and
+   server before switching to User Datagram Protocol (UDP) for real-
+   time gameplay.  This protocol handles client authentication, game
+   readiness coordination, and UDP port assignment.  The protocol
+   supports a maximum of 4 players per game session using a direct
+   connection model without lobby system.
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
+     1.1.  Key Requirements  . . . . . . . . . . . . . . . . . . . .   2
+     1.2.  Conventions Used in This Document  . . . . . . . . . . . .  2
+   2.  Protocol Architecture . . . . . . . . . . . . . . . . . . . .   2
+     2.1.  Connection Flow . . . . . . . . . . . . . . . . . . . . .   2
+   3.  Message Format  . . . . . . . . . . . . . . . . . . . . . . .   2
+     3.1.  TCP Header Structure  . . . . . . . . . . . . . . . . . .   3
+     3.2.  Message Types . . . . . . . . . . . . . . . . . . . . . .   3
+   4.  Message Specifications  . . . . . . . . . . . . . . . . . . .   4
+     4.1.  TCP_CONNECT (Client to Server) . . . . . . . . . . . . . .  4
+     4.2.  TCP_CONNECT_ACK (Server to Client) . . . . . . . . . . . .  4
+     4.3.  TCP_CONNECT_NAK (Server to Client) . . . . . . . . . . . .  4
+     4.4.  TCP_READY (Client to Server) . . . . . . . . . . . . . . .  5
+     4.5.  TCP_GAME_START (Server to All Clients) . . . . . . . . . .  5
+     4.6.  TCP_ERROR (Server to Client) . . . . . . . . . . . . . . .  5
+   5.  Connection State Machine  . . . . . . . . . . . . . . . . . .   6
+     5.1.  Client States . . . . . . . . . . . . . . . . . . . . . .   6
+     5.2.  Server States per Client  . . . . . . . . . . . . . . . .   6
+   6.  Implementation Notes  . . . . . . . . . . . . . . . . . . . .   7
+     6.1.  Endianness  . . . . . . . . . . . . . . . . . . . . . . .   7
+     6.2.  Timeouts . . . . . . . . . . . . . . . . . . . . . . . . .  7
+     6.3.  Error Handling  . . . . . . . . . . . . . . . . . . . . .   7
+     6.4.  Connection Limits . . . . . . . . . . . . . . . . . . . .   7
+   7.  Example Communication Flows . . . . . . . . . . . . . . . . .   8
+     7.1.  Successful 2-Player Game . . . . . . . . . . . . . . . . .  8
+     7.2.  Game Full Scenario  . . . . . . . . . . . . . . . . . . .   8
+   8.  Security Considerations . . . . . . . . . . . . . . . . . . .   9
+   Appendix A.  Message Format Examples . . . . . . . . . . . . . . .  9
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .   9
+
+
+
+                            Standards Track                     [Page 2]
+
+                          R-Type TCP Protocols            september 2025
+
+1.  Introduction
+
+   The R-Type TCP Connection Protocol defines the initial connection
+   phase between R-Type game clients and server infrastructure.  This
+   protocol is designed to establish reliable connections, coordinate
+   client readiness, and facilitate the transition to UDP-based real-
+   time gameplay communication.
+
+   The protocol addresses the need for synchronized game initialization
+   in multi-player R-Type gaming sessions while maintaining simplicity
+   and reliability during the connection establishment phase.  Once all
+   clients are ready and connected, the protocol facilitates a seamless
+   handover to UDP for low-latency game communication.
+
+1.1.  Key Requirements
+
+   All multi-byte integers MUST use Network Byte Order (Big Endian) as
+   specified in [RFC1700].  The protocol supports a maximum of 4 players
+   per game session.  The design follows a direct connection model
+   without implementing a lobby system.  All connected clients MUST
+   signal readiness before game commencement.
+
+1.2.  Conventions Used in This Document
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+2.  Protocol Architecture
+
+   The R-Type TCP Protocol operates in a client-server architecture
+   where multiple clients connect to a centralized TCP server:
+
+      Client 1 ----\
+      Client 2 ----+---- TCP Server ---- Server Logic
+      Client 3 ----+
+      Client 4 ----/
+
+   The server manages connection state for all clients and coordinates
+   the transition to UDP-based gameplay once all participants are ready.
+
+2.1.  Connection Flow
+
+   The connection establishment follows a structured sequence:
+
+   1.  Client initiates connection to TCP server
+   2.  Client sends CONNECT message
+   3.  Server responds with CONNECT_ACK containing player identifier
+   4.  Client sends READY when prepared for gameplay
+   5.  When all clients are ready, Server sends GAME_START with UDP port
+   6.  All clients transition to UDP protocol for game communication
+
+
+
+                            Standards Track                     [Page 3]
+
+                          R-Type TCP Protocols            september 2025
+
+3.  Message Format
+
+3.1.  TCP Header Structure
+
+   All TCP messages utilize a fixed header format:
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |   MSG_TYPE    |                   DATA_LENGTH                 |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                              DATA                             |
+   |                         (variable length)                     |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   MSG_TYPE (1 byte):  Message type identifier
+
+   DATA_LENGTH (3 bytes):  Length of DATA field in bytes, transmitted
+      in Network Byte Order
+
+   DATA (variable):  Message payload, format depends on MSG_TYPE
+
+3.2.  Message Types
+
+   The following message types are defined:
+
+      TCP_CONNECT     = 0x01
+      TCP_CONNECT_ACK = 0x02
+      TCP_CONNECT_NAK = 0x03
+      TCP_READY       = 0x04
+      TCP_GAME_START  = 0x05
+      TCP_ERROR       = 0xFF
+
+
+
+                            Standards Track                     [Page 4]
+
+                          R-Type TCP Protocols            september 2025
+
+4.  Message Specifications
+
+4.1.  TCP_CONNECT (Client to Server)
+
+   This message represents the client's initial connection request.
+
+   MSG_TYPE:  0x01
+   DATA_LENGTH:  0 (no payload)
+
+   Payload:  None
+
+   Example message:
+
+      01 00 00 00
+
+4.2.  TCP_CONNECT_ACK (Server to Client)
+
+   The server transmits this message to acknowledge successful client
+   connection.
+
+   MSG_TYPE:  0x02
+
+   DATA_LENGTH:  1
+
+   Payload format:
+
+    0
+    0 1 2 3 4 5 6 7
+   +-+-+-+-+-+-+-+-+
+   |   PLAYER_ID   |
+   +-+-+-+-+-+-+-+-+
+
+   PLAYER_ID (1 byte):  Unique player identifier ranging from 1 to 4
+
+   Example message (Player ID = 3):
+
+      02 00 00 01 03
+
+4.3.  TCP_CONNECT_NAK (Server to Client)
+
+   The server sends this message to reject client connection attempts.
+
+   MSG_TYPE:  0x03
+
+   DATA_LENGTH:  1
+
+   Payload format:
+
+    0
+    0 1 2 3 4 5 6 7
+   +-+-+-+-+-+-+-+-+
+   |  ERROR_CODE   |
+   +-+-+-+-+-+-+-+-+
+
+   ERROR_CODE values:
+
+      0x01:  Game full (4 players already connected)
+      0x02:  Game already started
+      0x03:  Server internal error
+
+   Example message (Game full):
+
+      03 00 00 01 01
+
+
+
+                            Standards Track                     [Page 5]
+
+                          R-Type TCP Protocols            september 2025
+
+4.4.  TCP_READY (Client to Server)
+
+   Clients use this message to signal readiness for game commencement.
+
+   MSG_TYPE:  0x04
+
+   DATA_LENGTH:  0
+
+   Payload:  None
+
+   Example message:
+
+      04 00 00 00
+
+4.5.  TCP_GAME_START (Server to All Clients)
+
+   The server broadcasts this message to initiate game start and provide
+   UDP connection information.
+
+   MSG_TYPE:  0x05
+
+   DATA_LENGTH:  2
+
+   Payload format:
+
+    0                   1
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |           UDP_PORT            |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   UDP_PORT (2 bytes):  UDP port number for game communication,
+      transmitted in Network Byte Order
+
+   Example message (UDP port = 8080):
+
+      05 00 00 02 1F 90
+
+4.6.  TCP_ERROR (Server to Client)
+
+   This message conveys general error conditions during the connection
+   phase.
+
+   MSG_TYPE:  0xFF
+
+   DATA_LENGTH:  1
+
+   Payload format:
+
+    0
+    0 1 2 3 4 5 6 7
+   +-+-+-+-+-+-+-+-+
+   |  ERROR_CODE   |
+   +-+-+-+-+-+-+-+-+
+
+   ERROR_CODE values:
+
+      0x01:  Protocol violation
+      0x02:  Unexpected message
+      0x03:  Timeout
+
+
+
+                            Standards Track                     [Page 6]
+
+                          R-Type TCP Protocols            september 2025
+
+5.  Connection State Machine
+
+5.1.  Client States
+
+   Client connections progress through the following states:
+
+   [DISCONNECTED] --TCP_CONNECT--> [CONNECTING]
+                                        |
+                   TCP_CONNECT_ACK      |      TCP_CONNECT_NAK
+                          |             |             |
+                          v             |             v
+                    [CONNECTED] <-------+       [DISCONNECTED]
+                          |
+                  TCP_READY
+                          |
+                          v
+                     [WAITING] --TCP_GAME_START--> [GAME_STARTING]
+
+   DISCONNECTED:  Initial state, no connection established
+
+   CONNECTING:  Connection request sent, awaiting server response
+
+   CONNECTED:  Connection acknowledged by server, ready to send READY
+      message
+
+   WAITING:  Ready message sent, waiting for game start
+
+   GAME_STARTING:  Game start received, transitioning to UDP protocol
+
+5.2.  Server States per Client
+
+   The server maintains individual state for each connected client:
+
+   [NO_CLIENT] --TCP_CONNECT--> [CLIENT_CONNECTED] --TCP_READY--> [CLIENT_READY]
+                                                                        |
+                                                            All clients ready
+                                                                        |
+                                                                        v
+                                                               [GAME_STARTING]
+
+   NO_CLIENT:  No client connection present
+
+   CLIENT_CONNECTED:  Client connection established, awaiting ready
+      signal
+
+   CLIENT_READY:  Client has signaled readiness
+
+   GAME_STARTING:  All clients ready, game initiation in progress
+
+
+
+                            Standards Track                     [Page 7]
+
+                          R-Type TCP Protocols            september 2025
+
+6.  Implementation Notes
+
+6.1.  Endianness
+
+   All multi-byte fields MUST be transmitted using Network Byte Order
+   (Big Endian) as defined in [RFC1700].  Implementations SHOULD use
+   standard network conversion functions such as htons() and htonl() for
+   transmission and ntohs() and ntohl() for reception.
+
+   Example conversion for transmission:
+
+      uint16_t port_network = htons(udp_port);
+      uint32_t length_network = htonl(data_length);
+
+   Example conversion for reception:
+
+      uint16_t port_host = ntohs(received_port);
+      uint32_t length_host = ntohl(received_length);
+
+6.2.  Timeouts
+
+   Implementations SHOULD implement the following timeout values:
+
+   Client connection timeout:  10 seconds from connection initiation
+
+   Ready phase timeout:  30 seconds per client after connection
+      acknowledgment
+
+   Total game start timeout:  60 seconds from first client connection
+
+6.3.  Error Handling
+
+   Protocol violations MUST result in immediate error response.  Invalid
+   message format triggers TCP_ERROR with code 0x01.  Out-of-sequence
+   messages trigger TCP_ERROR with code 0x02.  Any TCP-level errors
+   MUST result in immediate connection termination.
+
+6.4.  Connection Limits
+
+   Servers MUST support a maximum of 4 concurrent client connections.
+   Connection attempts when the server is at capacity MUST be rejected
+   with TCP_CONNECT_NAK using error code 0x01.
+
+
+
+                            Standards Track                     [Page 8]
+
+                          R-Type TCP Protocols            september 2025
+
+7.  Example Communication Flows
+
+7.1.  Successful 2-Player Game
+
+   The following sequence illustrates a successful connection and game
+   start for two players:
+
+   Client 1                Server                Client 2
+      |                      |                      |
+      |-- TCP_CONNECT ------>|                      |
+      |<-- TCP_CONNECT_ACK --|                      |
+      |    (Player ID: 1)    |<-- TCP_CONNECT ------|
+      |                      |-- TCP_CONNECT_ACK -->|
+      |                      |    (Player ID: 2)    |
+      |-- TCP_READY -------->|                      |
+      |                      |<-- TCP_READY --------|
+      |<-- TCP_GAME_START ---|-- TCP_GAME_START --->|
+      |    (UDP Port: 8080)  |    (UDP Port: 8080)  |
+      |                      |                      |
+      +-- Switch to UDP -----+------ Switch to UDP -+
+
+7.2.  Game Full Scenario
+
+   When the server has reached capacity, additional connection attempts
+   are rejected:
+
+   Client 5                Server
+      |                      |
+      |-- TCP_CONNECT ------>|
+      |<-- TCP_CONNECT_NAK --|
+      |    (Error: Game Full)|
+      |                      |
+      +-- Connection closed--+
+
+
+
+                            Standards Track                     [Page 9]
+
+                          R-Type TCP Protocols            september 2025
+
+8.  Security Considerations
+
+   The R-Type TCP Protocol is designed for local network gaming
+   environments and does not implement authentication mechanisms.  
+   Deployments SHOULD be limited to trusted network environments.
+
+   Basic input validation MUST be performed on message length and type
+   fields to prevent buffer overflow attacks.  Rate limiting of 10
+   messages per second per client is RECOMMENDED to prevent denial-of-
+   service attacks.
+
+   Automatic disconnection MUST occur upon detection of protocol
+   violations to maintain server stability.  Since the protocol is
+   intended for local network use, encryption is not required but MAY be
+   implemented for enhanced security.
+
+Appendix A.  Message Format Examples
+
+   This appendix provides additional examples of message formats for
+   implementation reference.
+
+   TCP_CONNECT with padding verification:
+      01 00 00 00
+
+   TCP_CONNECT_ACK for Player 4:
+      02 00 00 01 04
+
+   TCP_CONNECT_NAK for server internal error:
+      03 00 00 01 03
+
+   TCP_GAME_START with UDP port 12345 (decimal):
+      05 00 00 02 30 39
+
+Authors' Addresses
+
+   Dylan Adghar
+   Epitech
+   Email: dylan.adghar@epitech.eu
+
+
+   Pierre-etienne Henry
+   Epitech
+   Email: pierre-etienne.henry@epitech.eu
+
+
+   Ariles Harkati
+   Epitech
+   Email: ariles.harkati@epitech.eu
+
+
+   Ewen Layle-eveno
+   Epitech
+   Email: ewen.layle-eveno@epitech.eu

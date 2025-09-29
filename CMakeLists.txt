@@ -93,10 +93,10 @@ add_subdirectory(app)
 # Server
 set(SERVER_SOURCES
     Server/src/main.cpp
-    Server/src/UdpServer.cpp
-    Server/src/ServerLoop.cpp
-    Server/src/Player.cpp
-    Server/src/GameManager.cpp
+    Server/src/StartServer.cpp
+    Server/src/GameSession.cpp
+    Server/src/ClientState.cpp
+    Server/src/Protocole.cpp
 )
 
 add_executable(r-type_server ${SERVER_SOURCES})

@@ -5,7 +5,8 @@
 ** created by dylan adg
 */
 
-#include "ServerLoop.hpp"
+#include "StartServer.hpp"
+#include <cstring>
 #include <iostream>
 
 static void show_helper()
@@ -36,9 +37,17 @@ int main(int ac, char **av)
         return 0;
     } else if (ac == 3 && std::strcmp("-p", av[1]) == 0 && is_a_valid_port(av[2])) {
         int port = std::atoi(av[2]);
-        asio::io_context io_context;
-        ServerLoop serverLoop(port, io_context);
-        return serverLoop.run();
+        
+        try {
+            StartServer server(port);
+            std::cout << "Server running on port " << port << ". Press Ctrl+C to stop" << std::endl;
+            server.networkLoop();
+            
+        } catch (const std::exception& e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+            return 84;
+        }
+        
     } else {
         show_helper();
         return 84;
