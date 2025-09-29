@@ -1,6 +1,7 @@
 
 
 #include "../include/menu.hpp"
+#include "../include/accessibility_menu.hpp"
 #include <cmath>
 #include <stdexcept>
 
@@ -185,7 +186,14 @@ MenuResult Menu::run() {
                                 return MenuResult::Play;
                             case 1: {
                                 OptionsMenu optionsMenu(_window, _audioManager);
-                                optionsMenu.run();
+                                OptionsResult result = optionsMenu.run();
+
+                                if (result == OptionsResult::Accessibility) {
+                                    // User wants to access accessibility menu
+                                    AccessibilityMenu accessibilityMenu(_window, _audioManager);
+                                    accessibilityMenu.run();
+                                }
+
                                 // Update window size in case resolution changed
                                 _windowSize = _window.getSize();
                                 updateButtonScale();

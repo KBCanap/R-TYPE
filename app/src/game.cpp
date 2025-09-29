@@ -1,4 +1,7 @@
 #include "../include/game.hpp"
+#include "../include/settings.hpp"
+#include "../include/options_menu.hpp"
+#include "../include/accessibility_menu.hpp"
 #include "systems.hpp"
 #include <SFML/Window/Keyboard.hpp>
 #include <cmath>
@@ -58,7 +61,7 @@ void Game::handleEvents(bool& running, float /*dt*/) {
             _gameOverMenu.onWindowResize();
         }
 
-        // Handle weapon switching
+        // Handle weapon switching and pause
         if (!_gameOver && event.type == sf::Event::KeyPressed) {
             switch (event.key.code) {
                 case sf::Keyboard::Num1:
@@ -72,6 +75,21 @@ void Game::handleEvents(bool& running, float /*dt*/) {
                     break;
                 case sf::Keyboard::Num4:
                     _playerManager.changePlayerWeaponToSpread(_player);
+                    break;
+                case sf::Keyboard::P:
+                    // Open options menu
+                    {
+                        OptionsMenu optionsMenu(_window, _audioManager);
+                        OptionsResult result = optionsMenu.run();
+                        if (result == OptionsResult::Back) {
+                            // Player closed the menu, continue game
+                        } else if (result == OptionsResult::Accessibility) {
+                            // Player wants to open accessibility menu
+                            AccessibilityMenu accessibilityMenu(_window, _audioManager);
+                            AccessibilityResult accessibilityResult = accessibilityMenu.run();
+                            // After accessibility menu, return to game
+                        }
+                    }
                     break;
                 default:
                     break;
@@ -210,7 +228,10 @@ void Game::render(float dt) {
             hp_text.setFont(_scoreFont);
             hp_text.setString("HP " + std::to_string(player_health->current_hp) + "/" + std::to_string(player_health->max_hp));
             hp_text.setCharacterSize(24);
-            hp_text.setFillColor(sf::Color::White);
+
+            // Apply contrast to text color
+            Settings& settings = Settings::getInstance();
+            hp_text.setFillColor(settings.applyContrast(sf::Color::White));
             hp_text.setPosition(20, 20);
 
             _window.draw(hp_text);
@@ -224,7 +245,10 @@ void Game::render(float dt) {
             score_text.setFont(_scoreFont);
             score_text.setString("Score " + std::to_string(player_score->current_score));
             score_text.setCharacterSize(24);
-            score_text.setFillColor(sf::Color::White);
+
+            // Apply contrast to text color
+            Settings& settings = Settings::getInstance();
+            score_text.setFillColor(settings.applyContrast(sf::Color::White));
 
             // Position in top-right corner
             sf::Vector2u window_size = _window.getSize();

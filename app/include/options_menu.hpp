@@ -3,7 +3,7 @@
 #include "audio_manager.hpp"
 #include <vector>
 
-enum class OptionsResult { None, Back, ResolutionChanged, SoundToggled };
+enum class OptionsResult { None, Back, ResolutionChanged, SoundToggled, Accessibility };
 
 struct Resolution {
     unsigned int width;
@@ -51,6 +51,10 @@ private:
     sf::Text _soundValue;
     sf::RectangleShape _soundButton;
     sf::Text _soundButtonText;
+
+    // Accessibility button
+    sf::RectangleShape _accessibilityButton;
+    sf::Text _accessibilityButtonText;
 
     // Back button
     sf::RectangleShape _backButton;

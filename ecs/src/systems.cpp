@@ -1,4 +1,5 @@
 #include "../include/systems.hpp"
+#include "../../app/include/settings.hpp"
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Audio.hpp>
 #include <cmath>
@@ -239,8 +240,26 @@ void draw_system(registry& r,
                 static_cast<float>(window_size.y) / texture_size.y
             );
 
-            window.draw(sprite1);
-            window.draw(sprite2);
+            // Apply contrast to background sprites
+            Settings& settings = Settings::getInstance();
+            sf::Shader* contrastShader = settings.getContrastShader();
+
+            if (contrastShader) {
+                window.draw(sprite1, contrastShader);
+                window.draw(sprite2, contrastShader);
+            } else {
+                // Fallback: use color modulation
+                sf::Color contrastColor(
+                    static_cast<sf::Uint8>(255 * settings.getContrast()),
+                    static_cast<sf::Uint8>(255 * settings.getContrast()),
+                    static_cast<sf::Uint8>(255 * settings.getContrast()),
+                    255
+                );
+                sprite1.setColor(contrastColor);
+                sprite2.setColor(contrastColor);
+                window.draw(sprite1);
+                window.draw(sprite2);
+            }
         }
     }
 
@@ -308,11 +327,30 @@ void draw_system(registry& r,
                     sprite.setTextureRect(draw->sprite_rect);
                 }
 
-                window.draw(sprite);
+                // Apply contrast using shader if available
+                Settings& settings = Settings::getInstance();
+                sf::Shader* contrastShader = settings.getContrastShader();
+
+                if (contrastShader) {
+                    window.draw(sprite, contrastShader);
+                } else {
+                    // Fallback: use color modulation
+                    sprite.setColor(sf::Color(
+                        static_cast<sf::Uint8>(255 * settings.getContrast()),
+                        static_cast<sf::Uint8>(255 * settings.getContrast()),
+                        static_cast<sf::Uint8>(255 * settings.getContrast()),
+                        255
+                    ));
+                    window.draw(sprite);
+                }
             } else {
                 sf::RectangleShape shape(sf::Vector2f(draw->size, draw->size));
                 shape.setPosition(pos->x, pos->y);
-                shape.setFillColor(draw->color);
+
+                // Apply contrast to shape color
+                Settings& settings = Settings::getInstance();
+                shape.setFillColor(settings.applyContrast(draw->color));
+
                 window.draw(shape);
             }
         }

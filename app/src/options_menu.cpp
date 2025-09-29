@@ -1,4 +1,5 @@
 #include "../include/options_menu.hpp"
+#include "../include/settings.hpp"
 #include <iostream>
 
 OptionsMenu::OptionsMenu(sf::RenderWindow& win, AudioManager& audioMgr)
@@ -86,7 +87,7 @@ void OptionsMenu::createButtons() {
     _resolutionLeftButton.setFillColor(sf::Color(100, 100, 200));
     _resolutionLeftButton.setPosition(_windowSize.x * 0.35f, _windowSize.y * 0.40f);
 
-    _resolutionLeftText.setFont(_font);
+
     _resolutionLeftText.setCharacterSize(labelSize);
     _resolutionLeftText.setFillColor(sf::Color::White);
     sf::FloatRect leftBounds = _resolutionLeftText.getLocalBounds();
@@ -98,7 +99,6 @@ void OptionsMenu::createButtons() {
     _resolutionRightButton.setFillColor(sf::Color(100, 100, 200));
     _resolutionRightButton.setPosition(_windowSize.x * 0.65f, _windowSize.y * 0.40f);
 
-    _resolutionRightText.setFont(_font);
     _resolutionRightText.setCharacterSize(labelSize);
     _resolutionRightText.setFillColor(sf::Color::White);
     sf::FloatRect rightBounds = _resolutionRightText.getLocalBounds();
@@ -129,6 +129,19 @@ void OptionsMenu::createButtons() {
     sf::FloatRect soundBounds = _soundButtonText.getLocalBounds();
     _soundButtonText.setOrigin(soundBounds.left + soundBounds.width/2.f, soundBounds.top + soundBounds.height/2.f);
     _soundButtonText.setPosition(_soundButton.getPosition().x + buttonWidth, _soundButton.getPosition().y + buttonHeight/2.f);
+
+    // Accessibility button
+    _accessibilityButton.setSize(sf::Vector2f(_windowSize.x * 0.4f, _windowSize.y * 0.08f));
+    _accessibilityButton.setFillColor(sf::Color(150, 100, 200));
+    _accessibilityButton.setPosition((_windowSize.x - _accessibilityButton.getSize().x) / 2.f, _windowSize.y * 0.62f);
+
+    _accessibilityButtonText.setFont(_font);
+    _accessibilityButtonText.setString("Accessibility");
+    _accessibilityButtonText.setCharacterSize(static_cast<unsigned int>(_windowSize.y * 0.04f));
+    _accessibilityButtonText.setFillColor(sf::Color::White);
+    sf::FloatRect accessibilityBounds = _accessibilityButtonText.getLocalBounds();
+    _accessibilityButtonText.setOrigin(accessibilityBounds.left + accessibilityBounds.width/2.f, accessibilityBounds.top + accessibilityBounds.height/2.f);
+    _accessibilityButtonText.setPosition(_accessibilityButton.getPosition().x + _accessibilityButton.getSize().x/2.f, _accessibilityButton.getPosition().y + _accessibilityButton.getSize().y/2.f);
 
     // Back button
     _backButton.setSize(sf::Vector2f(_windowSize.x * 0.2f, _windowSize.y * 0.08f));
@@ -175,6 +188,7 @@ void OptionsMenu::toggleSound() {
 
     std::cout << "Sound " << (_soundEnabled ? "enabled" : "disabled") << std::endl;
 }
+
 
 OptionsResult OptionsMenu::run() {
     sf::Clock clock;
@@ -224,11 +238,17 @@ OptionsResult OptionsMenu::run() {
                     toggleSound();
                 }
 
+                // Check accessibility button
+                if (_accessibilityButton.getGlobalBounds().contains(mousePos)) {
+                    return OptionsResult::Accessibility;
+                }
+
                 // Check back button
                 if (_backButton.getGlobalBounds().contains(mousePos)) {
                     return OptionsResult::Back;
                 }
             }
+
         }
 
         // Background scrolling
@@ -268,6 +288,10 @@ void OptionsMenu::render() {
     _window.draw(_soundValue);
     _window.draw(_soundButton);
     _window.draw(_soundButtonText);
+
+    // Draw accessibility button
+    _window.draw(_accessibilityButton);
+    _window.draw(_accessibilityButtonText);
 
     // Draw back button
     _window.draw(_backButton);
