@@ -161,7 +161,6 @@ install(TARGETS r-type_app r-type_server
 set(CPACK_PACKAGE_NAME "R-Type")
 set(CPACK_PACKAGE_VERSION "1.0.0")
 set(CPACK_PACKAGE_DESCRIPTION "R-Type multiplayer game")
-set(CPACK_PACKAGE_CONTACT "your-email@domain.com")
 
 # Configuration spécifique par OS
 if(WIN32)

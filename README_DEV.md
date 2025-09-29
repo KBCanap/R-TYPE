@@ -1,6 +1,6 @@
 ﻿# R-TYPE Development Guide - CMake Configurations
 
-This document provides a comprehensive overview of all CMake presets available in this project, designed to support development across Windows and Linux platforms, as well as CI/CD workflows.
+This document provides a comprehensive overview of all CMake presets available in this project, designed to support development across Windows and Linux platforms.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ This document provides a comprehensive overview of all CMake presets available i
 
 ### Development Configurations
 
-#### `win-msvc` - Windows Development
+#### `win-config-dev` - Windows Development
 - **Platform**: Windows only
 - **Generator**: Visual Studio 17 2022
 - **Architecture**: x64
@@ -23,30 +23,33 @@ This document provides a comprehensive overview of all CMake presets available i
   - MSVC 2022 compiler
   - CPM dependency caching in `.cache/CPM`
   - Runtime output in `build/win/bin/`
-  - **Tests**: Disabled
+  - **Tests**: Enabled
+  - Compile commands export for IDE integration
 
 **Usage:**
 ```bash
-cmake --preset=win-msvc
+cmake --preset=win-config-dev
 ```
 
-#### `win-msvc-tests` - Windows Development with Tests
+#### `win-config-release` - Windows Release (Production)
 - **Platform**: Windows only
 - **Generator**: Visual Studio 17 2022
 - **Architecture**: x64
-- **Build Directory**: `build/win/`
+- **Build Directory**: `build/win-release/`
 - **Features**:
-  - Inherits from `win-msvc`
-  - Unit tests enabled (`RTYPE_BUILD_TESTS=ON`)
-  - Compile commands export for IDE integration
-  - **Tests**: Enabled
+  - C++17 standard
+  - MSVC 2022 compiler
+  - CPM dependency caching in `.cache/CPM`
+  - Runtime output in `build/win-release/bin/`
+  - **Tests**: Disabled
+  - Optimized for production builds
 
 **Usage:**
 ```bash
-cmake --preset=win-msvc-tests
+cmake --preset=win-config-release
 ```
 
-#### `linux-make` - Linux Release Development
+#### `linux-config-release` - Linux Release Development
 - **Platform**: Linux only
 - **Generator**: Unix Makefiles
 - **Build Directory**: `build/linux/`
@@ -60,10 +63,10 @@ cmake --preset=win-msvc-tests
 
 **Usage:**
 ```bash
-cmake --preset=linux-make
+cmake --preset=linux-config-release
 ```
 
-#### `dev-linux` - Enhanced Linux Development
+#### `linux-config-dev` - Enhanced Linux Development
 - **Platform**: Linux only
 - **Generator**: Unix Makefiles
 - **Build Directory**: `build/dev/`
@@ -78,149 +81,44 @@ cmake --preset=linux-make
 
 **Usage:**
 ```bash
-cmake --preset=dev-linux
-```
-
-### CI/CD Configurations
-
-#### `ci-linux` - Linux CI/CD
-- **Platform**: Linux only
-- **Generator**: Unix Makefiles
-- **Build Directory**: `build/ci/`
-- **Build Type**: Release
-- **Features**:
-  - Optimized for CI environments
-  - CPM cache in `/tmp/cpm_cache` for better CI performance
-  - Warnings treated as errors (`RTYPE_WERROR=ON`)
-  - Unit tests enabled (`RTYPE_BUILD_TESTS=ON`)
-  - Compile commands exported
-  - CI-specific optimizations (`RTYPE_CI_BUILD=ON`)
-  - **Tests**: Enabled
-
-**Usage:**
-```bash
-cmake --preset=ci-linux
-```
-
-#### `ci-windows` - Windows CI/CD
-- **Platform**: Windows only
-- **Generator**: Visual Studio 17 2022
-- **Build Directory**: `build/ci-win/`
-- **Features**:
-  - Optimized for Windows CI environments
-  - CPM cache in `C:/cpm_cache`
-  - Warnings treated as errors (`RTYPE_WERROR=ON`)
-  - Unit tests enabled (`RTYPE_BUILD_TESTS=ON`)
-  - CI-specific optimizations (`RTYPE_CI_BUILD=ON`)
-  - **Tests**: Enabled
-
-**Usage:**
-```bash
-cmake --preset=ci-windows
+cmake --preset=linux-config-dev
 ```
 
 ## Build Presets
 
 ### Windows Build Options
 
-#### `win-debug` - Windows Debug Build
+#### `win-build-dev` - Windows Development Build
 ```bash
-cmake --build --preset=win-debug
+cmake --build --preset=win-build-dev
 ```
-- Builds debug configuration using `win-msvc` preset
-- Includes debug symbols and assertions
+- Builds debug configuration using `win-config-dev` preset
+- Includes debug symbols, assertions, and tests
 
-#### `win-release` - Windows Release Build
+#### `win-build-release` - Windows Release Build
 ```bash
-cmake --build --preset=win-release
+cmake --build --preset=win-build-release
 ```
-- Builds optimized release configuration using `win-msvc` preset
-- Full optimizations enabled
-
-#### `win-tests-build` - Windows Tests Build
-```bash
-cmake --build --preset=win-tests-build
-```
-- Builds debug configuration using `win-msvc-tests` preset
-- Includes unit tests compilation
+- Builds optimized release configuration using `win-config-release` preset
+- Full optimizations enabled, no tests
+- 4 parallel jobs for faster builds
 
 ### Linux Build Options
 
-#### `linux-release` - Linux Release Build
+#### `linux-build-release` - Linux Release Build
 ```bash
-cmake --build --preset=linux-release
+cmake --build --preset=linux-build-release
 ```
-- Builds release configuration using `linux-make` preset
+- Builds release configuration using `linux-config-release` preset
 - Optimized for performance
 
-#### `dev-build` - Development Build
+#### `linux-build-dev` - Development Build
 ```bash
-cmake --build --preset=dev-build
+cmake --build --preset=linux-build-dev
 ```
-- Uses `dev-linux` configuration
+- Uses `linux-config-dev` configuration
 - Optimized for development workflow
 - Includes unit tests
-
-### CI/CD Build Options
-
-#### `ci-linux-build` - CI Linux Build
-```bash
-cmake --build --preset=ci-linux-build
-```
-- Release build with 4 parallel jobs
-- Optimized for CI performance
-- Includes unit tests
-
-#### `ci-windows-release` - CI Windows Build
-```bash
-cmake --build --preset=ci-windows-release
-```
-- Release build for Windows CI
-- 4 parallel jobs for faster build times
-- Includes unit tests
-
-## Test Presets
-
-### `win-tests` - Windows Unit Tests
-```bash
-ctest --preset=win-tests
-```
-- Runs unit tests on Windows
-- Uses debug configuration
-- Verbose output with failure details
-- Requires `win-msvc-tests` configure preset
-
-### `dev-tests` - Development Tests (Linux)
-```bash
-ctest --preset=dev-tests
-```
-- Runs tests with verbose output
-- Uses debug configuration from `dev-linux`
-- Ideal for development and debugging
-
-### `ci-tests` - CI Unit Tests
-```bash
-ctest --preset=ci-tests
-```
-- Runs unit tests in CI environment
-- Uses release configuration from `ci-linux`
-- Shows output only on failure
-
-## Package Presets
-
-### `ci-package-linux` - Linux Packaging
-```bash
-cpack --preset=ci-package-linux
-```
-- Generates TGZ and DEB packages
-- Uses CI Linux configuration
-
-### `ci-package-windows` - Windows Packaging
-```bash
-cpack --preset=ci-package-windows
-```
-- Generates ZIP packages
-- Uses CI Windows configuration
 
 ## Testing Framework
 
@@ -229,45 +127,68 @@ This project uses **Catch2 v3** as the testing framework. Tests are automaticall
 ### Running Tests
 
 Tests are only available when using presets with `RTYPE_BUILD_TESTS=ON`:
-- `win-msvc-tests`
-- `dev-linux`
-- `ci-linux`
-- `ci-windows`
+- `win-config-dev`
+- `linux-config-dev`
 
 **Configure with tests:**
 ```bash
 # Windows
-cmake --preset=win-msvc-tests
+cmake --preset=win-config-dev
 
 # Linux (development)
-cmake --preset=dev-linux
-
-# Linux (CI)
-cmake --preset=ci-linux
+cmake --preset=linux-config-dev
 ```
 
 **Build tests:**
 ```bash
 # Windows
-cmake --build --preset=win-tests-build
+cmake --build --preset=win-build-dev
 
 # Linux (development)
-cmake --build --preset=dev-build
-
-# Linux (CI)
-cmake --build --preset=ci-linux-build
+cmake --build --preset=linux-build-dev
 ```
 
 **Run tests:**
 ```bash
-# Windows
-ctest --preset=win-tests
+# Windows (from build directory)
+cd build/win
+ctest
 
-# Linux (development)
-ctest --preset=dev-tests
+# Linux (development, from build directory)
+cd build/dev
+ctest
 
-# Linux (CI)
-ctest --preset=ci-tests
+# Or run from project root
+ctest --build-config Debug --test-dir build/dev  # Linux
+ctest --build-config Debug --test-dir build/win  # Windows
+```
+
+### Automated Testing for Development
+
+For automated testing during development, always use the debug/dev configurations:
+
+**Linux:**
+```bash
+# Configure for development with tests
+cmake --preset=linux-config-dev
+
+# Build with debug symbols and tests
+cmake --build --preset=linux-build-dev
+
+# Run tests
+cd build/dev && ctest
+```
+
+**Windows:**
+```bash
+# Configure for development with tests
+cmake --preset=win-config-dev
+
+# Build with debug symbols and tests
+cmake --build --preset=win-build-dev
+
+# Run tests
+cd build/win && ctest
 ```
 
 ### Adding New Tests
@@ -304,13 +225,13 @@ set(TEST_SOURCES
 3. **Rebuild and run:**
 ```bash
 # Rebuild tests
-cmake --build --preset=dev-build  # or your preferred preset
+cmake --build --preset=linux-build-dev  # or your preferred preset
 
 # Run tests
-ctest --preset=dev-tests  # or your preferred test preset
+cd build/dev && ctest  # or your preferred test directory
 
-# Run specific tests by tag
-ctest --preset=dev-tests -R "math"
+# Run specific tests by regex
+ctest -R "math"
 ```
 
 ### Test Organization Tips
@@ -338,66 +259,39 @@ TEST_CASE("Player movement", "[player][movement]") {
 ### Development Workflow (Linux)
 ```bash
 # Setup development environment with tests
-cmake --preset=dev-linux
+cmake --preset=linux-config-dev
 
 # Build in debug mode with tests
-cmake --build --preset=dev-build
+cmake --build --preset=linux-build-dev
 
 # Run tests to verify everything works
-ctest --preset=dev-tests
+cd build/dev && ctest
 
 # Run specific test categories
-ctest --preset=dev-tests -R "networking"
+ctest -R "networking"
 ```
 
 ### Development Workflow (Windows)
 ```bash
 # Setup development environment with tests
-cmake --preset=win-msvc-tests
+cmake --preset=win-config-dev
 
 # Build debug version with tests
-cmake --build --preset=win-tests-build
+cmake --build --preset=win-build-dev
 
 # Run tests
-ctest --preset=win-tests
+cd build/win && ctest
 ```
 
 ### Production Build Workflow
 ```bash
 # Linux production build (no tests)
-cmake --preset=linux-make
-cmake --build --preset=linux-release
+cmake --preset=linux-config-release
+cmake --build --preset=linux-build-release
 
 # Windows production build (no tests)
-cmake --preset=win-msvc
-cmake --build --preset=win-release
-```
-
-### CI/CD Workflow (Linux)
-```bash
-# Configure for CI with tests
-cmake --preset=ci-linux
-
-# Build optimized release with tests
-cmake --build --preset=ci-linux-build
-
-# Run tests
-ctest --preset=ci-tests
-
-# Package for distribution
-cpack --preset=ci-package-linux
-```
-
-### CI/CD Workflow (Windows)
-```bash
-# Configure for CI with tests
-cmake --preset=ci-windows
-
-# Build release with tests
-cmake --build --preset=ci-windows-release
-
-# Package for distribution
-cpack --preset=ci-package-windows
+cmake --preset=win-config-release
+cmake --build --preset=win-build-release
 ```
 
 ## Key Variables Explained
@@ -405,7 +299,6 @@ cpack --preset=ci-package-windows
 - **`CMAKE_CXX_STANDARD`**: Set to 17 for C++17 support across all configurations
 - **`CMAKE_RUNTIME_OUTPUT_DIRECTORY`**: Centralizes executable output for easier access
 - **`CPM_SOURCE_CACHE`**: Caches downloaded dependencies to speed up builds
-- **`RTYPE_CI_BUILD`**: Enables CI-specific optimizations and behaviors
 - **`RTYPE_WERROR`**: Controls whether warnings are treated as errors
 - **`RTYPE_BUILD_TESTS`**: Enables/disables test compilation and Catch2 integration
 - **`CMAKE_EXPORT_COMPILE_COMMANDS`**: Generates compile_commands.json for IDE integration
@@ -416,26 +309,24 @@ cpack --preset=ci-package-windows
 
 1. **CMake version too old**: Ensure CMake 3.20+ is installed
 2. **Preset not found**: Verify you're running from the project root directory
-3. **Build failures on CI**: Check that `RTYPE_WERROR=ON` isn't causing issues with warnings
+3. **Build failures**: Check that `RTYPE_WERROR=ON` isn't causing issues with warnings
 4. **Cache issues**: Clear CPM cache or build directories if dependencies seem outdated
-5. **Tests not found**: Make sure you're using a test-enabled preset (`*-tests` or `dev-*` or `ci-*`)
+5. **Tests not found**: Make sure you're using a test-enabled preset (`*-dev`)
 
 ### Platform-Specific Notes
 
 - **Windows**: Requires Visual Studio 2022 with C++ workload installed
 - **Linux**: Requires g++ and make installed (`build-essential` package on Ubuntu/Debian)
-- **CI environments**: Use dedicated CI presets for optimal performance and caching
 
 ## Directory Structure
 
 ```
 project-root/
 ├── build/
-│   ├── win/           # Windows MSVC builds
+│   ├── win/           # Windows dev builds (debug + tests)
+│   ├── win-release/   # Windows release builds (production)
 │   ├── linux/         # Linux release builds  
-│   ├── dev/           # Development builds (Linux)
-│   ├── ci/            # CI Linux builds
-│   └── ci-win/        # CI Windows builds
+│   └── dev/           # Development builds (Linux, debug + tests)
 ├── tests/
 │   ├── CMakeLists.txt # Test configuration
 │   ├── example.test.cpp
@@ -445,24 +336,18 @@ project-root/
 └── CMakePresets.json  # This configuration file
 ```
 
-# RECAP
 ### Configure Presets
 | Preset | Platform | Purpose | Tests |
 |--------|----------|---------|-------|
-| `win-msvc` | Windows | Standard development | ❌ |
-| `win-msvc-tests` | Windows | Development with tests | ✅ |
-| `linux-make` | Linux | Production release | ❌ |
-| `dev-linux` | Linux | Development with tests | ✅ |
-| `ci-linux` | Linux | CI/CD pipeline | ✅ |
-| `ci-windows` | Windows | CI/CD pipeline | ✅ |
+| `win-config-dev` | Windows | Development with debug + tests | ✅ |
+| `win-config-release` | Windows | Production release | ❌ |
+| `linux-config-dev` | Linux | Development with debug + tests | ✅ |
+| `linux-config-release` | Linux | Production release | ❌ |
 
 ### Build Presets
 | Preset | Configuration | Platform |
 |--------|---------------|----------|
-| `win-debug` | Debug | Windows |
-| `win-release` | Release | Windows |
-| `win-tests-build` | Debug + Tests | Windows |
-| `linux-release` | Release | Linux |
-| `dev-build` | Debug + Tests | Linux |
-| `ci-linux-build` | Release + Tests | Linux CI |
-| `ci-windows-release` | Release + Tests | Windows CI |
+| `win-build-dev` | Debug + Tests | Windows |
+| `win-build-release` | Release | Windows |
+| `linux-build-dev` | Debug + Tests | Linux |
+| `linux-build-release` | Release | Linux |

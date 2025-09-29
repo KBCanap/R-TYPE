@@ -5,37 +5,40 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-# Détecter l'OS (Git Bash sous Windows retourne souvent 'MINGW*')
+# Detect OS (Git Bash on Windows often returns 'MINGW*' / 'MSYS*')
 unameOut="$(uname -s || echo unknown)"
 case "${unameOut}" in
-    Linux*)     os=linux;;
-    Darwin*)    os=mac;;         # si jamais
-    MINGW*|MSYS*) os=windows;;
-    *)          os=other;;
+  Linux*)        os=linux;;
+  Darwin*)       os=mac;;
+  MINGW*|MSYS*)  os=windows;;
+  *)             os=other;;
 esac
 
 echo "[pre-push] Detected OS: $os"
 
-# --- Choix des presets selon l'OS ---
+# --- Preset selection based on OS (normalized names) ---
 if [[ "$os" == "windows" ]]; then
-  CONFIG_PRESET="win-msvc-tests"     # configure avec tests ON
-  BUILD_PRESET="win-tests-build"     # build Debug
-  TEST_PRESET="win-tests"            # ctest Debug
-  CTEST_EXTRA=""                     # sous Windows, pas besoin de -C Debug via preset
+  CONFIG_PRESET="win-config-tests"   # configure with MSVC + tests ON
+  BUILD_PRESET="win-build-tests"     # build Debug with tests
+  TEST_PRESET="win-test"             # run tests (Debug)
+  CTEST_EXTRA=""                     # MSVC: config handled by preset
 else
-  CONFIG_PRESET="dev-linux"
-  BUILD_PRESET="dev-build"
-  TEST_PRESET="dev-tests"
-  CTEST_EXTRA=""                     # déjà Debug via preset
+  CONFIG_PRESET="linux-config-dev"   # configure Debug + tests (Makefiles)
+  BUILD_PRESET="linux-build-dev"     # build Debug with tests
+  TEST_PRESET="linux-test-dev"       # run tests (Debug)
+  CTEST_EXTRA=""                     # Makefiles: single-config
 fi
 
-# --- (Optionnel) Ne lancer que si des fichiers C++/CMake ont changé dans ce push ---
-# Si tu veux vraiment économiser chaque ms, décommente et adapte :
+# --- (Optional) Run only if relevant C++/CMake files changed ---
 # changed=$(git diff --name-only --cached || true)
 # if ! echo "$changed" | grep -Eq '(\.cpp$|\.hpp$|\.h$|CMakeLists\.txt|CMakePresets\.json|^Client/|^Server/|^tests/)'; then
-#   echo "[pre-push] No relevant changes (C++/CMake/tests). Skipping tests."
+#   echo "[pre-push] No relevant C++/CMake changes. Skipping tests."
 #   exit 0
 # fi
+
+# --- Tool checks (safety) ---
+command -v cmake >/dev/null 2>&1 || { echo "[pre-push] ERROR: cmake not found in PATH"; exit 1; }
+command -v ctest >/dev/null 2>&1 || { echo "[pre-push] ERROR: ctest not found in PATH"; exit 1; }
 
 echo "[pre-push] Configuring with preset: $CONFIG_PRESET"
 cmake --preset="$CONFIG_PRESET"
@@ -44,7 +47,7 @@ echo "[pre-push] Building tests with preset: $BUILD_PRESET"
 cmake --build --preset="$BUILD_PRESET" --target rtype_tests -j4
 
 echo "[pre-push] Running tests with preset: $TEST_PRESET"
-# Pour n'exécuter QUE les tests rapides taggués [fast], décommente la ligne suivante
+# To run only fast-tagged tests, uncomment the following line:
 # ctest --preset="$TEST_PRESET" --output-on-failure -R fast
 ctest --preset="$TEST_PRESET" --output-on-failure $CTEST_EXTRA
 
