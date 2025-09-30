@@ -51,7 +51,9 @@ private:
     float _playerRelativeY = 0.5f;    // 300/600 = 0.5
 
     GameOverMenu _gameOverMenu;
+    VictoryMenu _victoryMenu;
     bool _gameOver = false;
+    bool _victory = false;
 
     TickSystem _tickSystem;
     bool _shouldExit = false;

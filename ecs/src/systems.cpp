@@ -17,10 +17,42 @@ void position_system(registry& r,
                      sf::RenderWindow& window,
                      float current_time,
                      float dt) {
-    auto& weapons = r.get_components<component::weapon>();
-    auto& projectiles = r.get_components<component::projectile>();
-    auto& ai_inputs = r.get_components<component::ai_input>();
+    auto& drawables = r.get_components<component::drawable>();
     sf::Vector2u window_size = window.getSize();
+
+    // Handle boss bounce movement
+    for (size_t i = 0; i < std::min({drawables.size(), positions.size(), velocities.size()}); ++i) {
+        auto& drawable = drawables[i];
+        auto& pos = positions[i];
+        auto& vel = velocities[i];
+
+        if (drawable && drawable->tag == "boss" && pos && vel) {
+            // Check bounds and reverse direction
+            if (pos->y <= 50.0f) {
+                vel->vy = std::abs(vel->vy);
+            } else if (pos->y >= static_cast<float>(window_size.y) - 100.0f) {
+                vel->vy = -std::abs(vel->vy);
+            }
+        }
+    }
+
+    // Handle basic position updates
+    for (size_t i = 0; i < std::min(positions.size(), velocities.size()); ++i) {
+        auto& pos = positions[i];
+        auto& vel = velocities[i];
+        if (pos && vel) {
+            pos->x += vel->vx * dt;
+            pos->y += vel->vy * dt;
+        }
+    }
+}
+
+void weapon_system(registry& r,
+                   sparse_array<component::weapon>& weapons,
+                   sparse_array<component::position>& positions,
+                   sparse_array<component::input>& inputs,
+                   sparse_array<component::ai_input>& ai_inputs,
+                   float current_time) {
 
     // Handle weapon firing and projectile creation
     for (size_t i = 0; i < std::min({weapons.size(), positions.size()}); ++i) {
@@ -72,14 +104,14 @@ void position_system(registry& r,
             }
 
             if (can_fire) {
-                // Création de projectiles basiques - le comportement est géré par projectile_behavior
+                // Création de projectiles
                 float offset_x = weapon->friendly ? 40.0f : -10.0f;
                 float start_angle = 0.0f;
                 if (weapon->projectile_count > 1) {
                     start_angle = -weapon->spread_angle * (weapon->projectile_count - 1) / 2.0f;
                 }
 
-                for (int i = 0; i < weapon->projectile_count; ++i) {
+                for (int j = 0; j < weapon->projectile_count; ++j) {
                     auto projectile_entity = r.spawn_entity();
 
                     // Créer le projectile avec les paramètres de l'arme
@@ -91,14 +123,14 @@ void position_system(registry& r,
                     r.add_component<component::position>(projectile_entity,
                         component::position(pos->x + offset_x, pos->y + 20.0f));
 
-                    // Vélocité de base - le comportement sera modifié par projectile_behavior
+                    // Vélocité de base
                     float base_direction = weapon->friendly ? 1.0f : -1.0f;
                     float vx = base_direction * weapon->projectile_speed;
                     float vy = 0.0f;
 
                     // Spread uniquement pour les tirs multiples
                     if (weapon->projectile_count > 1) {
-                        float angle_deg = start_angle + i * weapon->spread_angle;
+                        float angle_deg = start_angle + j * weapon->spread_angle;
                         float angle_rad = angle_deg * M_PI / 180.0f;
                         vx = base_direction * weapon->projectile_speed * std::cos(angle_rad);
                         vy = base_direction * weapon->projectile_speed * std::sin(angle_rad);
@@ -114,43 +146,6 @@ void position_system(registry& r,
                     r.add_component<component::drawable>(projectile_entity,
                         component::drawable("assets/sprites/r-typesheet1.gif",
                             weapon->projectile_sprite_rect, 1.0f, "projectile"));
-                }
-            }
-        }
-    }
-
-    // Handle boss bounce movement with drawable tag check
-    auto& drawables = r.get_components<component::drawable>();
-    for (size_t i = 0; i < std::min({drawables.size(), positions.size(), velocities.size()}); ++i) {
-        auto& drawable = drawables[i];
-        auto& pos = positions[i];
-        auto& vel = velocities[i];
-
-        if (drawable && drawable->tag == "boss" && pos && vel) {
-            // Check bounds and reverse direction
-            if (pos->y <= 50.0f) {
-                vel->vy = std::abs(vel->vy);
-            } else if (pos->y >= static_cast<float>(window_size.y) - 100.0f) {
-                vel->vy = -std::abs(vel->vy);
-            }
-        }
-    }
-
-    // Handle position updates and projectile cleanup
-    for (size_t i = 0; i < std::min(positions.size(), velocities.size()); ++i) {
-        auto& pos = positions[i];
-        auto& vel = velocities[i];
-        if (pos && vel) {
-            // Wave movement for enemies is now handled by projectile_behavior component
-
-            pos->x += vel->vx * dt;
-            pos->y += vel->vy * dt;
-
-            // Remove projectiles that are off-screen (now handled by projectile_system)
-            if (i < projectiles.size() && projectiles[i]) {
-                if (pos->x < -50.0f || pos->x > static_cast<float>(window_size.x) + 50.0f ||
-                    pos->y < -50.0f || pos->y > static_cast<float>(window_size.y) + 50.0f) {
-                    r.kill_entity(entity(i));
                 }
             }
         }
@@ -205,11 +200,11 @@ void control_system(registry& r,
     }
 }
 
-void draw_system(registry& r,
-                 sparse_array<component::position>& positions,
-                 sparse_array<component::drawable>& drawables,
-                 sf::RenderWindow& window,
-                 float dt) {
+void render_system(registry& r,
+                   sparse_array<component::position>& positions,
+                   sparse_array<component::drawable>& drawables,
+                   sf::RenderWindow& window,
+                   float dt) {
     auto& animations = r.get_components<component::animation>();
     auto& backgrounds = r.get_components<component::background>();
 
@@ -664,10 +659,12 @@ void input_system(registry& /*r*/,
 void projectile_system(registry& r,
                        sparse_array<component::projectile>& projectiles,
                        sparse_array<component::position>& positions,
+                       sf::RenderWindow& window,
                        float dt) {
     auto& velocities = r.get_components<component::velocity>();
     auto& behaviors = r.get_components<component::projectile_behavior>();
     std::vector<size_t> entities_to_kill;
+    sf::Vector2u window_size = window.getSize();
 
     for (size_t i = 0; i < std::min({projectiles.size(), positions.size(), velocities.size()}); ++i) {
         auto& projectile = projectiles[i];
@@ -686,6 +683,13 @@ void projectile_system(registry& r,
 
             // Check if piercing projectile has hit maximum targets
             if (projectile->piercing && projectile->hits >= projectile->max_hits) {
+                entities_to_kill.push_back(i);
+                continue;
+            }
+
+            // Check if projectile is off-screen
+            if (pos->x < -50.0f || pos->x > static_cast<float>(window_size.x) + 50.0f ||
+                pos->y < -50.0f || pos->y > static_cast<float>(window_size.y) + 50.0f) {
                 entities_to_kill.push_back(i);
                 continue;
             }

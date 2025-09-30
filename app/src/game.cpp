@@ -11,7 +11,7 @@
 Game::Game(registry& reg, sf::RenderWindow& win, AudioManager& audioMgr)
     : _registry(reg), _window(win), _audioManager(audioMgr),
       _playerManager(reg, win), _enemyManager(reg, win), _bossManager(reg, win),
-      _gameOverMenu(win, audioMgr), _tickSystem(60.0)
+      _gameOverMenu(win, audioMgr), _victoryMenu(win, audioMgr), _tickSystem(60.0)
 {
     // Reset the window view to default after menu potentially modified it
     sf::Vector2u window_size = _window.getSize();
@@ -59,10 +59,11 @@ void Game::handleEvents(bool& running, float /*dt*/) {
             _playerManager.updatePlayerPosition(_player, _playerRelativeX, _playerRelativeY);
             _enemyManager.updateEnemyPositions(_enemies);
             _gameOverMenu.onWindowResize();
+            _victoryMenu.onWindowResize();
         }
 
         // Handle weapon switching and pause
-        if (!_gameOver && event.type == sf::Event::KeyPressed) {
+        if (!_gameOver && !_victory && event.type == sf::Event::KeyPressed) {
             switch (event.key.code) {
                 case sf::Keyboard::Num1:
                     _playerManager.changePlayerWeaponToSingle(_player);
@@ -86,7 +87,7 @@ void Game::handleEvents(bool& running, float /*dt*/) {
                         } else if (result == OptionsResult::Accessibility) {
                             // Player wants to open accessibility menu
                             AccessibilityMenu accessibilityMenu(_window, _audioManager);
-                            AccessibilityResult accessibilityResult = accessibilityMenu.run();
+                            accessibilityMenu.run();
                             // After accessibility menu, return to game
                         }
                     }
@@ -98,6 +99,21 @@ void Game::handleEvents(bool& running, float /*dt*/) {
 
         if (_gameOver) {
             MenuAction action = _gameOverMenu.handleEvents(event);
+            switch (action) {
+                case MenuAction::REPLAY:
+                    resetGame();
+                    break;
+                case MenuAction::QUIT:
+                    running = false;
+                    _shouldExit = true;
+                    break;
+                case MenuAction::NONE:
+                    break;
+            }
+        }
+
+        if (_victory) {
+            MenuAction action = _victoryMenu.handleEvents(event);
             switch (action) {
                 case MenuAction::REPLAY:
                     resetGame();
@@ -130,19 +146,25 @@ void Game::update(float dt) {
     auto& ai_inputs = _registry.get_components<component::ai_input>();
     systems::ai_input_system(_registry, ai_inputs, dt);
 
-    // Only allow player control if game is not over
-    if (!_gameOver) {
+    // Only allow player control if game is not over and not victory
+    if (!_gameOver && !_victory) {
         systems::control_system(_registry, controllables, velocities, inputs, dt);
+    }
+
+    // Weapon system - handle weapon firing and projectile creation
+    if (!_gameOver && !_victory) {
+        auto& weapons = _registry.get_components<component::weapon>();
+        systems::weapon_system(_registry, weapons, positions, inputs, ai_inputs, _gameTime);
     }
 
     // These systems should continue running even during game over
     systems::position_system(_registry, positions, velocities, inputs, _window, _gameTime, dt);
 
     // Update projectile lifetimes and cleanup
-    systems::projectile_system(_registry, projectiles, positions, dt);
+    systems::projectile_system(_registry, projectiles, positions, _window, dt);
 
     // Update player relative position and constrain to screen bounds
-    if (_player && !_gameOver) {
+    if (_player && !_gameOver && !_victory) {
         auto& player_pos = positions[*_player];
         if (player_pos) {
             sf::Vector2u window_size = _window.getSize();
@@ -157,8 +179,8 @@ void Game::update(float dt) {
         }
     }
 
-    // Collision system only runs if game is not over
-    if (!_gameOver) {
+    // Collision system only runs if game is not over and not victory
+    if (!_gameOver && !_victory) {
         auto& hitboxes = _registry.get_components<component::hitbox>();
         systems::collision_system(_registry, positions, drawables, projectiles, hitboxes);
     }
@@ -167,8 +189,20 @@ void Game::update(float dt) {
     auto& healths = _registry.get_components<component::health>();
     systems::health_system(_registry, healths, dt);
 
-    // Score system - only update if game is not over
-    if (!_gameOver) {
+    // Check for victory (boss defeated)
+    if (!_gameOver && !_victory && _boss) {
+        auto& boss_pos = positions[*_boss];
+        auto& boss_drawable = drawables[*_boss];
+        if (!boss_pos || !boss_drawable) {
+            // Boss entity has been killed
+            _victory = true;
+            _victoryMenu.setVisible(true);
+            _boss.reset();
+        }
+    }
+
+    // Score system - only update if game is not over and not victory
+    if (!_gameOver && !_victory) {
         auto& scores = _registry.get_components<component::score>();
         systems::score_system(_registry, scores, dt);
     }
@@ -188,12 +222,12 @@ void Game::update(float dt) {
     }
 
     // Check score and spawn boss using BossManager
-    if (!_gameOver && _bossManager.shouldSpawnBoss(_player, _boss)) {
+    if (!_gameOver && !_victory && _bossManager.shouldSpawnBoss(_player, _boss)) {
         _boss = _bossManager.spawnBoss();
     }
 
-    // Spawn enemies - only if game is not over AND boss hasn't spawned yet
-    if (!_gameOver && !_boss) {
+    // Spawn enemies - only if game is not over, not victory AND boss hasn't spawned yet
+    if (!_gameOver && !_victory && !_boss) {
         _enemySpawnTimer += dt;
         if (_enemySpawnTimer >= _enemySpawnInterval) {
             _enemySpawnTimer = 0.f;
@@ -213,7 +247,7 @@ void Game::render(float dt) {
     // Always draw background and entities, even during game over
     auto& positions = _registry.get_components<component::position>();
     auto& drawables = _registry.get_components<component::drawable>();
-    systems::draw_system(_registry, positions, drawables, _window, dt);
+    systems::render_system(_registry, positions, drawables, _window, dt);
 
     // Draw HP in top-left corner and score in top-right corner
     if (_player) {
@@ -293,6 +327,9 @@ void Game::render(float dt) {
     // Draw game over menu if visible (it will overlay the game)
     _gameOverMenu.render();
 
+    // Draw victory menu if visible (it will overlay the game)
+    _victoryMenu.render();
+
     _window.display();
 }
 
@@ -326,7 +363,9 @@ bool Game::isPlayerAlive() const {
 
 void Game::resetGame() {
     _gameOver = false;
+    _victory = false;
     _gameOverMenu.setVisible(false);
+    _victoryMenu.setVisible(false);
     _gameTime = 0.f;
     _enemySpawnTimer = 0.f;
     _audioManager.playMusic(MusicType::IN_GAME, true);
