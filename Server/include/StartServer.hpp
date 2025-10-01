@@ -8,20 +8,15 @@
 #ifndef STARTSERVER_HPP_
 #define STARTSERVER_HPP_
 
-#include <dlfcn.h>
 #include <atomic>
 #include <string>
 #include <vector>
 #include <cstdint>
 #include <csignal>
+#include <memory>
 #include "Protocole.hpp"
 #include "GameSession.hpp"
-
-struct ClientMessage {
-    std::string client_endpoint;
-    std::string message;
-    uint32_t client_id;
-};
+#include "TcpServer.hpp"
 
 class StartServer {
     public:
@@ -38,18 +33,11 @@ class StartServer {
 
     private:
         int _port;
-        void* _handle = nullptr;
-        void* _tcp_server = nullptr;
+        std::unique_ptr<TCPServer> _tcp_server;
         Protocol _protocol;
         GameSession _game_session;
 
         std::atomic<bool> _running{true};
-
-        std::vector<ClientMessage> (*_poll_tcp_messages)(void*) = nullptr;
-        void (*_stop_tcp_server)(void*) = nullptr;
-        bool (*_send_to_client)(void*, uint32_t, const char*) = nullptr;
-        void (*_disconnect_client)(void*, uint32_t) = nullptr;
-        std::vector<uint32_t> (*_get_connected_clients)(void*) = nullptr;
 
         void processMessage(const ClientMessage& message);
         void handleConnect(uint32_t client_id);
