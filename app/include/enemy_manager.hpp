@@ -17,10 +17,9 @@ public:
     component::weapon createEnemySingleWeapon();
     component::weapon createEnemyBurstWeapon();
     component::weapon createEnemySpreadWeapon();
-    component::weapon createEnemyZigzagSpreadWeapon();
 
     // Constants
-    static constexpr int NUM_ENEMY_WEAPON_TYPES = 4;
+    static constexpr int NUM_ENEMY_WEAPON_TYPES = 3;
 
     // Enemy weapon creators function pointer array
     typedef component::weapon (EnemyManager::*WeaponCreatorFunc)();

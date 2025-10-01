@@ -4,6 +4,12 @@
 #include <functional>
 #include <cmath>
 
+// Forward compatibility: keep SFML for now in components as they're used everywhere
+// The render systems will handle the abstraction layer
+
+// Forward declaration
+class registry;
+
 namespace component {
     struct position {
         float x, y;
@@ -120,6 +126,9 @@ namespace component {
         // Sprite configuration
         sf::IntRect projectile_sprite_rect;
 
+        // Custom fire function (overridable per weapon)
+        std::function<void(registry&, const position&, bool)> fire_function;
+
         weapon(float rate = 2.0f, bool friendly = true, int proj_count = 1, float spread = 0.0f,
                const projectile_pattern& pattern = projectile_pattern::straight(), float damage = 20.0f,
                float speed = 500.0f, float lifetime = 5.0f, bool piercing = false, int max_hits = 1,
@@ -130,7 +139,11 @@ namespace component {
               projectile_damage(damage), projectile_speed(speed), projectile_lifetime(lifetime),
               projectile_piercing(piercing), projectile_max_hits(max_hits),
               burst_count(burst_cnt), current_burst(0), burst_interval(burst_int),
-              last_burst_time(0.0f), is_burst(burst), projectile_sprite_rect(sprite_rect) {}
+              last_burst_time(0.0f), is_burst(burst), projectile_sprite_rect(sprite_rect),
+              fire_function(nullptr) {}
+
+        // Fire projectiles - uses custom function if set, otherwise default behavior
+        void fire(registry& r, const position& shooter_pos, bool is_friendly);
     };
 
     struct animation {

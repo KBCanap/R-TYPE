@@ -41,7 +41,7 @@ bool BossManager::shouldSpawnBoss(const std::optional<entity>& player, const std
     auto& scores = _registry.get_components<component::score>();
     if (*player < scores.size() && scores[*player]) {
         auto& player_score = scores[*player];
-        return player_score->current_score >= 10; // Spawn boss at 100 points
+        return player_score->current_score >= 100; // Spawn boss at XXX points
     }
 
     return false;

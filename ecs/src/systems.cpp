@@ -104,49 +104,8 @@ void weapon_system(registry& r,
             }
 
             if (can_fire) {
-                // Création de projectiles
-                float offset_x = weapon->friendly ? 40.0f : -10.0f;
-                float start_angle = 0.0f;
-                if (weapon->projectile_count > 1) {
-                    start_angle = -weapon->spread_angle * (weapon->projectile_count - 1) / 2.0f;
-                }
-
-                for (int j = 0; j < weapon->projectile_count; ++j) {
-                    auto projectile_entity = r.spawn_entity();
-
-                    // Créer le projectile avec les paramètres de l'arme
-                    r.add_component<component::projectile>(projectile_entity,
-                        component::projectile(weapon->projectile_damage, weapon->projectile_speed,
-                                            weapon->friendly, "bullet", weapon->projectile_lifetime,
-                                            weapon->projectile_piercing, weapon->projectile_max_hits));
-
-                    r.add_component<component::position>(projectile_entity,
-                        component::position(pos->x + offset_x, pos->y + 20.0f));
-
-                    // Vélocité de base
-                    float base_direction = weapon->friendly ? 1.0f : -1.0f;
-                    float vx = base_direction * weapon->projectile_speed;
-                    float vy = 0.0f;
-
-                    // Spread uniquement pour les tirs multiples
-                    if (weapon->projectile_count > 1) {
-                        float angle_deg = start_angle + j * weapon->spread_angle;
-                        float angle_rad = angle_deg * M_PI / 180.0f;
-                        vx = base_direction * weapon->projectile_speed * std::cos(angle_rad);
-                        vy = base_direction * weapon->projectile_speed * std::sin(angle_rad);
-                    }
-
-                    r.add_component<component::velocity>(projectile_entity,
-                        component::velocity(vx, vy));
-
-                    // Le projectile_behavior gère le pattern de mouvement
-                    r.add_component<component::projectile_behavior>(projectile_entity,
-                        component::projectile_behavior(weapon->movement_pattern));
-
-                    r.add_component<component::drawable>(projectile_entity,
-                        component::drawable("assets/sprites/r-typesheet1.gif",
-                            weapon->projectile_sprite_rect, 1.0f, "projectile"));
-                }
+                // Use weapon's fire() method - custom or default behavior
+                weapon->fire(r, *pos, weapon->friendly);
             }
         }
     }
@@ -416,7 +375,8 @@ void collision_system(registry& r,
             if (collision) {
                 // Check if this is a valid collision (friendly fire rules)
                 bool is_player = target_drawable->tag == "player";
-                bool is_enemy = target_drawable->tag == "enemy" || target_drawable->tag == "enemy_zigzag" || target_drawable->tag == "boss";
+                bool is_enemy = target_drawable->tag == "enemy" || target_drawable->tag == "enemy_zigzag" ||
+                                target_drawable->tag == "enemy_spread" || target_drawable->tag == "boss";
 
                 if ((projectile->friendly && is_enemy) || (!projectile->friendly && is_player)) {
                     // Apply damage if target has health component

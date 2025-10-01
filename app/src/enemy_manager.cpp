@@ -9,7 +9,6 @@ EnemyManager::EnemyManager(registry& reg, sf::RenderWindow& win)
     enemyWeaponCreators[0] = &EnemyManager::createEnemySingleWeapon;
     enemyWeaponCreators[1] = &EnemyManager::createEnemyBurstWeapon;
     enemyWeaponCreators[2] = &EnemyManager::createEnemySpreadWeapon;
-    enemyWeaponCreators[3] = &EnemyManager::createEnemyZigzagSpreadWeapon;
 }
 
 void EnemyManager::spawnEnemy() {
@@ -26,9 +25,9 @@ void EnemyManager::spawnEnemy() {
     int weapon_type = rand() % NUM_ENEMY_WEAPON_TYPES;
 
     // Different visuals for different enemy types
-    if (weapon_type == 3) { // Zigzag enemy - use different spritesheet with larger scale
-        _registry.add_component<component::drawable>(enemy, component::drawable("assets/sprites/r-typesheet3.gif", sf::IntRect(), 3.0f, "enemy_zigzag"));
-    } else { // Wave enemies - use original spritesheet
+    if (weapon_type == 2) { // Spread enemy - use different spritesheet
+        _registry.add_component<component::drawable>(enemy, component::drawable("assets/sprites/r-typesheet3.gif", sf::IntRect(), 3.0f, "enemy_spread"));
+    } else { // Single/Burst enemies - use original spritesheet
         _registry.add_component<component::drawable>(enemy, component::drawable("assets/sprites/r-typesheet9.gif", sf::IntRect(), 1.0f, "enemy"));
     }
 
@@ -36,9 +35,9 @@ void EnemyManager::spawnEnemy() {
     _registry.add_component<component::weapon>(enemy, std::move(enemy_weapon_config));
 
     // Different hitboxes for different enemy types
-    if (weapon_type == 3) { // Zigzag enemy - enhanced hitbox for better collision detection (17x18 * 3.0 scale + padding)
-        _registry.add_component<component::hitbox>(enemy, component::hitbox(65.0f, 70.0f, 0.0f, 0.0f));
-    } else { // Wave enemies - original hitbox
+    if (weapon_type == 2) { // Spread enemy - 17x18 sprite * 3.0 scale
+        _registry.add_component<component::hitbox>(enemy, component::hitbox(51.0f, 54.0f, 0.0f, 0.0f));
+    } else { // Single/Burst enemies
         _registry.add_component<component::hitbox>(enemy, component::hitbox(50.0f, 58.0f, 0.0f, 0.0f));
     }
 
@@ -47,11 +46,11 @@ void EnemyManager::spawnEnemy() {
     // Add AI input component for enemy automatic firing with movement pattern
     float fire_interval = 1.0f + (rand() % 100) / 100.0f; // Random interval between 1.0 and 2.0 seconds
 
-    // Choose between wave and zigzag enemies based on weapon type
+    // Different movement patterns
     component::ai_movement_pattern movement_pattern;
-    if (weapon_type == 3) { // Zigzag enemy with spread weapon
+    if (weapon_type == 2) { // Spread enemy - zigzag movement
         movement_pattern = component::ai_movement_pattern::zigzag(60.0f, 0.015f, 130.0f);
-    } else { // Wave enemies - other weapons
+    } else { // Single/Burst enemies - wave movement
         movement_pattern = component::ai_movement_pattern::wave(50.0f, 0.01f, 120.0f);
     }
 
@@ -59,8 +58,7 @@ void EnemyManager::spawnEnemy() {
 
     // Add enemy animation frames - different for each enemy type
     auto& anim = _registry.add_component<component::animation>(enemy, component::animation(0.5f, true));
-    if (weapon_type == 3) { // Zigzag enemy - 12 frame animation from spritesheet3 (205x18 pixels, 12 frames)
-        // 12 frames arranged in a row, each frame is 17x18 pixels
+    if (weapon_type == 2) { // Spread enemy - 12 frame animation from spritesheet3
         anim->frames.push_back(sf::IntRect(0, 0, 17, 18));      // Frame 1
         anim->frames.push_back(sf::IntRect(17, 0, 17, 18));     // Frame 2
         anim->frames.push_back(sf::IntRect(34, 0, 17, 18));     // Frame 3
@@ -73,10 +71,10 @@ void EnemyManager::spawnEnemy() {
         anim->frames.push_back(sf::IntRect(153, 0, 17, 18));    // Frame 10
         anim->frames.push_back(sf::IntRect(170, 0, 17, 18));    // Frame 11
         anim->frames.push_back(sf::IntRect(187, 0, 17, 18));    // Frame 12
-    } else { // Wave enemies - original animation frames
-        anim->frames.push_back(sf::IntRect(0, 0, 50, 58));     // Frame 1: 0 to 50 pixels wide
-        anim->frames.push_back(sf::IntRect(51, 0, 57, 58));    // Frame 2: 51 to 108 pixels wide (57 pixels)
-        anim->frames.push_back(sf::IntRect(116, 0, 49, 58));   // Frame 3: 116 to 165 pixels wide (49 pixels)
+    } else { // Single/Burst enemies - original animation
+        anim->frames.push_back(sf::IntRect(0, 0, 50, 58));     // Frame 1
+        anim->frames.push_back(sf::IntRect(51, 0, 57, 58));    // Frame 2
+        anim->frames.push_back(sf::IntRect(116, 0, 49, 58));   // Frame 3
     }
 
     _tempEnemies.push_back(enemy);
@@ -138,10 +136,4 @@ component::weapon EnemyManager::createEnemySpreadWeapon() {
     return component::weapon(0.8f, false, 3, 20.0f,
         component::projectile_pattern::straight(), 25.0f, 180.0f, 5.0f, false, 1,
         false, 3, 0.1f, sf::IntRect(249, 103, 16, 12));
-}
-
-component::weapon EnemyManager::createEnemyZigzagSpreadWeapon() {
-    return component::weapon(1.2f, false, 5, 25.0f,
-        component::projectile_pattern::spread(25.0f), 25.0f, 220.0f, 4.0f, false, 1,
-        false, 3, 0.1f, sf::IntRect(249, 115, 16, 12));
 }
