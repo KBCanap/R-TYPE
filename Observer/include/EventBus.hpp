@@ -106,10 +106,10 @@ class EventBus {
     }
 
     /**
-    * @brief Clear all subscriptions for a specific event type
-    *
-    * @param event_type
-    */
+     * @brief Clear all subscriptions for a specific event type
+     *
+     * @param event_type
+     */
     void ClearEvent(EventType event_type) { subscribers.erase(event_type); }
 
     /**
