@@ -7,17 +7,42 @@
 namespace render {
 namespace sfml {
 
+// SFML Image wrapper
+class SFMLImage : public IImage {
+public:
+    SFMLImage() = default;
+    void create(unsigned int width, unsigned int height, const Color& color) override;
+    sf::Image& getNativeImage() { return _image; }
+
+private:
+    sf::Image _image;
+};
+
 // SFML Texture wrapper
 class SFMLTexture : public ITexture {
 public:
     SFMLTexture() = default;
     bool loadFromFile(const std::string& filename) override;
+    bool loadFromImage(IImage& image) override;
     Vector2u getSize() const override;
     void setSmooth(bool smooth) override;
     sf::Texture& getNativeTexture() { return _texture; }
 
 private:
     sf::Texture _texture;
+};
+
+// SFML Shader wrapper
+class SFMLShader : public IShader {
+public:
+    SFMLShader() = default;
+    bool loadFromMemory(const std::string& shader, ShaderType type) override;
+    void setUniform(const std::string& name, float value) override;
+    void setUniform(const std::string& name, int value) override;
+    sf::Shader& getNativeShader() { return _shader; }
+
+private:
+    sf::Shader _shader;
 };
 
 // SFML Sprite wrapper
@@ -134,6 +159,9 @@ public:
     void draw(ISprite& sprite) override;
     void draw(IShape& shape) override;
     void draw(IText& text) override;
+    void draw(ISprite& sprite, IShader& shader) override;
+    void draw(IShape& shape, IShader& shader) override;
+    void draw(IText& text, IShader& shader) override;
 
     // View management
     void setView(IView& view) override;
@@ -147,6 +175,8 @@ public:
     std::unique_ptr<IShape> createCircleShape(float radius) override;
     std::unique_ptr<IFont> createFont() override;
     std::unique_ptr<IText> createText() override;
+    std::unique_ptr<IShader> createShader() override;
+    std::unique_ptr<IImage> createImage() override;
 
     // Access to native window (for compatibility during transition)
     sf::RenderWindow& getNativeWindow() { return _window; }

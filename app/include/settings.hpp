@@ -1,5 +1,4 @@
 #pragma once
-#include <SFML/Graphics.hpp>
 #include <memory>
 #include "../../ecs/include/render/IRenderWindow.hpp"
 
@@ -13,35 +12,6 @@ public:
     // Contrast settings
     void setContrast(float contrast) { _contrast = contrast; }
     float getContrast() const { return _contrast; }
-
-    // Utility function to apply contrast to a color
-    sf::Color applyContrast(const sf::Color& originalColor) const {
-        float factor = _contrast;
-
-        // Convert to normalized values
-        float r = originalColor.r / 255.0f;
-        float g = originalColor.g / 255.0f;
-        float b = originalColor.b / 255.0f;
-
-        // Apply contrast adjustment
-        // Formula: newValue = ((oldValue - 0.5) * contrast) + 0.5
-        r = ((r - 0.5f) * factor) + 0.5f;
-        g = ((g - 0.5f) * factor) + 0.5f;
-        b = ((b - 0.5f) * factor) + 0.5f;
-
-        // Clamp values to [0, 1]
-        r = std::max(0.0f, std::min(1.0f, r));
-        g = std::max(0.0f, std::min(1.0f, g));
-        b = std::max(0.0f, std::min(1.0f, b));
-
-        // Convert back to 0-255 range
-        return sf::Color(
-            static_cast<sf::Uint8>(r * 255),
-            static_cast<sf::Uint8>(g * 255),
-            static_cast<sf::Uint8>(b * 255),
-            originalColor.a  // Keep alpha unchanged
-        );
-    }
 
     // Utility function to apply contrast to a render::Color
     render::Color applyContrast(const render::Color& originalColor) const {
@@ -73,9 +43,9 @@ public:
     }
 
     // Get contrast shader for true contrast effect
-    sf::Shader* getContrastShader() {
+    render::IShader* getContrastShader(render::IRenderWindow& window) {
         if (!_contrastShader) {
-            _contrastShader = std::make_unique<sf::Shader>();
+            _contrastShader = window.createShader();
 
             // Fragment shader for contrast adjustment
             const std::string fragmentShaderSource = R"(
@@ -95,8 +65,8 @@ public:
                 }
             )";
 
-            if (_contrastShader->loadFromMemory(fragmentShaderSource, sf::Shader::Fragment)) {
-                _contrastShader->setUniform("texture", sf::Shader::CurrentTexture);
+            if (_contrastShader->loadFromMemory(fragmentShaderSource, render::ShaderType::Fragment)) {
+                _contrastShader->setUniform("texture", 0); // CurrentTexture equivalent
             } else {
                 // Fallback: shader loading failed, disable contrast
                 _contrastShader.reset();
@@ -134,7 +104,7 @@ private:
     bool _soundEnabled;
     unsigned int _resolutionWidth;
     unsigned int _resolutionHeight;
-    std::unique_ptr<sf::Shader> _contrastShader;
+    std::unique_ptr<render::IShader> _contrastShader;
 
     // Delete copy constructor and assignment operator
     Settings(const Settings&) = delete;

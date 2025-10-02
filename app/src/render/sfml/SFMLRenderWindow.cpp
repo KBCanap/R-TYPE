@@ -4,9 +4,19 @@
 namespace render {
 namespace sfml {
 
+// SFMLImage implementation
+void SFMLImage::create(unsigned int width, unsigned int height, const Color& color) {
+    _image.create(width, height, sf::Color(color.r, color.g, color.b, color.a));
+}
+
 // SFMLTexture implementation
 bool SFMLTexture::loadFromFile(const std::string& filename) {
     return _texture.loadFromFile(filename);
+}
+
+bool SFMLTexture::loadFromImage(IImage& image) {
+    auto& sfmlImage = dynamic_cast<SFMLImage&>(image);
+    return _texture.loadFromImage(sfmlImage.getNativeImage());
 }
 
 Vector2u SFMLTexture::getSize() const {
@@ -16,6 +26,21 @@ Vector2u SFMLTexture::getSize() const {
 
 void SFMLTexture::setSmooth(bool smooth) {
     _texture.setSmooth(smooth);
+}
+
+// SFMLShader implementation
+bool SFMLShader::loadFromMemory(const std::string& shader, ShaderType type) {
+    sf::Shader::Type sfmlType = (type == ShaderType::Fragment) ?
+        sf::Shader::Fragment : sf::Shader::Vertex;
+    return _shader.loadFromMemory(shader, sfmlType);
+}
+
+void SFMLShader::setUniform(const std::string& name, float value) {
+    _shader.setUniform(name, value);
+}
+
+void SFMLShader::setUniform(const std::string& name, int value) {
+    _shader.setUniform(name, value);
 }
 
 // SFMLSprite implementation
@@ -271,6 +296,24 @@ void SFMLRenderWindow::draw(IText& text) {
     _window.draw(sfmlText.getNativeText());
 }
 
+void SFMLRenderWindow::draw(ISprite& sprite, IShader& shader) {
+    auto& sfmlSprite = dynamic_cast<SFMLSprite&>(sprite);
+    auto& sfmlShader = dynamic_cast<SFMLShader&>(shader);
+    _window.draw(sfmlSprite.getNativeSprite(), &sfmlShader.getNativeShader());
+}
+
+void SFMLRenderWindow::draw(IShape& shape, IShader& shader) {
+    auto& sfmlShape = dynamic_cast<SFMLShape&>(shape);
+    auto& sfmlShader = dynamic_cast<SFMLShader&>(shader);
+    _window.draw(sfmlShape.getNativeShape(), &sfmlShader.getNativeShader());
+}
+
+void SFMLRenderWindow::draw(IText& text, IShader& shader) {
+    auto& sfmlText = dynamic_cast<SFMLText&>(text);
+    auto& sfmlShader = dynamic_cast<SFMLShader&>(shader);
+    _window.draw(sfmlText.getNativeText(), &sfmlShader.getNativeShader());
+}
+
 std::unique_ptr<ISprite> SFMLRenderWindow::createSprite() {
     return std::make_unique<SFMLSprite>();
 }
@@ -295,6 +338,14 @@ std::unique_ptr<IFont> SFMLRenderWindow::createFont() {
 
 std::unique_ptr<IText> SFMLRenderWindow::createText() {
     return std::make_unique<SFMLText>();
+}
+
+std::unique_ptr<IShader> SFMLRenderWindow::createShader() {
+    return std::make_unique<SFMLShader>();
+}
+
+std::unique_ptr<IImage> SFMLRenderWindow::createImage() {
+    return std::make_unique<SFMLImage>();
 }
 
 // SFMLView implementation

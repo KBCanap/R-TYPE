@@ -65,10 +65,10 @@ namespace component {
     };
 
     struct background {
-        sf::Texture texture;
+        std::shared_ptr<render::ITexture> texture;
         float scroll_speed;
         float offset_x;
-        background(float speed = 100.0f) : scroll_speed(speed), offset_x(0.0f) {}
+        background(float speed = 100.0f) : texture(nullptr), scroll_speed(speed), offset_x(0.0f) {}
     };
 
     struct projectile {

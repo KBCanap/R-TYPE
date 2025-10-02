@@ -2,7 +2,6 @@
 #include "../include/settings.hpp"
 #include "../include/options_menu.hpp"
 #include "../include/accessibility_menu.hpp"
-#include "../include/render/sfml/SFMLRenderWindow.hpp"
 #include "systems.hpp"
 #include <cmath>
 #include <cstdlib>
@@ -24,10 +23,11 @@ Game::Game(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr)
     // Create background
     _background = _registry.spawn_entity();
     auto& bg_component = _registry.add_component<component::background>(*_background, component::background(30.f));
-    if (!bg_component->texture.loadFromFile("assets/background.jpg")) {
-        sf::Image fallback_image;
-        fallback_image.create(800, 600, sf::Color(20, 20, 80));
-        bg_component->texture.loadFromImage(fallback_image);
+    bg_component->texture = _window.createTexture();
+    if (!bg_component->texture->loadFromFile("assets/background.jpg")) {
+        auto fallback_image = _window.createImage();
+        fallback_image->create(800, 600, render::Color(20, 20, 80));
+        bg_component->texture->loadFromImage(*fallback_image);
     }
 
     // Load r-type font for score display
@@ -40,12 +40,17 @@ Game::Game(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr)
 void Game::handleEvents(bool& running, float /*dt*/) {
     render::Event event;
     while (_window.pollEvent(event)) {
+        // Mettre à jour l'état des touches pour input_system
+        systems::update_key_state(event);
+
+        // Handle window close
         if (event.type == render::EventType::Closed) {
             running = false;
             _shouldExit = true;
             return;
         }
 
+        // Handle window resize
         if (event.type == render::EventType::Resized) {
             _playerManager.updatePlayerPosition(_player, _playerRelativeX, _playerRelativeY);
             _enemyManager.updateEnemyPositions(_enemies);
@@ -53,64 +58,57 @@ void Game::handleEvents(bool& running, float /*dt*/) {
             _victoryMenu.onWindowResize();
         }
 
-        // Handle weapon switching and pause
-        if (!_gameOver && !_victory && event.type == render::EventType::KeyPressed) {
-            switch (event.key.code) {
-                case render::Key::Num1:
+        // Handle key presses
+        if (event.type == render::EventType::KeyPressed) {
+            // Escape to exit
+            if (event.key.code == render::Key::Escape) {
+                running = false;
+                _shouldExit = true;
+                return;
+            }
+
+            // Handle weapon switching
+            if (!_gameOver && !_victory) {
+                if (event.key.code == render::Key::Num1) {
                     _playerManager.changePlayerWeaponToSingle(_player);
-                    break;
-                case render::Key::Num2:
+                }
+                if (event.key.code == render::Key::Num2) {
                     _playerManager.changePlayerWeaponToRapid(_player);
-                    break;
-                case render::Key::Num3:
+                }
+                if (event.key.code == render::Key::Num3) {
                     _playerManager.changePlayerWeaponToBurst(_player);
-                    break;
-                case render::Key::Num4:
+                }
+                if (event.key.code == render::Key::Num4) {
                     _playerManager.changePlayerWeaponToSpread(_player);
-                    break;
-                case render::Key::P:
-                    {
-                        OptionsMenu optionsMenu(_window, _audioManager);
-                        OptionsResult result = optionsMenu.run();
-                        if (result == OptionsResult::Back) {
-                        } else if (result == OptionsResult::Accessibility) {
-                            AccessibilityMenu accessibilityMenu(_window, _audioManager);
-                            accessibilityMenu.run();
-                        }
+                }
+                if (event.key.code == render::Key::P) {
+                    OptionsMenu optionsMenu(_window, _audioManager);
+                    OptionsResult result = optionsMenu.run();
+                    if (result == OptionsResult::Accessibility) {
+                        AccessibilityMenu accessibilityMenu(_window, _audioManager);
+                        accessibilityMenu.run();
                     }
-                    break;
-                default:
-                    break;
+                }
             }
-        }
 
-        if (_gameOver) {
-            MenuAction action = _gameOverMenu.handleEvents(event);
-            switch (action) {
-                case MenuAction::REPLAY:
+            // Handle game over menu
+            if (_gameOver) {
+                if (event.key.code == render::Key::Enter) {
                     resetGame();
-                    break;
-                case MenuAction::QUIT:
+                } else if (event.key.code == render::Key::Q) {
                     running = false;
                     _shouldExit = true;
-                    break;
-                case MenuAction::NONE:
-                    break;
+                }
             }
-        }
 
-        if (_victory) {
-            MenuAction action = _victoryMenu.handleEvents(event);
-            switch (action) {
-                case MenuAction::REPLAY:
+            // Handle victory menu
+            if (_victory) {
+                if (event.key.code == render::Key::Enter) {
                     resetGame();
-                    break;
-                case MenuAction::QUIT:
+                } else if (event.key.code == render::Key::Q) {
                     running = false;
                     _shouldExit = true;
-                    break;
-                case MenuAction::NONE:
-                    break;
+                }
             }
         }
     }
@@ -127,7 +125,7 @@ void Game::update(float dt) {
     auto& inputs = _registry.get_components<component::input>();
 
     // Input system - always runs to capture input state
-    systems::input_system(_registry, inputs);
+    systems::input_system(_registry, inputs, _window);
 
     // AI input system for enemies - always runs
     auto& ai_inputs = _registry.get_components<component::ai_input>();
@@ -145,11 +143,10 @@ void Game::update(float dt) {
     }
 
     // These systems should continue running even during game over
-    auto& sfmlWindow = dynamic_cast<render::sfml::SFMLRenderWindow&>(_window);
-    systems::position_system(_registry, positions, velocities, inputs, sfmlWindow.getNativeWindow(), _gameTime, dt);
+    systems::position_system(_registry, positions, velocities, inputs, _window, _gameTime, dt);
 
     // Update projectile lifetimes and cleanup
-    systems::projectile_system(_registry, projectiles, positions, sfmlWindow.getNativeWindow(), dt);
+    systems::projectile_system(_registry, projectiles, positions, _window, dt);
 
     // Update player relative position and constrain to screen bounds
     if (_player && !_gameOver && !_victory) {
@@ -196,7 +193,7 @@ void Game::update(float dt) {
     auto& sound_effects = _registry.get_components<component::sound_effect>();
     auto& musics = _registry.get_components<component::music>();
     auto& triggers = _registry.get_components<component::audio_trigger>();
-    systems::audio_system(_registry, sound_effects, musics, triggers);
+    systems::audio_system(_registry, sound_effects, musics, triggers, _audioManager.getAudioSystem());
 
     // Check if player is still alive
     if (!_gameOver && !isPlayerAlive()) {
@@ -230,8 +227,7 @@ void Game::render(float dt) {
 
     auto& positions = _registry.get_components<component::position>();
     auto& drawables = _registry.get_components<component::drawable>();
-    auto& sfmlWindow = dynamic_cast<render::sfml::SFMLRenderWindow&>(_window);
-    systems::render_system(_registry, positions, drawables, sfmlWindow.getNativeWindow(), dt);
+    systems::render_system(_registry, positions, drawables, _window, dt);
 
     if (_player) {
         auto& healths = _registry.get_components<component::health>();
@@ -376,10 +372,11 @@ void Game::resetGame() {
     // Recreate background
     _background = _registry.spawn_entity();
     auto& bg_component = _registry.add_component<component::background>(*_background, component::background(30.f));
-    if (!bg_component->texture.loadFromFile("assets/background.jpg")) {
-        sf::Image fallback_image;
-        fallback_image.create(800, 600, sf::Color(20, 20, 80));
-        bg_component->texture.loadFromImage(fallback_image);
+    bg_component->texture = _window.createTexture();
+    if (!bg_component->texture->loadFromFile("assets/background.jpg")) {
+        auto fallback_image = _window.createImage();
+        fallback_image->create(800, 600, render::Color(20, 20, 80));
+        bg_component->texture->loadFromImage(*fallback_image);
     }
 
     // Recreate player using PlayerManager

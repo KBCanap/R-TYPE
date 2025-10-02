@@ -40,8 +40,9 @@ AudioStatus SFMLSound::getStatus() const {
     return fromSFMLStatus(_sound.getStatus());
 }
 
-void SFMLSound::setBuffer(sf::SoundBuffer& buffer) {
-    _sound.setBuffer(buffer);
+void SFMLSound::setBuffer(ISoundBuffer& buffer) {
+    auto& sfmlBuffer = dynamic_cast<SFMLSoundBuffer&>(buffer);
+    _sound.setBuffer(sfmlBuffer.getNativeBuffer());
 }
 
 AudioStatus SFMLSound::fromSFMLStatus(sf::Sound::Status status) const {

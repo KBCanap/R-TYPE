@@ -24,6 +24,8 @@ public:
     void setMasterVolume(float volume);
     bool isMusicPlaying() const;
 
+    render::IRenderAudio& getAudioSystem() { return _audioSystem; }
+
 private:
     render::IRenderAudio& _audioSystem;
     std::unordered_map<MusicType, std::unique_ptr<render::IMusic>> _musicTracks;

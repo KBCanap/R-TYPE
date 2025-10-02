@@ -17,7 +17,6 @@ bool AudioManager::loadMusic(MusicType type, const std::string& filename) {
 
 void AudioManager::playMusic(MusicType type, bool loop) {
     stopMusic();
-
     auto it = _musicTracks.find(type);
     if (it != _musicTracks.end()) {
         _currentMusic = type;

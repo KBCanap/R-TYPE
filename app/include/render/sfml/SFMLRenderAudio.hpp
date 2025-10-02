@@ -16,10 +16,10 @@ public:
     void setVolume(float volume) override;
     void setLoop(bool loop) override;
     void setPitch(float pitch) override;
+    void setBuffer(ISoundBuffer& buffer) override;
     float getVolume() const override;
     bool getLoop() const override;
     AudioStatus getStatus() const override;
-    void setBuffer(sf::SoundBuffer& buffer);
 
 private:
     sf::Sound _sound;

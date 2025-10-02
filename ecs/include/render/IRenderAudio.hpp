@@ -9,6 +9,9 @@ enum class AudioStatus {
     Playing
 };
 
+// Forward declaration
+class ISoundBuffer;
+
 class ISound {
 public:
     virtual ~ISound() = default;
@@ -18,6 +21,7 @@ public:
     virtual void setVolume(float volume) = 0;
     virtual void setLoop(bool loop) = 0;
     virtual void setPitch(float pitch) = 0;
+    virtual void setBuffer(ISoundBuffer& buffer) = 0;
     virtual float getVolume() const = 0;
     virtual bool getLoop() const = 0;
     virtual AudioStatus getStatus() const = 0;

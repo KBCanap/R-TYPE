@@ -119,12 +119,32 @@ struct Event {
     };
 };
 
+class IImage {
+public:
+    virtual ~IImage() = default;
+    virtual void create(unsigned int width, unsigned int height, const Color& color) = 0;
+};
+
 class ITexture {
 public:
     virtual ~ITexture() = default;
     virtual bool loadFromFile(const std::string& filename) = 0;
+    virtual bool loadFromImage(IImage& image) = 0;
     virtual Vector2u getSize() const = 0;
     virtual void setSmooth(bool smooth) = 0;
+};
+
+enum class ShaderType {
+    Vertex,
+    Fragment
+};
+
+class IShader {
+public:
+    virtual ~IShader() = default;
+    virtual bool loadFromMemory(const std::string& shader, ShaderType type) = 0;
+    virtual void setUniform(const std::string& name, float value) = 0;
+    virtual void setUniform(const std::string& name, int value) = 0;
 };
 
 class ISprite {
@@ -212,6 +232,9 @@ public:
     virtual void draw(ISprite& sprite) = 0;
     virtual void draw(IShape& shape) = 0;
     virtual void draw(IText& text) = 0;
+    virtual void draw(ISprite& sprite, IShader& shader) = 0;
+    virtual void draw(IShape& shape, IShader& shader) = 0;
+    virtual void draw(IText& text, IShader& shader) = 0;
 
     // View management
     virtual void setView(IView& view) = 0;
@@ -225,6 +248,8 @@ public:
     virtual std::unique_ptr<IShape> createCircleShape(float radius) = 0;
     virtual std::unique_ptr<IFont> createFont() = 0;
     virtual std::unique_ptr<IText> createText() = 0;
+    virtual std::unique_ptr<IShader> createShader() = 0;
+    virtual std::unique_ptr<IImage> createImage() = 0;
 };
 
 } // namespace render
