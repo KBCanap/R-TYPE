@@ -97,6 +97,7 @@ set(SERVER_SOURCES
     Server/src/GameSession.cpp
     Server/src/ClientState.cpp
     Server/src/Protocole.cpp
+    Server/src/Tcpserver.cpp
 )
 
 add_executable(r-type_server ${SERVER_SOURCES})

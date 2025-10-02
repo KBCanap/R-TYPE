@@ -7,6 +7,8 @@
 
 #include "StartServer.hpp"
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 StartServer* StartServer::_instance = nullptr;
 
@@ -15,48 +17,20 @@ StartServer::StartServer(int port) : _port(port), _protocol(), _game_session()
     _instance = this;
     setupSignalHandlers();
 
-    _handle = dlopen("./libnet.so", RTLD_LAZY);
-    if (!_handle) {
-        std::cerr << "dlopen failed: " << dlerror() << std::endl;
-        throw std::runtime_error("Failed to load network library");
+    try {
+        _tcp_server = std::make_unique<TCPServer>(static_cast<uint16_t>(port));
+        std::cout << "TCP Server started on port " << port << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to start TCP server: " << e.what() << std::endl;
+        throw;
     }
-
-    void* (*start_tcp_server)(uint16_t) = reinterpret_cast<void*(*)(uint16_t)>(dlsym(_handle, "start_tcp_server"));
-    _poll_tcp_messages = reinterpret_cast<std::vector<ClientMessage>(*)(void*)>(dlsym(_handle, "poll_tcp_messages"));
-    _stop_tcp_server = reinterpret_cast<void(*)(void*)>(dlsym(_handle, "stop_tcp_server"));
-    _send_to_client = reinterpret_cast<bool(*)(void*, uint32_t, const char*)>(dlsym(_handle, "send_to_client"));
-    _disconnect_client = reinterpret_cast<void(*)(void*, uint32_t)>(dlsym(_handle, "disconnect_client"));
-    _get_connected_clients = reinterpret_cast<std::vector<uint32_t>(*)(void*)>(dlsym(_handle, "get_connected_clients"));
-
-    if (!start_tcp_server || !_poll_tcp_messages || !_stop_tcp_server || 
-        !_send_to_client || !_disconnect_client || !_get_connected_clients) {
-        std::cerr << "dlsym failed: " << dlerror() << std::endl;
-        dlclose(_handle);
-        throw std::runtime_error("Failed to load network functions");
-    }
-
-    _tcp_server = start_tcp_server(static_cast<uint16_t>(port));
-    if (!_tcp_server) {
-        dlclose(_handle);
-        throw std::runtime_error("Failed to start TCP server");
-    }
-    
-    std::cout << "TCP Server started on port " << port << std::endl;
 }
 
 StartServer::~StartServer()
 {
     std::cout << "\nShutting down server..." << std::endl;
     _running = false;
-
-    if (_tcp_server && _stop_tcp_server) {
-        _stop_tcp_server(_tcp_server);
-    }
-
-    if (_handle) {
-        dlclose(_handle);
-    }
-
+    _tcp_server.reset();
     _instance = nullptr;
 }
 
@@ -82,7 +56,7 @@ void StartServer::stop()
 void StartServer::networkLoop()
 {
     while (_running) {
-        auto messages = _poll_tcp_messages(_tcp_server);
+        auto messages = _tcp_server->poll();
         
         if (!messages.empty()) {
             for (const auto& message : messages) {
@@ -185,24 +159,16 @@ void StartServer::startGame()
 
 bool StartServer::sendToClient(uint32_t client_id, const std::string& message)
 {
-    if (_send_to_client && _tcp_server) {
-        return _send_to_client(_tcp_server, client_id, message.c_str());
-    }
-    return false;
+    return _tcp_server->sendToClient(client_id, message);
 }
 
 void StartServer::disconnectClient(uint32_t client_id)
 {
-    if (_disconnect_client && _tcp_server) {
-        _disconnect_client(_tcp_server, client_id);
-        std::cout << "Disconnected client " << client_id << std::endl;
-    }
+    _tcp_server->disconnectClient(client_id);
+    std::cout << "Disconnected client " << client_id << std::endl;
 }
 
 std::vector<uint32_t> StartServer::getConnectedClients()
 {
-    if (_get_connected_clients && _tcp_server) {
-        return _get_connected_clients(_tcp_server);
-    }
-    return std::vector<uint32_t>();
+    return _tcp_server->getConnectedClients();
 }
