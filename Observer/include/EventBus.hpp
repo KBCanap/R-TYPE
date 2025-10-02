@@ -1,20 +1,25 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** EventBus
+*/
+
 #pragma once
-#include "Event.hpp"
-#include <unordered_map>
-#include <vector>
-#include <functional>
+#include "../include/Event.hpp"
 #include <algorithm>
+#include <functional>
 
 /**
  * @brief Class to handle event manager
  *
  */
 class EventBus {
-public:
-    using Callback = std::function<void(const std::any&)>;
+  public:
+    using Callback = std::function<void(const std::any &)>;
     using SubscriptionID = size_t;
 
-private:
+  private:
     struct Subscription {
         SubscriptionID id;
         Callback callback;
@@ -23,9 +28,9 @@ private:
     std::unordered_map<EventType, std::vector<Subscription>> subscribers;
     SubscriptionID next_id = 0;
 
-public:
+  public:
     /**
-     * @brief Subscribe and return id for unsubscribing
+     * @brief Subscribe to an event type and return ID for unsubscribing
      *
      * @param event_type
      * @param callback
@@ -47,11 +52,13 @@ public:
      */
     bool Unsubscribe(EventType event_type, SubscriptionID id) {
         auto it = subscribers.find(event_type);
-        if (it == subscribers.end()) return false;
+        if (it == subscribers.end())
+            return false;
 
-        auto& subs = it->second;
-        auto sub_it = std::find_if(subs.begin(), subs.end(),
-            [id](const Subscription& sub) { return sub.id == id; });
+        auto &subs = it->second;
+        auto sub_it = std::find_if(
+            subs.begin(), subs.end(),
+            [id](const Subscription &sub) { return sub.id == id; });
 
         if (sub_it != subs.end()) {
             subs.erase(sub_it);
@@ -69,11 +76,12 @@ public:
      * @param event_type
      * @param payload
      */
-    void Notify(EventType event_type, const std::any& payload = {}) {
+    void Notify(EventType event_type, const std::any &payload = {}) {
         auto it = subscribers.find(event_type);
-        if (it == subscribers.end()) return;
+        if (it == subscribers.end())
+            return;
         auto subs_copy = it->second;
-        for (const auto& sub : subs_copy) {
+        for (const auto &sub : subs_copy) {
             sub.callback(payload);
         }
     }
@@ -83,9 +91,7 @@ public:
      *
      * @param event
      */
-    void Notify(const Event& event) {
-        Notify(event.type, event.payload);
-    }
+    void Notify(const Event &event) { Notify(event.type, event.payload); }
 
     /**
      * @brief Check if an event has subscribers
@@ -100,22 +106,19 @@ public:
     }
 
     /**
-     * @brief Clear all subscriptions for an event
-     *
-     * @param event_type
-     */
-    void ClearEvent(EventType event_type) {
-        subscribers.erase(event_type);
-    }
+    * @brief Clear all subscriptions for a specific event type
+    *
+    * @param event_type
+    */
+    void ClearEvent(EventType event_type) { subscribers.erase(event_type); }
 
     /**
-     * @brief Clear all subscriptions
-     *
-     * @warning This function remove all data
-     * !! THIS IS A FULL CLEAR OF ALL DATA !!
+     * @brief Clear all subscriptions for all events
+     * !!! This is a destructive function
      */
     void ClearAll() {
         subscribers.clear();
+        next_id = 0;
     }
 
     /**
@@ -124,7 +127,6 @@ public:
      * @param event_type
      * @return size_t
      */
-    // Get subscriber count for an event
     size_t GetSubscriberCount(EventType event_type) const {
         auto it = subscribers.find(event_type);
         return it != subscribers.end() ? it->second.size() : 0;

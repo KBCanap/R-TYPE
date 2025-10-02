@@ -1,16 +1,25 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** Event
+*/
+
 #pragma once
-#include <cstdint>
 #include <any>
+#include <cstdint>
 
 /**
  * @brief Enum for event identification
- * Enum is faster than string or user custom define
- *
+ * Enum is faster than string
  */
 enum class EventType : uint32_t {
     Collision,
     Damage,
     LevelUp,
+    PlayerHit,
+    ItemPickup,
+    GameOver,
     // Add more event types here as needed
 };
 
