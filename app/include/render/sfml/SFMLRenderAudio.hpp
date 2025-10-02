@@ -1,5 +1,5 @@
 #pragma once
-#include "../IRenderAudio.hpp"
+#include "../../../../ecs/include/render/IRenderAudio.hpp"
 #include <SFML/Audio.hpp>
 #include <memory>
 

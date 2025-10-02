@@ -1,5 +1,5 @@
 #pragma once
-#include "../IRenderWindow.hpp"
+#include "../../../../ecs/include/render/IRenderWindow.hpp"
 #include <SFML/Graphics.hpp>
 #include <memory>
 #include <unordered_map>
@@ -91,6 +91,25 @@ private:
     sf::Text _text;
 };
 
+// SFML View wrapper
+class SFMLView : public IView {
+public:
+    SFMLView() = default;
+    explicit SFMLView(const sf::View& view) : _view(view) {}
+    void reset(const FloatRect& rectangle) override;
+    void setSize(float width, float height) override;
+    void setSize(const Vector2f& size) override;
+    void setCenter(float x, float y) override;
+    void setCenter(const Vector2f& center) override;
+    Vector2f getSize() const override;
+    Vector2f getCenter() const override;
+    sf::View& getNativeView() { return _view; }
+    const sf::View& getNativeView() const { return _view; }
+
+private:
+    sf::View _view;
+};
+
 // SFML RenderWindow wrapper
 class SFMLRenderWindow : public IRenderWindow {
 public:
@@ -103,6 +122,7 @@ public:
     void clear(const Color& color = Color::Black()) override;
     void display() override;
     Vector2u getSize() const override;
+    void setSize(const Vector2u& size) override;
     void setFramerateLimit(unsigned int limit) override;
     void setVerticalSyncEnabled(bool enabled) override;
     void setTitle(const std::string& title) override;
@@ -115,16 +135,24 @@ public:
     void draw(IShape& shape) override;
     void draw(IText& text) override;
 
+    // View management
+    void setView(IView& view) override;
+    std::unique_ptr<IView> getDefaultView() const override;
+    std::unique_ptr<IView> createView() override;
+
     // Factory methods
-    ISprite* createSprite() override;
-    ITexture* createTexture() override;
-    IShape* createRectangleShape(const Vector2f& size) override;
-    IShape* createCircleShape(float radius) override;
-    IFont* createFont() override;
-    IText* createText() override;
+    std::unique_ptr<ISprite> createSprite() override;
+    std::unique_ptr<ITexture> createTexture() override;
+    std::unique_ptr<IShape> createRectangleShape(const Vector2f& size) override;
+    std::unique_ptr<IShape> createCircleShape(float radius) override;
+    std::unique_ptr<IFont> createFont() override;
+    std::unique_ptr<IText> createText() override;
 
     // Access to native window (for compatibility during transition)
     sf::RenderWindow& getNativeWindow() { return _window; }
+
+    // Event conversion for compatibility with non-migrated components
+    static sf::Event toSFMLEvent(const Event& event);
 
 private:
     sf::RenderWindow _window;
@@ -134,6 +162,8 @@ private:
     Color fromSFMLColor(const sf::Color& color) const;
     Key fromSFMLKey(sf::Keyboard::Key key) const;
     Mouse fromSFMLMouse(sf::Mouse::Button button) const;
+    static sf::Keyboard::Key toSFMLKey(Key key);
+    static sf::Mouse::Button toSFMLMouse(Mouse button);
 };
 
 } // namespace sfml

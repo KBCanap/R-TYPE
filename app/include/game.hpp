@@ -1,6 +1,7 @@
 #pragma once
-#include <SFML/Graphics.hpp>
 #include <optional>
+#include <memory>
+#include <vector>
 #include "registery.hpp"
 #include "components.hpp"
 #include "game_menu.hpp"
@@ -9,11 +10,11 @@
 #include "player_manager.hpp"
 #include "enemy_manager.hpp"
 #include "boss_manager.hpp"
-#include <vector>
+#include "../../ecs/include/render/IRenderWindow.hpp"
 
 class Game {
 public:
-    Game(registry& reg, sf::RenderWindow& win, AudioManager& audioMgr);
+    Game(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr);
 
     void run();  // Boucle principale du jeu avec système de tick
 
@@ -28,7 +29,7 @@ private:
 
 private:
     registry& _registry;
-    sf::RenderWindow& _window;
+    render::IRenderWindow& _window;
     AudioManager& _audioManager;
 
     // Managers for different game aspects
@@ -58,5 +59,5 @@ private:
     TickSystem _tickSystem;
     bool _shouldExit = false;
 
-    sf::Font _scoreFont;  // Font for displaying score using r-type.otf
+    std::unique_ptr<render::IFont> _scoreFont;  // Font for displaying score using r-type.otf
 };

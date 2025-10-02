@@ -1,6 +1,6 @@
 #pragma once
-#include "IRenderWindow.hpp"
-#include "IRenderAudio.hpp"
+#include "../../../ecs/include/render/IRenderWindow.hpp"
+#include "../../../ecs/include/render/IRenderAudio.hpp"
 #include <memory>
 
 namespace render {

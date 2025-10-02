@@ -1,15 +1,15 @@
 #pragma once
 #include "registery.hpp"
 #include "components.hpp"
-#include <SFML/Graphics.hpp>
+#include "../../ecs/include/render/IRenderWindow.hpp"
 #include <vector>
 
 class EnemyManager {
 public:
-    EnemyManager(registry& reg, sf::RenderWindow& win);
+    EnemyManager(registry& reg, render::IRenderWindow& win);
 
     // Enemy spawning and management
-    void spawnEnemy();
+    entity spawnEnemy();
     void updateEnemyPositions(std::vector<entity>& enemies);
     void cleanupOffscreenEnemies(std::vector<entity>& enemies);
 
@@ -27,6 +27,5 @@ public:
 
 private:
     registry& _registry;
-    sf::RenderWindow& _window;
-    std::vector<entity> _tempEnemies; // For managing spawned enemies
+    render::IRenderWindow& _window;
 };

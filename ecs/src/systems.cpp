@@ -1,5 +1,6 @@
 #include "../include/systems.hpp"
 #include "../../app/include/settings.hpp"
+#include "../../app/include/render/sfml/SFMLRenderWindow.hpp"
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Audio.hpp>
 #include <cmath>
@@ -266,36 +267,43 @@ void render_system(registry& r,
         auto& draw = drawables[i];
 
         if (pos && draw) {
-            if (draw->use_sprite && draw->texture.getSize().x > 0) {
-                sf::Sprite sprite(draw->texture);
-
-                // Position sprite at entity position (not centered in hitbox)
-                sprite.setPosition(pos->x, pos->y);
-
-                sprite.setScale(draw->scale, draw->scale);
-
-                // Use animation frame if available, otherwise use default sprite_rect
-                if (i < animations.size() && animations[i] && !animations[i]->frames.empty()) {
-                    sprite.setTextureRect(animations[i]->frames[animations[i]->current_frame]);
-                } else if (draw->sprite_rect.width > 0 && draw->sprite_rect.height > 0) {
-                    sprite.setTextureRect(draw->sprite_rect);
+            if (draw->use_sprite) {
+                // Lazy load texture and sprite if not already loaded
+                if (!draw->texture && !draw->texture_path.empty()) {
+                    draw->texture = std::make_shared<render::sfml::SFMLTexture>();
+                    if (!draw->texture->loadFromFile(draw->texture_path)) {
+                        // Failed to load texture, skip this entity
+                        continue;
+                    }
+                    draw->sprite = std::make_shared<render::sfml::SFMLSprite>();
+                    draw->sprite->setTexture(*draw->texture);
                 }
 
-                // Apply contrast using shader if available
-                Settings& settings = Settings::getInstance();
-                sf::Shader* contrastShader = settings.getContrastShader();
+                if (draw->sprite) {
+                    // Use the ISprite interface
+                    draw->sprite->setPosition(pos->x, pos->y);
+                    draw->sprite->setScale(draw->scale, draw->scale);
 
-                if (contrastShader) {
-                    window.draw(sprite, contrastShader);
-                } else {
-                    // Fallback: use color modulation
-                    sprite.setColor(sf::Color(
+                    // Use animation frame if available, otherwise use default sprite_rect
+                    if (i < animations.size() && animations[i] && !animations[i]->frames.empty()) {
+                        draw->sprite->setTextureRect(animations[i]->frames[animations[i]->current_frame]);
+                    } else if (draw->sprite_rect.width > 0 && draw->sprite_rect.height > 0) {
+                        draw->sprite->setTextureRect(draw->sprite_rect);
+                    }
+
+                    // Apply contrast with color modulation
+                    Settings& settings = Settings::getInstance();
+                    sf::Color contrastColor(
                         static_cast<sf::Uint8>(255 * settings.getContrast()),
                         static_cast<sf::Uint8>(255 * settings.getContrast()),
                         static_cast<sf::Uint8>(255 * settings.getContrast()),
                         255
-                    ));
-                    window.draw(sprite);
+                    );
+                    draw->sprite->setColor(render::toRenderColor(contrastColor));
+
+                    // Cast to SFML sprite and draw
+                    auto& sfmlSprite = dynamic_cast<render::sfml::SFMLSprite&>(*draw->sprite);
+                    window.draw(sfmlSprite.getNativeSprite());
                 }
             } else {
                 sf::RectangleShape shape(sf::Vector2f(draw->size, draw->size));
@@ -303,7 +311,7 @@ void render_system(registry& r,
 
                 // Apply contrast to shape color
                 Settings& settings = Settings::getInstance();
-                shape.setFillColor(settings.applyContrast(draw->color));
+                shape.setFillColor(settings.applyContrast(render::toSFMLColor(draw->color)));
 
                 window.draw(shape);
             }
@@ -492,14 +500,14 @@ void collision_system(registry& r,
     for (const auto& explosion_pos : explosion_positions) {
         auto explosion_entity = r.spawn_entity();
         r.add_component<component::position>(explosion_entity, component::position(explosion_pos.first, explosion_pos.second));
-        r.add_component<component::drawable>(explosion_entity, component::drawable("assets/sprites/r-typesheet1.gif", sf::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
+        r.add_component<component::drawable>(explosion_entity, component::drawable("assets/sprites/r-typesheet1.gif", render::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
 
         // Set up explosion animation frames with auto-destruction
         auto& anim = r.add_component<component::animation>(explosion_entity, component::animation(0.1f, false, true));
-        anim->frames.push_back(sf::IntRect(70, 290, 36, 32));
-        anim->frames.push_back(sf::IntRect(106, 290, 36, 32));
-        anim->frames.push_back(sf::IntRect(142, 290, 36, 32));
-        anim->frames.push_back(sf::IntRect(178, 290, 35, 32));
+        anim->frames.push_back(render::IntRect(70, 290, 36, 32));
+        anim->frames.push_back(render::IntRect(106, 290, 36, 32));
+        anim->frames.push_back(render::IntRect(142, 290, 36, 32));
+        anim->frames.push_back(render::IntRect(178, 290, 35, 32));
         anim->playing = true;
         anim->current_frame = 0;
     }
@@ -747,13 +755,13 @@ void health_system(registry& r,
                         component::position(positions[i]->x, positions[i]->y));
                     r.add_component<component::drawable>(explosion_entity,
                         component::drawable("assets/sprites/r-typesheet1.gif",
-                                          sf::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
+                                          render::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
                     auto& anim = r.add_component<component::animation>(explosion_entity,
                         component::animation(0.1f, false, true));
-                    anim->frames.push_back(sf::IntRect(70, 290, 36, 32));
-                    anim->frames.push_back(sf::IntRect(106, 290, 36, 32));
-                    anim->frames.push_back(sf::IntRect(142, 290, 36, 32));
-                    anim->frames.push_back(sf::IntRect(178, 290, 35, 32));
+                    anim->frames.push_back(render::IntRect(70, 290, 36, 32));
+                    anim->frames.push_back(render::IntRect(106, 290, 36, 32));
+                    anim->frames.push_back(render::IntRect(142, 290, 36, 32));
+                    anim->frames.push_back(render::IntRect(178, 290, 35, 32));
                     anim->playing = true;
                     anim->current_frame = 0;
                 }

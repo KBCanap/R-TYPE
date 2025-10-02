@@ -4,7 +4,6 @@
 #include "components.hpp"
 #include "../include/audio_manager.hpp"
 #include "render/RenderFactory.hpp"
-#include "render/sfml/SFMLRenderWindow.hpp"
 #include <memory>
 
 int main() {
@@ -12,7 +11,7 @@ int main() {
     auto window = render::RenderFactory::createWindow(
         render::RenderBackend::SFML,
         800, 600,
-        "BS_R-TYPE"
+        "R-TYPE"
     );
 
     auto audioSystem = render::RenderFactory::createAudio(
@@ -28,16 +27,13 @@ int main() {
     reg.register_component<component::drawable>();
     reg.register_component<component::controllable>();
 
-    // Get native SFML window for compatibility during transition
-    auto& sfmlWindow = dynamic_cast<render::sfml::SFMLRenderWindow&>(*window);
-
-    // Lance le menu
-    Menu menu(reg, sfmlWindow.getNativeWindow(), audioManager);
+    // Lance le menu using interface
+    Menu menu(reg, *window, audioManager);
     MenuResult result = menu.run();
 
     if (result == MenuResult::Play) {
         // Lance le jeu
-        Game game(reg, sfmlWindow.getNativeWindow(), audioManager);
+        Game game(reg, *window, audioManager);
         game.run();
     }
     else if (result == MenuResult::Quit) {

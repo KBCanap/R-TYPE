@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <cstdint>
+#include <memory>
 
 namespace render {
 
@@ -177,6 +178,18 @@ public:
     virtual FloatRect getLocalBounds() const = 0;
 };
 
+class IView {
+public:
+    virtual ~IView() = default;
+    virtual void reset(const FloatRect& rectangle) = 0;
+    virtual void setSize(float width, float height) = 0;
+    virtual void setSize(const Vector2f& size) = 0;
+    virtual void setCenter(float x, float y) = 0;
+    virtual void setCenter(const Vector2f& center) = 0;
+    virtual Vector2f getSize() const = 0;
+    virtual Vector2f getCenter() const = 0;
+};
+
 class IRenderWindow {
 public:
     virtual ~IRenderWindow() = default;
@@ -187,6 +200,7 @@ public:
     virtual void clear(const Color& color = Color::Black()) = 0;
     virtual void display() = 0;
     virtual Vector2u getSize() const = 0;
+    virtual void setSize(const Vector2u& size) = 0;
     virtual void setFramerateLimit(unsigned int limit) = 0;
     virtual void setVerticalSyncEnabled(bool enabled) = 0;
     virtual void setTitle(const std::string& title) = 0;
@@ -199,13 +213,18 @@ public:
     virtual void draw(IShape& shape) = 0;
     virtual void draw(IText& text) = 0;
 
+    // View management
+    virtual void setView(IView& view) = 0;
+    virtual std::unique_ptr<IView> getDefaultView() const = 0;
+    virtual std::unique_ptr<IView> createView() = 0;
+
     // Factory methods for creating drawable objects
-    virtual ISprite* createSprite() = 0;
-    virtual ITexture* createTexture() = 0;
-    virtual IShape* createRectangleShape(const Vector2f& size) = 0;
-    virtual IShape* createCircleShape(float radius) = 0;
-    virtual IFont* createFont() = 0;
-    virtual IText* createText() = 0;
+    virtual std::unique_ptr<ISprite> createSprite() = 0;
+    virtual std::unique_ptr<ITexture> createTexture() = 0;
+    virtual std::unique_ptr<IShape> createRectangleShape(const Vector2f& size) = 0;
+    virtual std::unique_ptr<IShape> createCircleShape(float radius) = 0;
+    virtual std::unique_ptr<IFont> createFont() = 0;
+    virtual std::unique_ptr<IText> createText() = 0;
 };
 
 } // namespace render
