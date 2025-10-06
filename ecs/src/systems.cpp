@@ -1,11 +1,12 @@
 #include "../include/systems.hpp"
 #include "../../app/include/settings.hpp"
-#include <SFML/Window/Keyboard.hpp>
-#include <SFML/Audio.hpp>
+#include "../include/render/IRenderWindow.hpp"
+#include "../include/render/IRenderAudio.hpp"
 #include <cmath>
 #include <algorithm>
 #include <unordered_map>
 #include <memory>
+#include <set>
 
 namespace systems {
 
@@ -14,11 +15,11 @@ void position_system(registry& r,
                      sparse_array<component::position>& positions,
                      sparse_array<component::velocity>& velocities,
                      sparse_array<component::input>& inputs,
-                     sf::RenderWindow& window,
+                     render::IRenderWindow& window,
                      float current_time,
                      float dt) {
     auto& drawables = r.get_components<component::drawable>();
-    sf::Vector2u window_size = window.getSize();
+    render::Vector2u window_size = window.getSize();
 
     // Handle boss bounce movement
     for (size_t i = 0; i < std::min({drawables.size(), positions.size(), velocities.size()}); ++i) {
@@ -104,49 +105,8 @@ void weapon_system(registry& r,
             }
 
             if (can_fire) {
-                // Création de projectiles
-                float offset_x = weapon->friendly ? 40.0f : -10.0f;
-                float start_angle = 0.0f;
-                if (weapon->projectile_count > 1) {
-                    start_angle = -weapon->spread_angle * (weapon->projectile_count - 1) / 2.0f;
-                }
-
-                for (int j = 0; j < weapon->projectile_count; ++j) {
-                    auto projectile_entity = r.spawn_entity();
-
-                    // Créer le projectile avec les paramètres de l'arme
-                    r.add_component<component::projectile>(projectile_entity,
-                        component::projectile(weapon->projectile_damage, weapon->projectile_speed,
-                                            weapon->friendly, "bullet", weapon->projectile_lifetime,
-                                            weapon->projectile_piercing, weapon->projectile_max_hits));
-
-                    r.add_component<component::position>(projectile_entity,
-                        component::position(pos->x + offset_x, pos->y + 20.0f));
-
-                    // Vélocité de base
-                    float base_direction = weapon->friendly ? 1.0f : -1.0f;
-                    float vx = base_direction * weapon->projectile_speed;
-                    float vy = 0.0f;
-
-                    // Spread uniquement pour les tirs multiples
-                    if (weapon->projectile_count > 1) {
-                        float angle_deg = start_angle + j * weapon->spread_angle;
-                        float angle_rad = angle_deg * M_PI / 180.0f;
-                        vx = base_direction * weapon->projectile_speed * std::cos(angle_rad);
-                        vy = base_direction * weapon->projectile_speed * std::sin(angle_rad);
-                    }
-
-                    r.add_component<component::velocity>(projectile_entity,
-                        component::velocity(vx, vy));
-
-                    // Le projectile_behavior gère le pattern de mouvement
-                    r.add_component<component::projectile_behavior>(projectile_entity,
-                        component::projectile_behavior(weapon->movement_pattern));
-
-                    r.add_component<component::drawable>(projectile_entity,
-                        component::drawable("assets/sprites/r-typesheet1.gif",
-                            weapon->projectile_sprite_rect, 1.0f, "projectile"));
-                }
+                // Use weapon's fire() method - custom or default behavior
+                weapon->fire(r, *pos, weapon->friendly);
             }
         }
     }
@@ -203,7 +163,7 @@ void control_system(registry& r,
 void render_system(registry& r,
                    sparse_array<component::position>& positions,
                    sparse_array<component::drawable>& drawables,
-                   sf::RenderWindow& window,
+                   render::IRenderWindow& window,
                    float dt) {
     auto& animations = r.get_components<component::animation>();
     auto& backgrounds = r.get_components<component::background>();
@@ -211,49 +171,51 @@ void render_system(registry& r,
     // Handle background rendering
     for (size_t i = 0; i < backgrounds.size(); ++i) {
         auto& bg = backgrounds[i];
-        if (bg) {
+        if (bg && bg->texture) {
             bg->offset_x -= bg->scroll_speed * dt;
 
-            sf::Vector2u window_size = window.getSize();
-            sf::Vector2u texture_size = bg->texture.getSize();
+            render::Vector2u window_size = window.getSize();
+            render::Vector2u texture_size = bg->texture->getSize();
 
             if (bg->offset_x <= -static_cast<float>(texture_size.x)) {
                 bg->offset_x = 0.0f;
             }
 
-            sf::Sprite sprite1(bg->texture);
-            sprite1.setPosition(bg->offset_x, 0);
-            sprite1.setScale(
+            auto sprite1 = window.createSprite();
+            sprite1->setTexture(*bg->texture);
+            sprite1->setPosition(bg->offset_x, 0);
+            sprite1->setScale(
                 static_cast<float>(window_size.x) / texture_size.x,
                 static_cast<float>(window_size.y) / texture_size.y
             );
 
-            sf::Sprite sprite2(bg->texture);
-            sprite2.setPosition(bg->offset_x + static_cast<float>(window_size.x), 0);
-            sprite2.setScale(
+            auto sprite2 = window.createSprite();
+            sprite2->setTexture(*bg->texture);
+            sprite2->setPosition(bg->offset_x + static_cast<float>(window_size.x), 0);
+            sprite2->setScale(
                 static_cast<float>(window_size.x) / texture_size.x,
                 static_cast<float>(window_size.y) / texture_size.y
             );
 
             // Apply contrast to background sprites
             Settings& settings = Settings::getInstance();
-            sf::Shader* contrastShader = settings.getContrastShader();
+            render::IShader* contrastShader = settings.getContrastShader(window);
 
             if (contrastShader) {
-                window.draw(sprite1, contrastShader);
-                window.draw(sprite2, contrastShader);
+                window.draw(*sprite1, *contrastShader);
+                window.draw(*sprite2, *contrastShader);
             } else {
                 // Fallback: use color modulation
-                sf::Color contrastColor(
-                    static_cast<sf::Uint8>(255 * settings.getContrast()),
-                    static_cast<sf::Uint8>(255 * settings.getContrast()),
-                    static_cast<sf::Uint8>(255 * settings.getContrast()),
+                render::Color contrastColor(
+                    static_cast<uint8_t>(255 * settings.getContrast()),
+                    static_cast<uint8_t>(255 * settings.getContrast()),
+                    static_cast<uint8_t>(255 * settings.getContrast()),
                     255
                 );
-                sprite1.setColor(contrastColor);
-                sprite2.setColor(contrastColor);
-                window.draw(sprite1);
-                window.draw(sprite2);
+                sprite1->setColor(contrastColor);
+                sprite2->setColor(contrastColor);
+                window.draw(*sprite1);
+                window.draw(*sprite2);
             }
         }
     }
@@ -307,46 +269,52 @@ void render_system(registry& r,
         auto& draw = drawables[i];
 
         if (pos && draw) {
-            if (draw->use_sprite && draw->texture.getSize().x > 0) {
-                sf::Sprite sprite(draw->texture);
-
-                // Position sprite at entity position (not centered in hitbox)
-                sprite.setPosition(pos->x, pos->y);
-
-                sprite.setScale(draw->scale, draw->scale);
-
-                // Use animation frame if available, otherwise use default sprite_rect
-                if (i < animations.size() && animations[i] && !animations[i]->frames.empty()) {
-                    sprite.setTextureRect(animations[i]->frames[animations[i]->current_frame]);
-                } else if (draw->sprite_rect.width > 0 && draw->sprite_rect.height > 0) {
-                    sprite.setTextureRect(draw->sprite_rect);
+            if (draw->use_sprite) {
+                // Lazy load texture and sprite if not already loaded
+                if (!draw->texture && !draw->texture_path.empty()) {
+                    draw->texture = std::shared_ptr<render::ITexture>(window.createTexture());
+                    if (!draw->texture->loadFromFile(draw->texture_path)) {
+                        // Failed to load texture, skip this entity
+                        continue;
+                    }
+                    draw->sprite = std::shared_ptr<render::ISprite>(window.createSprite());
+                    draw->sprite->setTexture(*draw->texture);
                 }
 
-                // Apply contrast using shader if available
-                Settings& settings = Settings::getInstance();
-                sf::Shader* contrastShader = settings.getContrastShader();
+                if (draw->sprite) {
+                    // Use the ISprite interface
+                    draw->sprite->setPosition(pos->x, pos->y);
+                    draw->sprite->setScale(draw->scale, draw->scale);
 
-                if (contrastShader) {
-                    window.draw(sprite, contrastShader);
-                } else {
-                    // Fallback: use color modulation
-                    sprite.setColor(sf::Color(
-                        static_cast<sf::Uint8>(255 * settings.getContrast()),
-                        static_cast<sf::Uint8>(255 * settings.getContrast()),
-                        static_cast<sf::Uint8>(255 * settings.getContrast()),
+                    // Use animation frame if available, otherwise use default sprite_rect
+                    if (i < animations.size() && animations[i] && !animations[i]->frames.empty()) {
+                        draw->sprite->setTextureRect(animations[i]->frames[animations[i]->current_frame]);
+                    } else if (draw->sprite_rect.width > 0 && draw->sprite_rect.height > 0) {
+                        draw->sprite->setTextureRect(draw->sprite_rect);
+                    }
+
+                    // Apply contrast with color modulation
+                    Settings& settings = Settings::getInstance();
+                    render::Color contrastColor(
+                        static_cast<uint8_t>(255 * settings.getContrast()),
+                        static_cast<uint8_t>(255 * settings.getContrast()),
+                        static_cast<uint8_t>(255 * settings.getContrast()),
                         255
-                    ));
-                    window.draw(sprite);
+                    );
+                    draw->sprite->setColor(contrastColor);
+
+                    // Draw using interface
+                    window.draw(*draw->sprite);
                 }
             } else {
-                sf::RectangleShape shape(sf::Vector2f(draw->size, draw->size));
-                shape.setPosition(pos->x, pos->y);
+                auto shape = window.createRectangleShape(render::Vector2f(draw->size, draw->size));
+                shape->setPosition(pos->x, pos->y);
 
                 // Apply contrast to shape color
                 Settings& settings = Settings::getInstance();
-                shape.setFillColor(settings.applyContrast(draw->color));
+                shape->setFillColor(settings.applyContrast(draw->color));
 
-                window.draw(shape);
+                window.draw(*shape);
             }
         }
     }
@@ -416,7 +384,8 @@ void collision_system(registry& r,
             if (collision) {
                 // Check if this is a valid collision (friendly fire rules)
                 bool is_player = target_drawable->tag == "player";
-                bool is_enemy = target_drawable->tag == "enemy" || target_drawable->tag == "enemy_zigzag" || target_drawable->tag == "boss";
+                bool is_enemy = target_drawable->tag == "enemy" || target_drawable->tag == "enemy_zigzag" ||
+                                target_drawable->tag == "enemy_spread" || target_drawable->tag == "boss";
 
                 if ((projectile->friendly && is_enemy) || (!projectile->friendly && is_player)) {
                     // Apply damage if target has health component
@@ -532,14 +501,14 @@ void collision_system(registry& r,
     for (const auto& explosion_pos : explosion_positions) {
         auto explosion_entity = r.spawn_entity();
         r.add_component<component::position>(explosion_entity, component::position(explosion_pos.first, explosion_pos.second));
-        r.add_component<component::drawable>(explosion_entity, component::drawable("assets/sprites/r-typesheet1.gif", sf::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
+        r.add_component<component::drawable>(explosion_entity, component::drawable("assets/sprites/r-typesheet1.gif", render::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
 
         // Set up explosion animation frames with auto-destruction
         auto& anim = r.add_component<component::animation>(explosion_entity, component::animation(0.1f, false, true));
-        anim->frames.push_back(sf::IntRect(70, 290, 36, 32));
-        anim->frames.push_back(sf::IntRect(106, 290, 36, 32));
-        anim->frames.push_back(sf::IntRect(142, 290, 36, 32));
-        anim->frames.push_back(sf::IntRect(178, 290, 35, 32));
+        anim->frames.push_back(render::IntRect(70, 290, 36, 32));
+        anim->frames.push_back(render::IntRect(106, 290, 36, 32));
+        anim->frames.push_back(render::IntRect(142, 290, 36, 32));
+        anim->frames.push_back(render::IntRect(178, 290, 35, 32));
         anim->playing = true;
         anim->current_frame = 0;
     }
@@ -548,11 +517,12 @@ void collision_system(registry& r,
 void audio_system(registry& /*r*/,
                   sparse_array<component::sound_effect>& sound_effects,
                   sparse_array<component::music>& musics,
-                  sparse_array<component::audio_trigger>& triggers) {
+                  sparse_array<component::audio_trigger>& triggers,
+                  render::IRenderAudio& audioManager) {
 
-    static std::unordered_map<std::string, sf::SoundBuffer> sound_buffers;
-    static std::unordered_map<std::string, sf::Sound> sounds;
-    static std::unordered_map<std::string, std::unique_ptr<sf::Music>> music_tracks;
+    static std::unordered_map<std::string, render::ISoundBuffer*> sound_buffers;
+    static std::unordered_map<std::string, render::ISound*> sounds;
+    static std::unordered_map<std::string, render::IMusic*> music_tracks;
 
     // Handle sound effects
     for (size_t i = 0; i < std::min(sound_effects.size(), triggers.size()); ++i) {
@@ -562,19 +532,22 @@ void audio_system(registry& /*r*/,
         if (sound_effect && trigger && !trigger->triggered) {
             // Load sound buffer if not already loaded
             if (sound_buffers.find(sound_effect->sound_path) == sound_buffers.end()) {
-                sf::SoundBuffer buffer;
-                if (buffer.loadFromFile(sound_effect->sound_path)) {
+                auto* buffer = audioManager.createSoundBuffer();
+                if (buffer->loadFromFile(sound_effect->sound_path)) {
                     sound_buffers[sound_effect->sound_path] = buffer;
-                    sounds[sound_effect->sound_path] = sf::Sound();
-                    sounds[sound_effect->sound_path].setBuffer(sound_buffers[sound_effect->sound_path]);
+                    auto* sound = audioManager.createSound();
+                    sound->setBuffer(*buffer);
+                    sounds[sound_effect->sound_path] = sound;
+                } else {
+                    delete buffer;
                 }
             }
 
             // Play sound if buffer exists
             if (sound_buffers.find(sound_effect->sound_path) != sound_buffers.end()) {
-                auto& sound = sounds[sound_effect->sound_path];
-                sound.setVolume(sound_effect->volume);
-                sound.play();
+                auto* sound = sounds[sound_effect->sound_path];
+                sound->setVolume(sound_effect->volume);
+                sound->play();
                 sound_effect->is_playing = true;
 
                 if (sound_effect->play_once) {
@@ -586,8 +559,8 @@ void audio_system(registry& /*r*/,
         // Update playing status
         if (sound_effect && sound_effect->is_playing) {
             if (sounds.find(sound_effect->sound_path) != sounds.end()) {
-                auto& sound = sounds[sound_effect->sound_path];
-                if (sound.getStatus() != sf::Sound::Playing) {
+                auto* sound = sounds[sound_effect->sound_path];
+                if (sound->getStatus() != render::AudioStatus::Playing) {
                     sound_effect->is_playing = false;
                 }
             }
@@ -602,10 +575,10 @@ void audio_system(registry& /*r*/,
         if (music && trigger && !trigger->triggered && !music->is_playing) {
             // Load music if not already loaded
             if (music_tracks.find(music->music_path) == music_tracks.end()) {
-                music_tracks[music->music_path] = std::make_unique<sf::Music>();
+                music_tracks[music->music_path] = audioManager.createMusic();
             }
 
-            auto& track = music_tracks[music->music_path];
+            auto* track = music_tracks[music->music_path];
             if (track->openFromFile(music->music_path)) {
                 track->setVolume(music->volume);
                 track->setLoop(music->loop);
@@ -618,8 +591,8 @@ void audio_system(registry& /*r*/,
         // Update playing status
         if (music && music->is_playing) {
             if (music_tracks.find(music->music_path) != music_tracks.end()) {
-                auto& track = music_tracks[music->music_path];
-                if (track->getStatus() != sf::Music::Playing) {
+                auto* track = music_tracks[music->music_path];
+                if (track->getStatus() != render::AudioStatus::Playing) {
                     music->is_playing = false;
                 }
             }
@@ -627,8 +600,21 @@ void audio_system(registry& /*r*/,
     }
 }
 
+// État global des touches pressées (partagé entre handleEvents et input_system)
+static std::set<render::Key> g_pressed_keys;
+
+void update_key_state(const render::Event& event) {
+    if (event.type == render::EventType::KeyPressed) {
+        g_pressed_keys.insert(event.key.code);
+    } else if (event.type == render::EventType::KeyReleased) {
+        g_pressed_keys.erase(event.key.code);
+    }
+}
+
 void input_system(registry& /*r*/,
-                  sparse_array<component::input>& inputs) {
+                  sparse_array<component::input>& inputs,
+                  render::IRenderWindow& /*window*/) {
+    // Mettre à jour tous les inputs en fonction de l'état des touches
     for (size_t i = 0; i < inputs.size(); ++i) {
         auto& input = inputs[i];
         if (input) {
@@ -639,12 +625,12 @@ void input_system(registry& /*r*/,
             bool prev_down = input->down;
             bool prev_fire = input->fire;
 
-            // Mettre à jour l'état actuel des touches
-            input->left = sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
-            input->right = sf::Keyboard::isKeyPressed(sf::Keyboard::Right);
-            input->up = sf::Keyboard::isKeyPressed(sf::Keyboard::Up);
-            input->down = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
-            input->fire = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
+            // Mettre à jour l'état actuel des touches via Event
+            input->left = g_pressed_keys.count(render::Key::Left) > 0;
+            input->right = g_pressed_keys.count(render::Key::Right) > 0;
+            input->up = g_pressed_keys.count(render::Key::Up) > 0;
+            input->down = g_pressed_keys.count(render::Key::Down) > 0;
+            input->fire = g_pressed_keys.count(render::Key::Space) > 0;
 
             // Détecter les moments où les touches sont pressées (transition de false à true)
             input->left_pressed = !prev_left && input->left;
@@ -659,12 +645,12 @@ void input_system(registry& /*r*/,
 void projectile_system(registry& r,
                        sparse_array<component::projectile>& projectiles,
                        sparse_array<component::position>& positions,
-                       sf::RenderWindow& window,
+                       render::IRenderWindow& window,
                        float dt) {
     auto& velocities = r.get_components<component::velocity>();
     auto& behaviors = r.get_components<component::projectile_behavior>();
     std::vector<size_t> entities_to_kill;
-    sf::Vector2u window_size = window.getSize();
+    render::Vector2u window_size = window.getSize();
 
     for (size_t i = 0; i < std::min({projectiles.size(), positions.size(), velocities.size()}); ++i) {
         auto& projectile = projectiles[i];
@@ -787,13 +773,13 @@ void health_system(registry& r,
                         component::position(positions[i]->x, positions[i]->y));
                     r.add_component<component::drawable>(explosion_entity,
                         component::drawable("assets/sprites/r-typesheet1.gif",
-                                          sf::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
+                                          render::IntRect(70, 290, 36, 32), 2.0f, "explosion"));
                     auto& anim = r.add_component<component::animation>(explosion_entity,
                         component::animation(0.1f, false, true));
-                    anim->frames.push_back(sf::IntRect(70, 290, 36, 32));
-                    anim->frames.push_back(sf::IntRect(106, 290, 36, 32));
-                    anim->frames.push_back(sf::IntRect(142, 290, 36, 32));
-                    anim->frames.push_back(sf::IntRect(178, 290, 35, 32));
+                    anim->frames.push_back(render::IntRect(70, 290, 36, 32));
+                    anim->frames.push_back(render::IntRect(106, 290, 36, 32));
+                    anim->frames.push_back(render::IntRect(142, 290, 36, 32));
+                    anim->frames.push_back(render::IntRect(178, 290, 35, 32));
                     anim->playing = true;
                     anim->current_frame = 0;
                 }

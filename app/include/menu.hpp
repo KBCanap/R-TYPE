@@ -1,15 +1,17 @@
 #pragma once
-#include <SFML/Graphics.hpp>
 #include "registery.hpp"
 #include "components.hpp"
 #include "audio_manager.hpp"
 #include "options_menu.hpp"
+#include "../../ecs/include/render/IRenderWindow.hpp"
+#include <vector>
+#include <memory>
 
 enum class MenuResult { None, Play, Options, Quit };
 
 class Menu {
 public:
-    Menu(registry& reg, sf::RenderWindow& win, AudioManager& audioMgr);
+    Menu(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr);
 
     MenuResult run();                  // Boucle du menu
     void update(float dt);             // Update background et ennemis
@@ -24,21 +26,21 @@ private:
 
 private:
     registry& _registry;
-    sf::RenderWindow& _window;
+    render::IRenderWindow& _window;
     AudioManager& _audioManager;
 
-    sf::Texture _bgTexture;
-    sf::Sprite _bgSprite1;
-    sf::Sprite _bgSprite2;
-    sf::Vector2u _windowSize;
-    sf::Vector2u _baseWindowSize;
+    std::unique_ptr<render::ITexture> _bgTexture;
+    std::unique_ptr<render::ISprite> _bgSprite1;
+    std::unique_ptr<render::ISprite> _bgSprite2;
+    render::Vector2u _windowSize;
+    render::Vector2u _baseWindowSize;
 
     float _bgScrollSpeed = 100.f;
 
-    sf::Font _font;
-    std::vector<sf::RectangleShape> _buttons;
-    std::vector<sf::Text> _buttonTexts;
+    std::unique_ptr<render::IFont> _font;
+    std::vector<std::unique_ptr<render::IShape>> _buttons;
+    std::vector<std::unique_ptr<render::IText>> _buttonTexts;
 
-    std::vector<sf::Vector2f> _enemyStartPositions;
+    std::vector<render::Vector2f> _enemyStartPositions;
     std::vector<entity> _enemies;
 };

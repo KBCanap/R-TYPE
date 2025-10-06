@@ -11,6 +11,7 @@ set(ECS_SOURCES
     src/systems.cpp
     src/projectile_pattern.cpp
     src/ai_movement_pattern.cpp
+    src/weapon.cpp
 )
 
 # Création de la bibliothèque partagée

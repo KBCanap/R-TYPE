@@ -3,12 +3,23 @@
 #include "registery.hpp"
 #include "components.hpp"
 #include "../include/audio_manager.hpp"
-#include <SFML/Graphics.hpp>
+#include "render/RenderFactory.hpp"
+#include <memory>
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode(800, 600), "BS_R-TYPE");
+    // Create render and audio systems using factory
+    auto window = render::RenderFactory::createWindow(
+        render::RenderBackend::SFML,
+        800, 600,
+        "R-TYPE"
+    );
+
+    auto audioSystem = render::RenderFactory::createAudio(
+        render::RenderBackend::SFML
+    );
+
     registry reg;
-    AudioManager audioManager;
+    AudioManager audioManager(*audioSystem);
 
     // Enregistre les composants
     reg.register_component<component::position>();
@@ -16,17 +27,17 @@ int main() {
     reg.register_component<component::drawable>();
     reg.register_component<component::controllable>();
 
-    // Lance le menu
-    Menu menu(reg, window, audioManager);
+    // Lance le menu using interface
+    Menu menu(reg, *window, audioManager);
     MenuResult result = menu.run();
 
     if (result == MenuResult::Play) {
         // Lance le jeu
-        Game game(reg, window, audioManager);
+        Game game(reg, *window, audioManager);
         game.run();
     }
     else if (result == MenuResult::Quit) {
-        window.close();
+        window->close();
     }
 
     return 0;
