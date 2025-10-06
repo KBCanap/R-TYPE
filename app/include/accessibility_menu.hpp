@@ -1,12 +1,13 @@
 #pragma once
-#include <SFML/Graphics.hpp>
+#include "../../ecs/include/render/IRenderWindow.hpp"
 #include "audio_manager.hpp"
+#include <memory>
 
 enum class AccessibilityResult { None, Back, Resumed };
 
 class AccessibilityMenu {
 public:
-    AccessibilityMenu(sf::RenderWindow& win, AudioManager& audioMgr);
+    AccessibilityMenu(render::IRenderWindow& win, AudioManager& audioMgr);
 
     AccessibilityResult run();
     void render();
@@ -18,35 +19,35 @@ private:
     void updateContrastSliderPosition();
 
 private:
-    sf::RenderWindow& _window;
+    render::IRenderWindow& _window;
     AudioManager& _audioManager;
 
-    sf::Font _font;
-    sf::Text _titleText;
+    std::unique_ptr<render::IFont> _font;
+    std::unique_ptr<render::IText> _titleText;
 
     // Contrast settings
     float _currentContrast;
-    sf::Text _contrastLabel;
-    sf::Text _contrastValue;
-    sf::RectangleShape _contrastSliderTrack;
-    sf::CircleShape _contrastSliderHandle;
+    std::unique_ptr<render::IText> _contrastLabel;
+    std::unique_ptr<render::IText> _contrastValue;
+    std::unique_ptr<render::IShape> _contrastSliderTrack;
+    std::unique_ptr<render::IShape> _contrastSliderHandle;
     bool _isDraggingContrastSlider;
     float _contrastSliderMin;
     float _contrastSliderMax;
 
     // Reference square for contrast testing
-    sf::RectangleShape _referenceSquare;
-    sf::Text _referenceLabel;
+    std::unique_ptr<render::IShape> _referenceSquare;
+    std::unique_ptr<render::IText> _referenceLabel;
 
     // Back button
-    sf::RectangleShape _backButton;
-    sf::Text _backButtonText;
+    std::unique_ptr<render::IShape> _backButton;
+    std::unique_ptr<render::IText> _backButtonText;
 
-    sf::Vector2u _windowSize;
+    render::Vector2u _windowSize;
 
     // Background (scrolling)
-    sf::Texture _bgTexture;
-    sf::Sprite _bgSprite1;
-    sf::Sprite _bgSprite2;
+    std::unique_ptr<render::ITexture> _bgTexture;
+    std::unique_ptr<render::ISprite> _bgSprite1;
+    std::unique_ptr<render::ISprite> _bgSprite2;
     float _bgScrollSpeed;
 };

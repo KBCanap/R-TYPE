@@ -18,6 +18,11 @@ set(APP_SOURCES
     src/player_manager.cpp
     src/enemy_manager.cpp
     src/boss_manager.cpp
+    src/pause_menu.cpp
+    # Render abstraction layer
+    src/render/RenderFactory.cpp
+    src/render/sfml/SFMLRenderWindow.cpp
+    src/render/sfml/SFMLRenderAudio.cpp
 )
 
 # Création de l'exécutable client

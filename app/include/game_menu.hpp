@@ -1,6 +1,7 @@
 #pragma once
-#include <SFML/Graphics.hpp>
+#include "../../ecs/include/render/IRenderWindow.hpp"
 #include "audio_manager.hpp"
+#include <memory>
 
 enum class MenuAction {
     NONE,
@@ -10,9 +11,9 @@ enum class MenuAction {
 
 class GameOverMenu {
 public:
-    GameOverMenu(sf::RenderWindow& window, AudioManager& audioMgr);
+    GameOverMenu(render::IRenderWindow& window, AudioManager& audioMgr);
 
-    MenuAction handleEvents(const sf::Event& event);
+    MenuAction handleEvents(const render::Event& event);
     void render();
     void setVisible(bool visible);
     bool isVisible() const;
@@ -22,31 +23,31 @@ private:
     void initializeMenu();
     void updateButtonColors();
 
-    sf::RenderWindow& _window;
+    render::IRenderWindow& _window;
     AudioManager& _audioManager;
     bool _visible;
     int _selectedButton;
 
-    sf::Font _font;
-    sf::Text _gameOverText;
-    sf::Text _replayText;
-    sf::Text _quitText;
+    std::unique_ptr<render::IFont> _font;
+    std::unique_ptr<render::IText> _gameOverText;
+    std::unique_ptr<render::IText> _replayText;
+    std::unique_ptr<render::IText> _quitText;
 
-    sf::RectangleShape _replayButton;
-    sf::RectangleShape _quitButton;
-    sf::RectangleShape _overlay;
+    std::unique_ptr<render::IShape> _replayButton;
+    std::unique_ptr<render::IShape> _quitButton;
+    std::unique_ptr<render::IShape> _overlay;
 
-    const sf::Color NORMAL_BUTTON_COLOR = sf::Color(100, 100, 100, 200);
-    const sf::Color SELECTED_BUTTON_COLOR = sf::Color(150, 150, 150, 200);
-    const sf::Color TEXT_COLOR = sf::Color::White;
-    const sf::Color SELECTED_TEXT_COLOR = sf::Color::Yellow;
+    const render::Color NORMAL_BUTTON_COLOR = render::Color(100, 100, 100, 200);
+    const render::Color SELECTED_BUTTON_COLOR = render::Color(150, 150, 150, 200);
+    const render::Color TEXT_COLOR = render::Color::White();
+    const render::Color SELECTED_TEXT_COLOR = render::Color::Yellow();
 };
 
 class VictoryMenu {
 public:
-    VictoryMenu(sf::RenderWindow& window, AudioManager& audioMgr);
+    VictoryMenu(render::IRenderWindow& window, AudioManager& audioMgr);
 
-    MenuAction handleEvents(const sf::Event& event);
+    MenuAction handleEvents(const render::Event& event);
     void render();
     void setVisible(bool visible);
     bool isVisible() const;
@@ -56,22 +57,22 @@ private:
     void initializeMenu();
     void updateButtonColors();
 
-    sf::RenderWindow& _window;
+    render::IRenderWindow& _window;
     AudioManager& _audioManager;
     bool _visible;
     int _selectedButton;
 
-    sf::Font _font;
-    sf::Text _victoryText;
-    sf::Text _replayText;
-    sf::Text _quitText;
+    std::unique_ptr<render::IFont> _font;
+    std::unique_ptr<render::IText> _victoryText;
+    std::unique_ptr<render::IText> _replayText;
+    std::unique_ptr<render::IText> _quitText;
 
-    sf::RectangleShape _replayButton;
-    sf::RectangleShape _quitButton;
-    sf::RectangleShape _overlay;
+    std::unique_ptr<render::IShape> _replayButton;
+    std::unique_ptr<render::IShape> _quitButton;
+    std::unique_ptr<render::IShape> _overlay;
 
-    const sf::Color NORMAL_BUTTON_COLOR = sf::Color(100, 100, 100, 200);
-    const sf::Color SELECTED_BUTTON_COLOR = sf::Color(150, 150, 150, 200);
-    const sf::Color TEXT_COLOR = sf::Color::White;
-    const sf::Color SELECTED_TEXT_COLOR = sf::Color::Yellow;
+    const render::Color NORMAL_BUTTON_COLOR = render::Color(100, 100, 100, 200);
+    const render::Color SELECTED_BUTTON_COLOR = render::Color(150, 150, 150, 200);
+    const render::Color TEXT_COLOR = render::Color::White();
+    const render::Color SELECTED_TEXT_COLOR = render::Color::Yellow();
 };

@@ -3,127 +3,112 @@
 #include "../include/options_menu.hpp"
 #include "../include/accessibility_menu.hpp"
 #include "systems.hpp"
-#include <SFML/Window/Keyboard.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <chrono>
 
-Game::Game(registry& reg, sf::RenderWindow& win, AudioManager& audioMgr)
+Game::Game(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr)
     : _registry(reg), _window(win), _audioManager(audioMgr),
-      _playerManager(reg, win), _enemyManager(reg, win), _bossManager(reg, win),
-      _gameOverMenu(win, audioMgr), _victoryMenu(win, audioMgr), _tickSystem(60.0)
+      _playerManager(reg, win),
+      _enemyManager(reg, win),
+      _bossManager(reg, win),
+      _gameOverMenu(win, audioMgr),
+      _victoryMenu(win, audioMgr),
+      _tickSystem(60.0)
 {
-    // Reset the window view to default after menu potentially modified it
-    sf::Vector2u window_size = _window.getSize();
-    sf::View default_view;
-    default_view.setSize(static_cast<float>(window_size.x), static_cast<float>(window_size.y));
-    default_view.setCenter(static_cast<float>(window_size.x) / 2.f, static_cast<float>(window_size.y) / 2.f);
-    _window.setView(default_view);
 
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
     // Create background
     _background = _registry.spawn_entity();
     auto& bg_component = _registry.add_component<component::background>(*_background, component::background(30.f));
-    if (!bg_component->texture.loadFromFile("assets/background.jpg")) {
-        sf::Image fallback_image;
-        fallback_image.create(800, 600, sf::Color(20, 20, 80));
-        bg_component->texture.loadFromImage(fallback_image);
+    bg_component->texture = _window.createTexture();
+    if (!bg_component->texture->loadFromFile("assets/background.jpg")) {
+        auto fallback_image = _window.createImage();
+        fallback_image->create(800, 600, render::Color(20, 20, 80));
+        bg_component->texture->loadFromImage(*fallback_image);
     }
 
     // Load r-type font for score display
-    if (!_scoreFont.loadFromFile("assets/r-type.otf")) {
-        // If loading fails, use default font (no action needed, SFML will use default)
+    _scoreFont = _window.createFont();
+    if (!_scoreFont->loadFromFile("assets/r-type.otf")) {
     }
-
-    // Create player using PlayerManager
     _player = _playerManager.createPlayer(_playerRelativeX, _playerRelativeY, _playerSpeed);
 }
 
 void Game::handleEvents(bool& running, float /*dt*/) {
-    sf::Event event;
+    render::Event event;
     while (_window.pollEvent(event)) {
-        if (event.type == sf::Event::Closed) {
+        // Mettre à jour l'état des touches pour input_system
+        systems::update_key_state(event);
+
+        // Handle window close
+        if (event.type == render::EventType::Closed) {
             running = false;
             _shouldExit = true;
             return;
         }
 
-        if (event.type == sf::Event::Resized) {
-            sf::View view;
-            view.setSize(static_cast<float>(event.size.width), static_cast<float>(event.size.height));
-            view.setCenter(static_cast<float>(event.size.width) / 2.f, static_cast<float>(event.size.height) / 2.f);
-            _window.setView(view);
-
-            // Update all positions when window is resized
+        // Handle window resize
+        if (event.type == render::EventType::Resized) {
             _playerManager.updatePlayerPosition(_player, _playerRelativeX, _playerRelativeY);
             _enemyManager.updateEnemyPositions(_enemies);
             _gameOverMenu.onWindowResize();
             _victoryMenu.onWindowResize();
         }
 
-        // Handle weapon switching and pause
-        if (!_gameOver && !_victory && event.type == sf::Event::KeyPressed) {
-            switch (event.key.code) {
-                case sf::Keyboard::Num1:
+        // Handle key presses
+        if (event.type == render::EventType::KeyPressed) {
+            // Escape to exit
+            if (event.key.code == render::Key::Escape) {
+                running = false;
+                _shouldExit = true;
+                return;
+            }
+
+            // Handle weapon switching
+            if (!_gameOver && !_victory) {
+                if (event.key.code == render::Key::Num1) {
                     _playerManager.changePlayerWeaponToSingle(_player);
-                    break;
-                case sf::Keyboard::Num2:
+                }
+                if (event.key.code == render::Key::Num2) {
                     _playerManager.changePlayerWeaponToRapid(_player);
-                    break;
-                case sf::Keyboard::Num3:
+                }
+                if (event.key.code == render::Key::Num3) {
                     _playerManager.changePlayerWeaponToBurst(_player);
-                    break;
-                case sf::Keyboard::Num4:
+                }
+                if (event.key.code == render::Key::Num4) {
                     _playerManager.changePlayerWeaponToSpread(_player);
-                    break;
-                case sf::Keyboard::P:
-                    // Open options menu
-                    {
-                        OptionsMenu optionsMenu(_window, _audioManager);
-                        OptionsResult result = optionsMenu.run();
-                        if (result == OptionsResult::Back) {
-                            // Player closed the menu, continue game
-                        } else if (result == OptionsResult::Accessibility) {
-                            // Player wants to open accessibility menu
-                            AccessibilityMenu accessibilityMenu(_window, _audioManager);
-                            accessibilityMenu.run();
-                            // After accessibility menu, return to game
-                        }
+                }
+                if (event.key.code == render::Key::P) {
+                    OptionsMenu optionsMenu(_window, _audioManager);
+                    OptionsResult result = optionsMenu.run();
+                    if (result == OptionsResult::Accessibility) {
+                        AccessibilityMenu accessibilityMenu(_window, _audioManager);
+                        accessibilityMenu.run();
                     }
-                    break;
-                default:
-                    break;
+                }
             }
-        }
 
-        if (_gameOver) {
-            MenuAction action = _gameOverMenu.handleEvents(event);
-            switch (action) {
-                case MenuAction::REPLAY:
+            // Handle game over menu
+            if (_gameOver) {
+                if (event.key.code == render::Key::Enter) {
                     resetGame();
-                    break;
-                case MenuAction::QUIT:
+                } else if (event.key.code == render::Key::Q) {
                     running = false;
                     _shouldExit = true;
-                    break;
-                case MenuAction::NONE:
-                    break;
+                }
             }
-        }
 
-        if (_victory) {
-            MenuAction action = _victoryMenu.handleEvents(event);
-            switch (action) {
-                case MenuAction::REPLAY:
+            // Handle victory menu
+            if (_victory) {
+                if (event.key.code == render::Key::Enter) {
                     resetGame();
-                    break;
-                case MenuAction::QUIT:
+                } else if (event.key.code == render::Key::Q) {
                     running = false;
                     _shouldExit = true;
-                    break;
-                case MenuAction::NONE:
-                    break;
+                }
             }
         }
     }
@@ -140,7 +125,7 @@ void Game::update(float dt) {
     auto& inputs = _registry.get_components<component::input>();
 
     // Input system - always runs to capture input state
-    systems::input_system(_registry, inputs);
+    systems::input_system(_registry, inputs, _window);
 
     // AI input system for enemies - always runs
     auto& ai_inputs = _registry.get_components<component::ai_input>();
@@ -167,7 +152,7 @@ void Game::update(float dt) {
     if (_player && !_gameOver && !_victory) {
         auto& player_pos = positions[*_player];
         if (player_pos) {
-            sf::Vector2u window_size = _window.getSize();
+            render::Vector2u window_size = _window.getSize();
 
             // Constrain player to screen bounds
             player_pos->x = std::max(0.f, std::min(player_pos->x, static_cast<float>(window_size.x) - 40.f));
@@ -179,7 +164,6 @@ void Game::update(float dt) {
         }
     }
 
-    // Collision system only runs if game is not over and not victory
     if (!_gameOver && !_victory) {
         auto& hitboxes = _registry.get_components<component::hitbox>();
         systems::collision_system(_registry, positions, drawables, projectiles, hitboxes);
@@ -194,14 +178,12 @@ void Game::update(float dt) {
         auto& boss_pos = positions[*_boss];
         auto& boss_drawable = drawables[*_boss];
         if (!boss_pos || !boss_drawable) {
-            // Boss entity has been killed
             _victory = true;
             _victoryMenu.setVisible(true);
             _boss.reset();
         }
     }
 
-    // Score system - only update if game is not over and not victory
     if (!_gameOver && !_victory) {
         auto& scores = _registry.get_components<component::score>();
         systems::score_system(_registry, scores, dt);
@@ -211,7 +193,7 @@ void Game::update(float dt) {
     auto& sound_effects = _registry.get_components<component::sound_effect>();
     auto& musics = _registry.get_components<component::music>();
     auto& triggers = _registry.get_components<component::audio_trigger>();
-    systems::audio_system(_registry, sound_effects, musics, triggers);
+    systems::audio_system(_registry, sound_effects, musics, triggers, _audioManager.getAudioSystem());
 
     // Check if player is still alive
     if (!_gameOver && !isPlayerAlive()) {
@@ -231,9 +213,8 @@ void Game::update(float dt) {
         _enemySpawnTimer += dt;
         if (_enemySpawnTimer >= _enemySpawnInterval) {
             _enemySpawnTimer = 0.f;
-            _enemyManager.spawnEnemy();
-            // Note: We need to modify EnemyManager to return the spawned enemy
-            // For now, this will be handled internally by EnemyManager
+            entity newEnemy = _enemyManager.spawnEnemy();
+            _enemies.push_back(newEnemy);
         }
     }
 
@@ -244,52 +225,45 @@ void Game::update(float dt) {
 void Game::render(float dt) {
     _window.clear();
 
-    // Always draw background and entities, even during game over
     auto& positions = _registry.get_components<component::position>();
     auto& drawables = _registry.get_components<component::drawable>();
     systems::render_system(_registry, positions, drawables, _window, dt);
 
-    // Draw HP in top-left corner and score in top-right corner
     if (_player) {
         auto& healths = _registry.get_components<component::health>();
         auto& scores = _registry.get_components<component::score>();
 
-        // Draw HP
         if (*_player < healths.size() && healths[*_player]) {
             auto& player_health = healths[*_player];
 
-            sf::Text hp_text;
-            hp_text.setFont(_scoreFont);
-            hp_text.setString("HP " + std::to_string(player_health->current_hp) + "/" + std::to_string(player_health->max_hp));
-            hp_text.setCharacterSize(24);
+            auto hp_text = _window.createText();
+            hp_text->setFont(*_scoreFont);
+            hp_text->setString("HP " + std::to_string(player_health->current_hp) + "/" + std::to_string(player_health->max_hp));
+            hp_text->setCharacterSize(24);
 
-            // Apply contrast to text color
             Settings& settings = Settings::getInstance();
-            hp_text.setFillColor(settings.applyContrast(sf::Color::White));
-            hp_text.setPosition(20, 20);
+            hp_text->setFillColor(settings.applyContrast(render::Color::White()));
+            hp_text->setPosition(20, 20);
 
-            _window.draw(hp_text);
+            _window.draw(*hp_text);
         }
 
-        // Draw Score
         if (*_player < scores.size() && scores[*_player]) {
             auto& player_score = scores[*_player];
 
-            sf::Text score_text;
-            score_text.setFont(_scoreFont);
-            score_text.setString("Score " + std::to_string(player_score->current_score));
-            score_text.setCharacterSize(24);
+            auto score_text = _window.createText();
+            score_text->setFont(*_scoreFont);
+            score_text->setString("Score " + std::to_string(player_score->current_score));
+            score_text->setCharacterSize(24);
 
-            // Apply contrast to text color
             Settings& settings = Settings::getInstance();
-            score_text.setFillColor(settings.applyContrast(sf::Color::White));
+            score_text->setFillColor(settings.applyContrast(render::Color::White()));
 
-            // Position in top-right corner
-            sf::Vector2u window_size = _window.getSize();
-            sf::FloatRect text_bounds = score_text.getLocalBounds();
-            score_text.setPosition(window_size.x - text_bounds.width - 20, 20);
+            render::Vector2u window_size = _window.getSize();
+            render::FloatRect text_bounds = score_text->getLocalBounds();
+            score_text->setPosition(window_size.x - text_bounds.width - 20, 20);
 
-            _window.draw(score_text);
+            _window.draw(*score_text);
         }
     }
 
@@ -300,34 +274,33 @@ void Game::render(float dt) {
 
         for (size_t i = 0; i < positions.size() && i < hitboxes.size(); ++i) {
             if (positions[i] && hitboxes[i]) {
-                sf::RectangleShape hitbox_outline;
-                hitbox_outline.setSize(sf::Vector2f(hitboxes[i]->width, hitboxes[i]->height));
-                hitbox_outline.setPosition(
+                auto hitbox_outline = _window.createRectangleShape(
+                    render::Vector2f(hitboxes[i]->width, hitboxes[i]->height)
+                );
+                hitbox_outline->setPosition(
                     positions[i]->x + hitboxes[i]->offset_x,
                     positions[i]->y + hitboxes[i]->offset_y
                 );
-                hitbox_outline.setFillColor(sf::Color::Transparent);
+                hitbox_outline->setFillColor(render::Color(0, 0, 0, 0)); // Transparent
 
                 // Different colors for different entity types
                 if (drawables[i] && drawables[i]->tag == "player") {
-                    hitbox_outline.setOutlineColor(sf::Color::Green);
+                    hitbox_outline->setOutlineColor(render::Color::Green());
                 } else if (drawables[i] && (drawables[i]->tag == "enemy" || drawables[i]->tag == "enemy_zigzag" || drawables[i]->tag == "boss")) {
-                    hitbox_outline.setOutlineColor(sf::Color::Red);
+                    hitbox_outline->setOutlineColor(render::Color::Red());
                 } else {
-                    hitbox_outline.setOutlineColor(sf::Color::Yellow);
+                    hitbox_outline->setOutlineColor(render::Color::Yellow());
                 }
-                hitbox_outline.setOutlineThickness(2.0f);
+                hitbox_outline->setOutlineThickness(2.0f);
 
-                _window.draw(hitbox_outline);
+                _window.draw(*hitbox_outline);
             }
         }
     }
 #endif
 
-    // Draw game over menu if visible (it will overlay the game)
     _gameOverMenu.render();
 
-    // Draw victory menu if visible (it will overlay the game)
     _victoryMenu.render();
 
     _window.display();
@@ -399,10 +372,11 @@ void Game::resetGame() {
     // Recreate background
     _background = _registry.spawn_entity();
     auto& bg_component = _registry.add_component<component::background>(*_background, component::background(30.f));
-    if (!bg_component->texture.loadFromFile("assets/background.jpg")) {
-        sf::Image fallback_image;
-        fallback_image.create(800, 600, sf::Color(20, 20, 80));
-        bg_component->texture.loadFromImage(fallback_image);
+    bg_component->texture = _window.createTexture();
+    if (!bg_component->texture->loadFromFile("assets/background.jpg")) {
+        auto fallback_image = _window.createImage();
+        fallback_image->create(800, 600, render::Color(20, 20, 80));
+        bg_component->texture->loadFromImage(*fallback_image);
     }
 
     // Recreate player using PlayerManager

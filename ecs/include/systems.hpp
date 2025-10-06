@@ -1,14 +1,17 @@
 #pragma once
 #include "registery.hpp"
 #include "components.hpp"
-#include <SFML/Graphics.hpp>
+#include "render/IRenderWindow.hpp"
+#include "render/IRenderAudio.hpp"
 
 namespace systems {
+    void update_key_state(const render::Event& event);
+
     void position_system(registry& r,
                          sparse_array<component::position>& positions,
                          sparse_array<component::velocity>& velocities,
                          sparse_array<component::input>& inputs,
-                         sf::RenderWindow& window,
+                         render::IRenderWindow& window,
                          float current_time,
                          float dt);
 
@@ -21,7 +24,7 @@ namespace systems {
     void render_system(registry& r,
                        sparse_array<component::position>& positions,
                        sparse_array<component::drawable>& drawables,
-                       sf::RenderWindow& window,
+                       render::IRenderWindow& window,
                        float dt);
 
     void collision_system(registry& r,
@@ -33,10 +36,12 @@ namespace systems {
     void audio_system(registry& r,
                       sparse_array<component::sound_effect>& sound_effects,
                       sparse_array<component::music>& musics,
-                      sparse_array<component::audio_trigger>& triggers);
+                      sparse_array<component::audio_trigger>& triggers,
+                      render::IRenderAudio& audioManager);
 
     void input_system(registry& r,
-                      sparse_array<component::input>& inputs);
+                      sparse_array<component::input>& inputs,
+                      render::IRenderWindow& window);
 
     void weapon_system(registry& r,
                        sparse_array<component::weapon>& weapons,
@@ -48,7 +53,7 @@ namespace systems {
     void projectile_system(registry& r,
                            sparse_array<component::projectile>& projectiles,
                            sparse_array<component::position>& positions,
-                           sf::RenderWindow& window,
+                           render::IRenderWindow& window,
                            float dt);
 
     void ai_input_system(registry& r,

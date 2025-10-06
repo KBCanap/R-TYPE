@@ -1,11 +1,11 @@
 #pragma once
 #include "registery.hpp"
 #include "components.hpp"
-#include <SFML/Graphics.hpp>
+#include "../../ecs/include/render/IRenderWindow.hpp"
 
 class PlayerManager {
 public:
-    PlayerManager(registry& reg, sf::RenderWindow& win);
+    PlayerManager(registry& reg, render::IRenderWindow& win);
 
     // Player creation and management
     std::optional<entity> createPlayer(float relativeX = 0.1f, float relativeY = 0.5f, float speed = 500.0f);
@@ -24,5 +24,5 @@ public:
 
 private:
     registry& _registry;
-    sf::RenderWindow& _window;
+    render::IRenderWindow& _window;
 };

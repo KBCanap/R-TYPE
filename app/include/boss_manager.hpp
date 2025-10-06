@@ -1,11 +1,11 @@
 #pragma once
 #include "registery.hpp"
 #include "components.hpp"
-#include <SFML/Graphics.hpp>
+#include "../../ecs/include/render/IRenderWindow.hpp"
 
 class BossManager {
 public:
-    BossManager(registry& reg, sf::RenderWindow& win);
+    BossManager(registry& reg, render::IRenderWindow& win);
 
     // Boss management
     std::optional<entity> spawnBoss();
@@ -13,5 +13,5 @@ public:
 
 private:
     registry& _registry;
-    sf::RenderWindow& _window;
+    render::IRenderWindow& _window;
 };
