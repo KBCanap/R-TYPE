@@ -1,7 +1,8 @@
 #pragma once
-#include <SFML/Audio.hpp>
+#include "render/IRenderAudio.hpp"
 #include <unordered_map>
 #include <string>
+#include <memory>
 
 enum class MusicType {
     MAIN_MENU,
@@ -11,7 +12,7 @@ enum class MusicType {
 
 class AudioManager {
 public:
-    AudioManager();
+    AudioManager(render::IRenderAudio& audioSystem);
     ~AudioManager() = default;
 
     bool loadMusic(MusicType type, const std::string& filename);
@@ -23,8 +24,11 @@ public:
     void setMasterVolume(float volume);
     bool isMusicPlaying() const;
 
+    render::IRenderAudio& getAudioSystem() { return _audioSystem; }
+
 private:
-    std::unordered_map<MusicType, sf::Music> _musicTracks;
+    render::IRenderAudio& _audioSystem;
+    std::unordered_map<MusicType, std::unique_ptr<render::IMusic>> _musicTracks;
     MusicType _currentMusic = MusicType::MAIN_MENU;
     float _musicVolume = 50.0f;
 };
