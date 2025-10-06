@@ -7,12 +7,10 @@
 
 #include "StartServer.hpp"
 #include <iostream>
-#include <thread>
-#include <chrono>
 
 StartServer* StartServer::_instance = nullptr;
 
-StartServer::StartServer(int port) : _port(port), _protocol(), _game_session()
+StartServer::StartServer(int port, int udp_port) : _port(port), _udp_port(udp_port), _protocol(), _game_session()
 {
     _instance = this;
     setupSignalHandlers();
@@ -53,9 +51,9 @@ void StartServer::stop()
     _running = false;
 }
 
-void StartServer::networkLoop()
+short StartServer::networkLoop()
 {
-    while (_running) {
+    while (_running && !_in_game) {
         auto messages = _tcp_server->poll();
         
         if (!messages.empty()) {
@@ -64,6 +62,10 @@ void StartServer::networkLoop()
             }
         }
     }
+    if (_in_game) {
+        return _game_session.getClientCount();
+    }
+    return 0;
 }
 
 void StartServer::processMessage(const ClientMessage& message)
@@ -145,8 +147,7 @@ void StartServer::startGame()
 {
     std::cout << "All clients ready! Starting game..." << std::endl;
 
-    uint16_t udp_port = static_cast<uint16_t>(8080);
-    std::string game_start_message = _protocol.createGameStart(udp_port);
+    std::string game_start_message = _protocol.createGameStart(_udp_port);
 
     auto connected_clients = _game_session.getConnectedClients();
     for (auto client_id : connected_clients) {
@@ -154,7 +155,8 @@ void StartServer::startGame()
         sendToClient(client_id, game_start_message);
     }
     
-    std::cout << "Game started with UDP port: " << udp_port << std::endl;
+    _in_game = true;
+    std::cout << "Game started with UDP port: " << _udp_port << std::endl;
 }
 
 bool StartServer::sendToClient(uint32_t client_id, const std::string& message)
