@@ -1,0 +1,577 @@
+
+Network Working Group                                         D. Adghar
+Request for Comments: XXXX                                  P-E. Henry
+Category: Standards Track                                   A. Harkati
+ISSN: 2070-1721                                         E. Layle-eveno
+                                                               Epitech
+                                                          September 2025
+
+
+                            R-Type UDP Protocol
+
+Abstract
+
+   This document defines the R-Type UDP Protocol, which handles real-
+   time game communication between R-Type clients and server after the
+   initial TCP connection phase. This protocol manages entity state
+   synchronization, player input transmission, and game event
+   notifications. The protocol uses a NET_ID system to uniquely
+   identify entities across all connected clients.
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
+     1.1.  Key Requirements  . . . . . . . . . . . . . . . . . . . .   2
+     1.2.  Conventions Used in This Document  . . . . . . . . . . . .  2
+   2.  Protocol Architecture . . . . . . . . . . . . . . . . . . . .   2
+     2.1.  Communication Flow  . . . . . . . . . . . . . . . . . . .   3
+     2.2.  NET_ID System . . . . . . . . . . . . . . . . . . . . . .   3
+   3.  Message Format  . . . . . . . . . . . . . . . . . . . . . . .   3
+     3.1.  UDP Header Structure  . . . . . . . . . . . . . . . . . .   3
+     3.2.  Message Types . . . . . . . . . . . . . . . . . . . . . .   4
+     3.3.  Entity Types  . . . . . . . . . . . . . . . . . . . . . .   4
+   4.  Server to Client Messages . . . . . . . . . . . . . . . . . .   4
+     4.1.  ENTITY_CREATE . . . . . . . . . . . . . . . . . . . . . .   4
+     4.2.  ENTITY_UPDATE . . . . . . . . . . . . . . . . . . . . . .   5
+     4.3.  ENTITY_DESTROY  . . . . . . . . . . . . . . . . . . . . .   6
+     4.4.  GAME_STATE  . . . . . . . . . . . . . . . . . . . . . . .   7
+   5.  Client to Server Messages . . . . . . . . . . . . . . . . . .   8
+     5.1.  PLAYER_INPUT  . . . . . . . . . . . . . . . . . . . . . .   8
+   6.  Implementation Notes  . . . . . . . . . . . . . . . . . . . .   9
+     6.1.  Endianness  . . . . . . . . . . . . . . . . . . . . . . .   9
+     6.2.  Packet Loss Handling  . . . . . . . . . . . . . . . . . .   9
+     6.3.  Position Coordinates  . . . . . . . . . . . . . . . . . .  10
+   7.  Example Communication Flows . . . . . . . . . . . . . . . . .  10
+     7.1.  Game Initialization . . . . . . . . . . . . . . . . . . .  10
+     7.2.  Continuous Gameplay . . . . . . . . . . . . . . . . . . .  11
+   8.  Security Considerations . . . . . . . . . . . . . . . . . . .  11
+   Appendix A.  Message Examples . . . . . . . . . . . . . . . . . .  11
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  12
+
+
+
+                            Standards Track                     [Page 2]
+
+                          R-Type UDP Protocol            September 2025
+
+1.  Introduction
+
+   The R-Type UDP Protocol defines the real-time communication layer
+   between R-Type game clients and server. This protocol operates after
+   the initial TCP connection phase (as defined in the R-Type TCP
+   Protocol) and handles all gameplay-related data exchange.
+
+   The protocol is designed to minimize latency and bandwidth usage
+   while maintaining game state consistency across all connected
+   clients. It uses a NET_ID system to uniquely identify entities and
+   implements an optimized update mechanism that transmits only changed
+   entity states.
+
+1.1.  Key Requirements
+
+   All multi-byte integers and floating-point values MUST use Network
+   Byte Order (Big Endian) as specified in [RFC1700]. Position
+   coordinates MUST be represented as floating-point percentages (0.0
+   to 1.0) to support different client resolutions. The protocol
+   supports a maximum of 4 players per game session. Clients MUST
+   maintain a local entity registry indexed by NET_ID.
+
+1.2.  Conventions Used in This Document
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+2.  Protocol Architecture
+
+   The R-Type UDP Protocol operates in a client-server architecture
+   where the server maintains authoritative game state and broadcasts
+   updates to all connected clients:
+
+      Client 1 ----\
+      Client 2 ----+---- UDP Server ---- Game Engine
+      Client 3 ----+
+      Client 4 ----/
+
+   The server executes game logic and sends entity updates to clients.
+   Clients send player inputs to the server and render the game state
+   locally based on received updates.
+
+
+
+                            Standards Track                     [Page 3]
+
+                          R-Type UDP Protocol            September 2025
+
+2.1.  Communication Flow
+
+   The typical communication pattern during gameplay:
+
+ 0.5.  Client must send a ping to know that their are connected 
+   1.  Server sends initial GAME_STATE with all entities
+   2.  Clients send PLAYER_INPUT messages continuously
+   3.  Server processes inputs and updates game state
+   4.  Server sends ENTITY_CREATE for new entities
+   5.  Server sends ENTITY_UPDATE for changed entities
+   6.  Server sends ENTITY_DESTROY for removed entities
+   7.  Repeat steps 2-6 during gameplay
+
+2.2.  NET_ID System
+
+   Each entity in the game is assigned a unique NET_ID by the server.
+   This identifier allows clients to track entities across multiple
+   update messages. The NET_ID is a 32-bit unsigned integer that MUST
+   be unique within a game session. The server MUST NOT reuse NET_IDs
+   during a single game session to prevent entity confusion.
+
+   Clients MUST maintain a local registry mapping NET_IDs to entity
+   objects. When receiving ENTITY_UPDATE messages, clients MUST update
+   the corresponding entity. When receiving ENTITY_DESTROY messages,
+   clients MUST remove the entity from their registry.
+
+3.  Message Format
+
+3.1.  UDP Header Structure
+
+   All UDP messages utilize a fixed header format:
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |   MSG_TYPE    |                   DATA_LENGTH                 |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                          SEQUENCE_NUM                         |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                              DATA                             |
+   |                         (variable length)                     |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   MSG_TYPE (1 byte):  Message type identifier
+
+   DATA_LENGTH (3 bytes):  Length of DATA field in bytes, transmitted
+      in Network Byte Order
+
+   SEQUENCE_NUM (4 bytes):  Monotonically increasing sequence number
+      for ordering messages, transmitted in Network Byte Order
+
+   DATA (variable):  Message payload, format depends on MSG_TYPE
+
+
+
+                            Standards Track                     [Page 4]
+
+                          R-Type UDP Protocol            September 2025
+
+3.2.  Message Types
+
+   The following message types are defined:
+
+      ENTITY_CREATE   = 0x10
+      ENTITY_UPDATE   = 0x11
+      ENTITY_DESTROY  = 0x12
+      GAME_STATE      = 0x13
+      PLAYER_INPUT    = 0x20
+
+3.3.  Entity Types
+
+   The following entity types are defined:
+
+      PLAYER      = 0x01
+      ENEMY       = 0x02
+      PROJECTILE  = 0x03
+      ALLIED_PROJECTILE = 0x04
+
+   ENEMY_PROJECTILE refers to projectiles fired by enemies that can
+   damage players. ALLIED_PROJECTILE refers to projectiles fired by
+   any player that can damage enemies but not other players.
+
+4.  Server to Client Messages
+
+4.1.  ENTITY_CREATE
+
+   The server sends this message to notify clients of new entity
+   creation.
+
+   MSG_TYPE:  0x10
+
+   Payload format:
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                             NET_ID                            |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   | ENTITY_TYPE   |                    HEALTH                     |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                          POSITION_X                           |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                          POSITION_Y                           |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   NET_ID (4 bytes):  Unique entity identifier
+
+   ENTITY_TYPE (1 byte):  Type of entity (PLAYER, ENEMY, PROJECTILE)
+
+   HEALTH (3 bytes):  Current health points
+
+   POSITION_X (4 bytes):  X coordinate as IEEE 754 float (0.0 to 1.0)
+
+   POSITION_Y (4 bytes):  Y coordinate as IEEE 754 float (0.0 to 1.0)
+
+
+
+                            Standards Track                     [Page 5]
+
+                          R-Type UDP Protocol            September 2025
+
+4.2.  ENTITY_UPDATE
+
+   The server sends this message to update entity states. Only entities
+   with changes MUST be included.
+
+   MSG_TYPE:  0x11
+
+   Payload format for a single entity:
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                             NET_ID                            |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+   |                           HEALTH                              |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                          POSITION_X                           |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                          POSITION_Y                           |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   NET_ID (4 bytes):  Unique entity identifier
+
+   HEALTH (4 bytes):  Current health points
+
+   POSITION_X (4 bytes):  X coordinate as IEEE 754 float (0.0 to 1.0)
+
+   POSITION_Y (4 bytes):  Y coordinate as IEEE 754 float (0.0 to 1.0)
+
+   Multiple entities can be included in a single ENTITY_UPDATE message
+   by concatenating their data. The number of entities can be
+   determined by dividing DATA_LENGTH by 16 (the size of one entity
+   update).
+
+   Example for 2 entities:
+
+      MSG_TYPE = 0x11
+      DATA_LENGTH = 32
+      SEQUENCE_NUM = 42
+      DATA = [Entity1: NET_ID, HEALTH, POS_X, POS_Y]
+             [Entity2: NET_ID, HEALTH, POS_X, POS_Y]
+
+
+
+                            Standards Track                     [Page 6]
+
+                          R-Type UDP Protocol            September 2025
+
+4.3.  ENTITY_DESTROY
+
+   The server sends this message to notify clients that entities have
+   been destroyed.
+
+   MSG_TYPE:  0x12
+
+   Payload format:
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                             NET_ID                            |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   NET_ID (4 bytes):  Unique identifier of destroyed entity
+
+   Multiple entities can be destroyed in a single message by
+   concatenating their NET_IDs. The number of destroyed entities can be
+   determined by dividing DATA_LENGTH by 4.
+
+   Example for 3 destroyed entities:
+
+      MSG_TYPE = 0x12
+      DATA_LENGTH = 12
+      SEQUENCE_NUM = 58
+      DATA = [NET_ID_1][NET_ID_2][NET_ID_3]
+
+
+
+                            Standards Track                     [Page 7]
+
+                          R-Type UDP Protocol            September 2025
+
+4.4.  GAME_STATE
+
+   The server sends this message at game initialization to provide the
+   complete initial state. This message contains all existing entities.
+
+   MSG_TYPE:  0x13
+
+   Payload format:
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                        ENTITY_COUNT                           |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                                                               |
+   |                         ENTITY_DATA_1                         |
+   |                   (36 bytes - same as CREATE)                 |
+   |                                                               |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                                                               |
+   |                         ENTITY_DATA_2                         |
+   |                   (36 bytes - same as CREATE)                 |
+   |                                                               |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                              ...                              |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   ENTITY_COUNT (4 bytes):  Number of entities in this message
+
+   ENTITY_DATA (36 bytes each):  Each entity uses the same format as
+      ENTITY_CREATE payload (NET_ID, ENTITY_TYPE, HEALTH, POSITION_X,
+      POSITION_Y, SPRITE_INDEX, RECT_X, RECT_Y, WIDTH, HEIGHT)
+
+   This message MUST be sent immediately after transitioning from TCP
+   to UDP. Clients MUST clear any existing entity registry before
+   processing this message.
+
+
+
+                            Standards Track                     [Page 8]
+
+                          R-Type UDP Protocol            September 2025
+
+5.  Client to Server Messages
+
+5.1.  PLAYER_INPUT
+
+   Clients send this message to transmit player actions to the server.
+
+   MSG_TYPE:  0x20
+
+   Payload format:
+
+    0                   1           
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |  EVENT_TYPE   |   DIRECTION   |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   EVENT_TYPE (1 byte):  Type of player action
+
+   DIRECTION (1 byte):  Direction for MOVE events (0x00 if not MOVE)
+
+   Event Types:
+
+      MOVE  = 0x01
+      SHOOT = 0x02
+      QUIT  = 0x03
+
+   Direction Values (for MOVE events):
+
+      LEFT  = 0x01
+      RIGHT = 0x02
+      UP    = 0x03
+      DOWN  = 0x04
+
+   Examples:
+
+   Move left:
+      MSG_TYPE = 0x20
+      DATA_LENGTH = 4
+      SEQUENCE_NUM = 123
+      DATA = [0x01][0x01]
+
+   Shoot:
+      MSG_TYPE = 0x20
+      DATA_LENGTH = 4
+      SEQUENCE_NUM = 124
+      DATA = [0x02][0x00]
+
+   Quit:
+      MSG_TYPE = 0x20
+      DATA_LENGTH = 4
+      SEQUENCE_NUM = 125
+      DATA = [0x03][0x00]
+
+
+
+                            Standards Track                     [Page 9]
+
+                          R-Type UDP Protocol            September 2025
+
+6.  Implementation Notes
+
+6.1.  Endianness
+
+   All multi-byte integer fields and floating-point values MUST be
+   transmitted using Network Byte Order (Big Endian) as defined in
+   [RFC1700]. Implementations SHOULD use standard conversion functions:
+
+   For integers:
+      uint32_t value_network = htonl(value);
+      uint32_t value_host = ntohl(received_value);
+
+   For floats:
+      uint32_t temp = htonl(*(uint32_t*)&float_value);
+      float received = *(float*)&temp_after_ntohl;
+
+6.2.  Packet Loss Handling
+
+   UDP does not guarantee packet delivery. Implementations MUST handle
+   packet loss gracefully:
+
+   Clients SHOULD use the SEQUENCE_NUM field to detect lost packets.
+   Clients MAY implement interpolation for smooth entity movement
+   between updates. The server SHOULD periodically send complete state
+   updates to resynchronize clients that experienced packet loss.
+
+   Critical events (entity creation/destruction) MAY be sent multiple
+   times by the server to ensure delivery.
+
+
+
+                            Standards Track                    [Page 10]
+
+                          R-Type UDP Protocol            September 2025
+
+6.3.  Position Coordinates
+
+   Position coordinates use normalized floating-point values (0.0 to
+   1.0) to support different client resolutions:
+
+   - 0.0 represents the left/top edge
+   - 1.0 represents the right/bottom edge
+   - 0.5 represents the center
+
+   Clients MUST convert these normalized coordinates to pixel
+   coordinates based on their window dimensions:
+
+      pixel_x = position_x * window_width
+      pixel_y = position_y * window_height
+
+   This approach ensures consistent gameplay across different screen
+   resolutions and aspect ratios.
+
+7.  Example Communication Flows
+
+7.1.  Game Initialization
+
+   The following sequence illustrates game initialization:
+
+   Server                           Client
+      |                                |
+      |<-- (TCP GAME_START received) --|
+      |                                |
+      |-- GAME_STATE ----------------->|
+      |   (All entities)               |
+      |                                |
+      |<-- PLAYER_INPUT (MOVE RIGHT) --|
+      |                                |
+      |-- ENTITY_UPDATE -------------->|
+      |   (Player position changed)    |
+      |                                |
+      |-- ENTITY_CREATE -------------->|
+      |   (New enemy spawned)          |
+      |                                |
+
+
+
+                            Standards Track                    [Page 11]
+
+                          R-Type UDP Protocol            September 2025
+
+7.2.  Continuous Gameplay
+
+   During normal gameplay:
+
+   Client 1        Server        Client 2
+      |               |               |
+      |- INPUT ------>|               |
+      |  (SHOOT)      |               |
+      |               |<- INPUT ------|
+      |               |   (MOVE UP)   |
+      |               |               |
+      |<- UPDATE -----|-- UPDATE ---->|
+      | (All changes) | (All changes) |
+      |               |               |
+      |<- CREATE -----|-- CREATE ---->|
+      | (Projectile)  | (Projectile)  |
+      |               |               |
+      |               |<- INPUT ------|
+      |               |   (SHOOT)     |
+      |               |               |
+      |<- DESTROY ----|-- DESTROY --->|
+      | (Enemy)       | (Enemy)       |
+      |               |               |
+
+8.  Security Considerations
+
+   The R-Type UDP Protocol is designed for local network gaming and
+   does not implement authentication or encryption. Deployments SHOULD
+   be limited to trusted network environments.
+
+   Implementations MUST validate all incoming message fields to prevent
+   buffer overflows and invalid state updates. The server MUST validate
+   that NET_IDs in client messages correspond to entities owned by that
+   client.
+
+   Rate limiting on input messages is RECOMMENDED to prevent denial-of-
+   service attacks (suggested: 100 messages per second per client).
+
+   Since UDP packets can be spoofed, the protocol is vulnerable to
+   packet injection in untrusted networks. For internet deployment,
+   implementations SHOULD add authentication tokens or use DTLS.
+
+Appendix A.  Message Examples
+
+   ENTITY_CREATE for a player at center screen with full health:
+      10 00 00 24 00 00 00 01  // Header + Sequence
+      00 00 00 0A 01 00 00 64  // NET_ID=10, Type=PLAYER, Health=100
+      3F 00 00 00 3F 00 00 00  // Pos X=0.5, Pos Y=0.5
+
+   ENTITY_UPDATE for 2 entities:
+      11 00 00 20 00 00 00 05  // Header + Sequence
+      00 00 00 0A 00 00 00 64  // NET_ID=10, Health=100
+      3F 0C CC CD 3F 00 00 00  // Pos X=0.55, Pos Y=0.5
+      00 00 00 14 00 00 00 32  // NET_ID=20, Health=50
+      3E CC CC CD 3F 19 99 9A  // Pos X=0.4, Pos Y=0.6
+
+   ENTITY_DESTROY for 1 entity:
+      12 00 00 04 00 00 00 08  // Header + Sequence
+      00 00 00 14                // NET_ID=20
+
+   PLAYER_INPUT move right:
+      20 00 00 04 00 00 00 42  // Header + Sequence
+      01 02                // MOVE, RIGHT
+
+Authors' Addresses
+
+   Dylan Adghar
+   Epitech
+   Email: dylan.adghar@epitech.eu
+
+
+   Pierre-etienne Henry
+   Epitech
+   Email: pierre-etienne.henry@epitech.eu
+
+
+   Ariles Harkati
+   Epitech
+   Email: ariles.harkati@epitech.eu
+
+
+   Ewen Layle-eveno
+   Epitech
+   Email: ewen.layle-eveno@epitech.eu
