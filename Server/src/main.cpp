@@ -10,6 +10,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include "GameServerLoop.hpp"
 
 struct ServerConfig {
     int tcp_port;
@@ -113,7 +114,12 @@ int main(int ac, char **av)
             return 0;
         }
         std::cout << "nb client :" << nb_client << std::endl;
-        
+        GameServerLoop game_loop(config.udp_port, nb_client);
+        game_loop.start();
+        while (game_loop.isRunning()) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+        game_loop.stop();
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 84;
