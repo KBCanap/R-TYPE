@@ -99,6 +99,9 @@ set(SERVER_SOURCES
     Server/src/Protocole.cpp
     Server/src/Tcpserver.cpp
     Server/src/UdpServer.cpp
+    Server/src/MessageQueue.cpp
+    Server/src/GameServerLoop.cpp
+    Server/src/UdpProtocole.cpp
 )
 
 add_executable(r-type_server ${SERVER_SOURCES})
