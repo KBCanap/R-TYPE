@@ -10,6 +10,9 @@
 
 #include "UdpProtocole.hpp"
 #include "UdpServer.hpp"
+#include "GameLogic.hpp"
+#include <chrono>
+#include <cstdint>
 #include <memory>
 #include <atomic>
 #include <thread>
@@ -23,9 +26,10 @@ public:
     void start();
     void stop();
     bool isRunning() const { return _running; }
-    
+
     static void signalHandler(int signal);
     static GameServerLoop* instance;
+    void broadcastEntityUpdates();
 
 private:
     void run();
@@ -35,9 +39,12 @@ private:
     uint16_t _port;
     uint32_t _max_clients;
     bool _in_game;
+    std::chrono::time_point<std::chrono::steady_clock> _last_tick;
+    uint32_t _sequence_num;
     std::atomic<bool> _running;
     std::unique_ptr<UDPServer> _udp_server;
     std::unique_ptr<std::thread> _loop_thread;
+    std::unique_ptr<GameLogic> _game_logic;
     UdpProtocole _protocol;
 };
 
