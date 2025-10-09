@@ -177,8 +177,8 @@ void render_system(registry& r,
             render::Vector2u window_size = window.getSize();
             render::Vector2u texture_size = bg->texture->getSize();
 
-            if (bg->offset_x <= -static_cast<float>(texture_size.x)) {
-                bg->offset_x = 0.0f;
+            if (bg->offset_x <= -static_cast<float>(window_size.x)) {
+                bg->offset_x += static_cast<float>(window_size.x);
             }
 
             auto sprite1 = window.createSprite();
