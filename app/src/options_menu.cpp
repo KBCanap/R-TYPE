@@ -9,8 +9,8 @@ static bool containsPoint(const render::FloatRect& rect, const render::Vector2f&
            point.y >= rect.top && point.y <= rect.top + rect.height;
 }
 
-OptionsMenu::OptionsMenu(render::IRenderWindow& win, AudioManager& audioMgr)
-    : _window(win), _audioManager(audioMgr), _currentResolution(1), _soundEnabled(true)
+OptionsMenu::OptionsMenu(render::IRenderWindow& win, AudioManager& audioMgr, KeyBindings& keyBindings)
+    : _window(win), _audioManager(audioMgr), _keyBindings(keyBindings), _currentResolution(1), _soundEnabled(true)
 {
     _windowSize = _window.getSize();
 
@@ -164,7 +164,7 @@ void OptionsMenu::createButtons() {
     // Accessibility button
     _accessibilityButton = _window.createRectangleShape(render::Vector2f(_windowSize.x * 0.4f, _windowSize.y * 0.08f));
     _accessibilityButton->setFillColor(render::Color(150, 100, 200));
-    _accessibilityButton->setPosition((_windowSize.x - _windowSize.x * 0.4f) / 2.f, _windowSize.y * 0.62f);
+    _accessibilityButton->setPosition((_windowSize.x - _windowSize.x * 0.4f) / 2.f, _windowSize.y * 0.60f);
 
     _accessibilityButtonText = _window.createText();
     _accessibilityButtonText->setFont(*_font);
@@ -174,13 +174,29 @@ void OptionsMenu::createButtons() {
     render::FloatRect accessibilityBounds = _accessibilityButtonText->getLocalBounds();
     // Center text in button
     float accessibilityTextX = (_windowSize.x - _windowSize.x * 0.4f) / 2.f + _windowSize.x * 0.4f / 2.f - accessibilityBounds.width / 2.f;
-    float accessibilityTextY = _windowSize.y * 0.62f + _windowSize.y * 0.08f / 2.f - accessibilityBounds.height / 2.f;
+    float accessibilityTextY = _windowSize.y * 0.60f + _windowSize.y * 0.08f / 2.f - accessibilityBounds.height / 2.f;
     _accessibilityButtonText->setPosition(accessibilityTextX, accessibilityTextY);
+
+    // Key Bindings button
+    _keyBindingsButton = _window.createRectangleShape(render::Vector2f(_windowSize.x * 0.4f, _windowSize.y * 0.08f));
+    _keyBindingsButton->setFillColor(render::Color(100, 150, 200));
+    _keyBindingsButton->setPosition((_windowSize.x - _windowSize.x * 0.4f) / 2.f, _windowSize.y * 0.70f);
+
+    _keyBindingsButtonText = _window.createText();
+    _keyBindingsButtonText->setFont(*_font);
+    _keyBindingsButtonText->setString("Key Bindings");
+    _keyBindingsButtonText->setCharacterSize(static_cast<unsigned int>(_windowSize.y * 0.04f));
+    _keyBindingsButtonText->setFillColor(render::Color::White());
+    render::FloatRect keyBindingsBounds = _keyBindingsButtonText->getLocalBounds();
+    // Center text in button
+    float keyBindingsTextX = (_windowSize.x - _windowSize.x * 0.4f) / 2.f + _windowSize.x * 0.4f / 2.f - keyBindingsBounds.width / 2.f;
+    float keyBindingsTextY = _windowSize.y * 0.70f + _windowSize.y * 0.08f / 2.f - keyBindingsBounds.height / 2.f;
+    _keyBindingsButtonText->setPosition(keyBindingsTextX, keyBindingsTextY);
 
     // Back button
     _backButton = _window.createRectangleShape(render::Vector2f(_windowSize.x * 0.2f, _windowSize.y * 0.08f));
     _backButton->setFillColor(render::Color(150, 50, 50));
-    _backButton->setPosition((_windowSize.x - _windowSize.x * 0.2f) / 2.f, _windowSize.y * 0.75f);
+    _backButton->setPosition((_windowSize.x - _windowSize.x * 0.2f) / 2.f, _windowSize.y * 0.82f);
 
     _backButtonText = _window.createText();
     _backButtonText->setFont(*_font);
@@ -190,8 +206,8 @@ void OptionsMenu::createButtons() {
     render::FloatRect backBounds = _backButtonText->getLocalBounds();
     // Center text in button
     float backTextX = (_windowSize.x - _windowSize.x * 0.2f) / 2.f + _windowSize.x * 0.2f / 2.f - backBounds.width / 2.f;
-    float backTextY = _windowSize.y * 0.75f + _windowSize.y * 0.08f / 2.f - backBounds.height / 2.f;
-    _backButtonText->setPosition(backTextX, backTextY);
+    float backTextY = _windowSize.y * 0.82f + _windowSize.y * 0.08f / 2.f - backBounds.height / 2.f;
+    _backButtonText->setPosition(backTextX, backTextY - _windowSize.y * 0.01f);
 }
 
 void OptionsMenu::updateButtonScale() {
@@ -289,6 +305,11 @@ OptionsResult OptionsMenu::run() {
                     return OptionsResult::Accessibility;
                 }
 
+                // Check key bindings button
+                if (containsPoint(_keyBindingsButton->getGlobalBounds(), mousePos)) {
+                    return OptionsResult::KeyBindings;
+                }
+
                 // Check back button
                 if (containsPoint(_backButton->getGlobalBounds(), mousePos)) {
                     return OptionsResult::Back;
@@ -343,6 +364,10 @@ void OptionsMenu::render() {
     // Draw accessibility button
     _window.draw(*_accessibilityButton);
     _window.draw(*_accessibilityButtonText);
+
+    // Draw key bindings button
+    _window.draw(*_keyBindingsButton);
+    _window.draw(*_keyBindingsButtonText);
 
     // Draw back button
     _window.draw(*_backButton);

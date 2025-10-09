@@ -3,6 +3,7 @@
 #include "registery.hpp"
 #include "components.hpp"
 #include "../include/audio_manager.hpp"
+#include "../include/key_bindings.hpp"
 #include "render/RenderFactory.hpp"
 #include <memory>
 
@@ -20,6 +21,7 @@ int main() {
 
     registry reg;
     AudioManager audioManager(*audioSystem);
+    KeyBindings keyBindings;
 
     // Enregistre les composants
     reg.register_component<component::position>();
@@ -28,12 +30,12 @@ int main() {
     reg.register_component<component::controllable>();
 
     // Lance le menu using interface
-    Menu menu(reg, *window, audioManager);
+    Menu menu(reg, *window, audioManager, keyBindings);
     MenuResult result = menu.run();
 
     if (result == MenuResult::Play) {
         // Lance le jeu
-        Game game(reg, *window, audioManager);
+        Game game(reg, *window, audioManager, keyBindings);
         game.run();
     }
     else if (result == MenuResult::Quit) {

@@ -1,6 +1,7 @@
 
 #include "../include/menu.hpp"
 #include "../include/accessibility_menu.hpp"
+#include "../include/keybindings_menu.hpp"
 #include "../include/render/sfml/SFMLRenderWindow.hpp"
 #include <cmath>
 #include <stdexcept>
@@ -12,8 +13,8 @@ static bool containsPoint(const render::FloatRect& rect, const render::Vector2f&
            point.y >= rect.top && point.y <= rect.top + rect.height;
 }
 
-Menu::Menu(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr)
-    : _registry(reg), _window(win), _audioManager(audioMgr)
+Menu::Menu(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr, KeyBindings& keyBindings)
+    : _registry(reg), _window(win), _audioManager(audioMgr), _keyBindings(keyBindings)
 {
     _baseWindowSize = _window.getSize();
     _windowSize = _baseWindowSize;
@@ -210,13 +211,19 @@ MenuResult Menu::run() {
                                 return MenuResult::Play;
                             case 1: {
                                 // Options menu now uses render interface
-                                OptionsMenu optionsMenu(_window, _audioManager);
+                                OptionsMenu optionsMenu(_window, _audioManager, _keyBindings);
                                 OptionsResult result = optionsMenu.run();
 
                                 if (result == OptionsResult::Accessibility) {
                                     // User wants to access accessibility menu (now migrated)
                                     AccessibilityMenu accessibilityMenu(_window, _audioManager);
                                     accessibilityMenu.run();
+                                }
+
+                                if (result == OptionsResult::KeyBindings) {
+                                    // User wants to access key bindings menu
+                                    KeyBindingsMenu keyBindingsMenu(_window, _audioManager, _keyBindings);
+                                    keyBindingsMenu.run();
                                 }
 
                                 // Update window size in case resolution changed

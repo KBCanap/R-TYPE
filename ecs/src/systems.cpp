@@ -1,5 +1,6 @@
 #include "../include/systems.hpp"
 #include "../../app/include/settings.hpp"
+#include "../../app/include/key_bindings.hpp"
 #include "../include/render/IRenderWindow.hpp"
 #include "../include/render/IRenderAudio.hpp"
 #include <cmath>
@@ -613,7 +614,24 @@ void update_key_state(const render::Event& event) {
 
 void input_system(registry& /*r*/,
                   sparse_array<component::input>& inputs,
-                  render::IRenderWindow& /*window*/) {
+                  render::IRenderWindow& /*window*/,
+                  KeyBindings* keyBindings) {
+    // Use default keys if no KeyBindings provided
+    render::Key key_left = render::Key::Left;
+    render::Key key_right = render::Key::Right;
+    render::Key key_up = render::Key::Up;
+    render::Key key_down = render::Key::Down;
+    render::Key key_fire = render::Key::Space;
+
+    // Get custom key bindings if available
+    if (keyBindings) {
+        key_left = keyBindings->getBinding(GameAction::MoveLeft);
+        key_right = keyBindings->getBinding(GameAction::MoveRight);
+        key_up = keyBindings->getBinding(GameAction::MoveUp);
+        key_down = keyBindings->getBinding(GameAction::MoveDown);
+        key_fire = keyBindings->getBinding(GameAction::Fire);
+    }
+
     // Mettre à jour tous les inputs en fonction de l'état des touches
     for (size_t i = 0; i < inputs.size(); ++i) {
         auto& input = inputs[i];
@@ -625,12 +643,12 @@ void input_system(registry& /*r*/,
             bool prev_down = input->down;
             bool prev_fire = input->fire;
 
-            // Mettre à jour l'état actuel des touches via Event
-            input->left = g_pressed_keys.count(render::Key::Left) > 0;
-            input->right = g_pressed_keys.count(render::Key::Right) > 0;
-            input->up = g_pressed_keys.count(render::Key::Up) > 0;
-            input->down = g_pressed_keys.count(render::Key::Down) > 0;
-            input->fire = g_pressed_keys.count(render::Key::Space) > 0;
+            // Mettre à jour l'état actuel des touches via Event avec touches configurées
+            input->left = g_pressed_keys.count(key_left) > 0;
+            input->right = g_pressed_keys.count(key_right) > 0;
+            input->up = g_pressed_keys.count(key_up) > 0;
+            input->down = g_pressed_keys.count(key_down) > 0;
+            input->fire = g_pressed_keys.count(key_fire) > 0;
 
             // Détecter les moments où les touches sont pressées (transition de false à true)
             input->left_pressed = !prev_left && input->left;

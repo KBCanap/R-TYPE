@@ -2,14 +2,15 @@
 #include "../include/settings.hpp"
 #include "../include/options_menu.hpp"
 #include "../include/accessibility_menu.hpp"
+#include "../include/keybindings_menu.hpp"
 #include "systems.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <chrono>
 
-Game::Game(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr)
-    : _registry(reg), _window(win), _audioManager(audioMgr),
+Game::Game(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr, KeyBindings& keyBindings)
+    : _registry(reg), _window(win), _audioManager(audioMgr), _keyBindings(keyBindings),
       _playerManager(reg, win),
       _enemyManager(reg, win),
       _bossManager(reg, win),
@@ -82,11 +83,15 @@ void Game::handleEvents(bool& running, float /*dt*/) {
                     _playerManager.changePlayerWeaponToSpread(_player);
                 }
                 if (event.key.code == render::Key::P) {
-                    OptionsMenu optionsMenu(_window, _audioManager);
+                    OptionsMenu optionsMenu(_window, _audioManager, _keyBindings);
                     OptionsResult result = optionsMenu.run();
                     if (result == OptionsResult::Accessibility) {
                         AccessibilityMenu accessibilityMenu(_window, _audioManager);
                         accessibilityMenu.run();
+                    }
+                    if (result == OptionsResult::KeyBindings) {
+                        KeyBindingsMenu keyBindingsMenu(_window, _audioManager, _keyBindings);
+                        keyBindingsMenu.run();
                     }
                 }
             }
@@ -125,7 +130,7 @@ void Game::update(float dt) {
     auto& inputs = _registry.get_components<component::input>();
 
     // Input system - always runs to capture input state
-    systems::input_system(_registry, inputs, _window);
+    systems::input_system(_registry, inputs, _window, &_keyBindings);
 
     // AI input system for enemies - always runs
     auto& ai_inputs = _registry.get_components<component::ai_input>();
