@@ -10,8 +10,7 @@ static bool containsPoint(const render::FloatRect& rect, const render::Vector2f&
 }
 
 AccessibilityMenu::AccessibilityMenu(render::IRenderWindow& win, AudioManager& audioMgr)
-    : _window(win), _audioManager(audioMgr), _currentContrast(Settings::getInstance().getContrast()),
-      _isDraggingContrastSlider(false), _contrastSliderMin(0.1f), _contrastSliderMax(3.0f)
+    : _window(win), _audioManager(audioMgr), _currentMode(Settings::getInstance().getColorblindMode())
 {
     _windowSize = _window.getSize();
 
@@ -67,53 +66,79 @@ void AccessibilityMenu::createButtons() {
     _titleText->setPosition(titleX, titleY);
 
     float labelSize = static_cast<unsigned int>(_windowSize.y * 0.04f);
+    float buttonWidth = _windowSize.x * 0.08f;
+    float buttonHeight = _windowSize.y * 0.06f;
 
-    // Reference square for contrast testing (centered)
-    float squareSize = _windowSize.y * 0.1f;
+    // Reference squares for colorblind testing (RGB)
+    float squareSize = _windowSize.y * 0.08f;
     float squareY = _windowSize.y * 0.25f;
+    float spacing = squareSize * 1.5f;
+    float startX = (_windowSize.x - (3 * squareSize + 2 * spacing)) / 2.f;
 
-    _referenceSquare = _window.createRectangleShape(render::Vector2f(squareSize, squareSize));
-    _referenceSquare->setFillColor(render::Color(128, 128, 128)); // Gray color for better contrast testing
-    _referenceSquare->setPosition((_windowSize.x - squareSize) / 2.f, squareY);
+    _referenceSquare1 = _window.createRectangleShape(render::Vector2f(squareSize, squareSize));
+    _referenceSquare1->setFillColor(render::Color(220, 50, 50)); // Red
+    _referenceSquare1->setPosition(startX, squareY);
+
+    _referenceSquare2 = _window.createRectangleShape(render::Vector2f(squareSize, squareSize));
+    _referenceSquare2->setFillColor(render::Color(50, 220, 50)); // Green
+    _referenceSquare2->setPosition(startX + squareSize + spacing, squareY);
+
+    _referenceSquare3 = _window.createRectangleShape(render::Vector2f(squareSize, squareSize));
+    _referenceSquare3->setFillColor(render::Color(50, 50, 220)); // Blue
+    _referenceSquare3->setPosition(startX + 2 * (squareSize + spacing), squareY);
 
     _referenceLabel = _window.createText();
     _referenceLabel->setFont(*_font);
-    _referenceLabel->setString("Reference square");
+    _referenceLabel->setString("Color reference");
     _referenceLabel->setCharacterSize(labelSize * 0.8f);
     _referenceLabel->setFillColor(render::Color::White());
     render::FloatRect labelBounds = _referenceLabel->getLocalBounds();
-    _referenceLabel->setPosition((_windowSize.x - labelBounds.width) / 2.f, squareY - labelSize);
+    _referenceLabel->setPosition((_windowSize.x - labelBounds.width) / 2.f, squareY - labelSize * 1.2f);
 
-    // Contrast settings
-    _contrastLabel = _window.createText();
-    _contrastLabel->setFont(*_font);
-    _contrastLabel->setString("Contrast ");
-    _contrastLabel->setCharacterSize(labelSize);
-    _contrastLabel->setFillColor(render::Color::White());
-    _contrastLabel->setPosition(_windowSize.x * 0.15f, _windowSize.y * 0.45f);
+    // Colorblind mode settings
+    _colorblindLabel = _window.createText();
+    _colorblindLabel->setFont(*_font);
+    _colorblindLabel->setString("Filter ");
+    _colorblindLabel->setCharacterSize(labelSize);
+    _colorblindLabel->setFillColor(render::Color::White());
+    _colorblindLabel->setPosition(_windowSize.x * 0.1f, _windowSize.y * 0.45f);
 
-    _contrastValue = _window.createText();
-    _contrastValue->setFont(*_font);
-    _contrastValue->setString(std::to_string(static_cast<int>(_currentContrast * 100)));
-    _contrastValue->setCharacterSize(labelSize);
-    _contrastValue->setFillColor(render::Color::Yellow());
-    _contrastValue->setPosition(_windowSize.x * 0.5f, _windowSize.y * 0.45f);
+    _colorblindValue = _window.createText();
+    _colorblindValue->setFont(*_font);
+    _colorblindValue->setString(Settings::getInstance().getColorblindModeName());
+    _colorblindValue->setCharacterSize(labelSize);
+    _colorblindValue->setFillColor(render::Color::Yellow());
+    _colorblindValue->setPosition(_windowSize.x * 0.5f, _windowSize.y * 0.45f);
 
-    // Contrast slider track
-    float sliderWidth = _windowSize.x * 0.4f;
-    float sliderHeight = _windowSize.y * 0.02f;
-    _contrastSliderTrack = _window.createRectangleShape(render::Vector2f(sliderWidth, sliderHeight));
-    _contrastSliderTrack->setFillColor(render::Color(100, 100, 100));
-    _contrastSliderTrack->setPosition(_windowSize.x * 0.3f, _windowSize.y * 0.55f);
+    // Left arrow button
+    _colorblindLeftButton = _window.createRectangleShape(render::Vector2f(buttonWidth, buttonHeight));
+    _colorblindLeftButton->setFillColor(render::Color(100, 100, 200));
+    _colorblindLeftButton->setPosition(_windowSize.x * 0.35f, _windowSize.y * 0.55f);
 
-    // Contrast slider handle
-    float handleRadius = _windowSize.y * 0.025f;
-    _contrastSliderHandle = _window.createCircleShape(handleRadius);
-    _contrastSliderHandle->setFillColor(render::Color(200, 200, 200));
-    // Note: IShape doesn't have setOrigin, position will be adjusted during updateContrastSliderPosition
+    _colorblindLeftText = _window.createText();
+    _colorblindLeftText->setFont(*_font);
+    _colorblindLeftText->setString("<");
+    _colorblindLeftText->setCharacterSize(labelSize);
+    _colorblindLeftText->setFillColor(render::Color::White());
+    render::FloatRect leftBounds = _colorblindLeftText->getLocalBounds();
+    float leftTextX = _windowSize.x * 0.35f + buttonWidth / 2.f - leftBounds.width / 2.f;
+    float leftTextY = _windowSize.y * 0.55f + buttonHeight / 2.f - leftBounds.height / 2.f;
+    _colorblindLeftText->setPosition(leftTextX, leftTextY);
 
-    // Position slider handle based on current contrast value
-    updateContrastSliderPosition();
+    // Right arrow button
+    _colorblindRightButton = _window.createRectangleShape(render::Vector2f(buttonWidth, buttonHeight));
+    _colorblindRightButton->setFillColor(render::Color(100, 100, 200));
+    _colorblindRightButton->setPosition(_windowSize.x * 0.65f, _windowSize.y * 0.55f);
+
+    _colorblindRightText = _window.createText();
+    _colorblindRightText->setFont(*_font);
+    _colorblindRightText->setString(">");
+    _colorblindRightText->setCharacterSize(labelSize);
+    _colorblindRightText->setFillColor(render::Color::White());
+    render::FloatRect rightBounds = _colorblindRightText->getLocalBounds();
+    float rightTextX = _windowSize.x * 0.65f + buttonWidth / 2.f - rightBounds.width / 2.f;
+    float rightTextY = _windowSize.y * 0.55f + buttonHeight / 2.f - rightBounds.height / 2.f;
+    _colorblindRightText->setPosition(rightTextX, rightTextY);
 
     // Back button
     float btnWidth = _windowSize.x * 0.2f;
@@ -139,42 +164,24 @@ void AccessibilityMenu::updateButtonScale() {
     createButtons();
 }
 
-void AccessibilityMenu::updateContrastSlider(float mouseX) {
-    render::FloatRect trackBounds = _contrastSliderTrack->getGlobalBounds();
-    float trackLeft = trackBounds.left;
-    float trackWidth = trackBounds.width;
+void AccessibilityMenu::cycleColorblindMode(int direction) {
+    int currentMode = static_cast<int>(_currentMode);
+    int newMode = currentMode + direction;
 
-    // Calculate new contrast value based on mouse position
-    float relativePos = (mouseX - trackLeft) / trackWidth;
-    relativePos = std::max(0.0f, std::min(1.0f, relativePos));
+    // Wrap around: 0 (None) -> 3 (Tritanopia) -> 0
+    if (newMode < 0) {
+        newMode = 3;
+    } else if (newMode > 3) {
+        newMode = 0;
+    }
 
-    _currentContrast = _contrastSliderMin + relativePos * (_contrastSliderMax - _contrastSliderMin);
-
-    // Update the settings singleton
-    Settings::getInstance().setContrast(_currentContrast);
+    _currentMode = static_cast<ColorblindMode>(newMode);
+    Settings::getInstance().setColorblindMode(_currentMode);
 
     // Update the display value
-    _contrastValue->setString(std::to_string(static_cast<int>(_currentContrast * 100)));
+    _colorblindValue->setString(Settings::getInstance().getColorblindModeName());
 
-    // Update slider handle position
-    updateContrastSliderPosition();
-
-    std::cout << "Contrast set to: " << (_currentContrast * 100) << "%" << std::endl;
-}
-
-void AccessibilityMenu::updateContrastSliderPosition() {
-    render::FloatRect trackBounds = _contrastSliderTrack->getGlobalBounds();
-    float trackLeft = trackBounds.left;
-    float trackWidth = trackBounds.width;
-    float trackCenter = trackBounds.top + trackBounds.height / 2.0f;
-
-    // Calculate handle position based on current contrast value
-    float relativePos = (_currentContrast - _contrastSliderMin) / (_contrastSliderMax - _contrastSliderMin);
-    float handleX = trackLeft + relativePos * trackWidth;
-
-    // For circle shape, we need to offset by radius to center it
-    float handleRadius = _windowSize.y * 0.025f;
-    _contrastSliderHandle->setPosition(handleX - handleRadius, trackCenter - handleRadius);
+    std::cout << "Colorblind mode set to: " << Settings::getInstance().getColorblindModeName() << std::endl;
 }
 
 AccessibilityResult AccessibilityMenu::run() {
@@ -209,31 +216,26 @@ AccessibilityResult AccessibilityMenu::run() {
             if (event.type == render::EventType::MouseMoved) {
                 mousePos.x = static_cast<float>(event.mouseMove.x);
                 mousePos.y = static_cast<float>(event.mouseMove.y);
-
-                if (_isDraggingContrastSlider) {
-                    updateContrastSlider(mousePos.x);
-                }
             }
 
             if (event.type == render::EventType::MouseButtonPressed) {
                 mousePos.x = static_cast<float>(event.mouseButton.x);
                 mousePos.y = static_cast<float>(event.mouseButton.y);
 
-                // Check contrast slider
-                if (containsPoint(_contrastSliderTrack->getGlobalBounds(), mousePos) ||
-                    containsPoint(_contrastSliderHandle->getGlobalBounds(), mousePos)) {
-                    _isDraggingContrastSlider = true;
-                    updateContrastSlider(mousePos.x);
+                // Check colorblind mode left button
+                if (containsPoint(_colorblindLeftButton->getGlobalBounds(), mousePos)) {
+                    cycleColorblindMode(-1);
+                }
+
+                // Check colorblind mode right button
+                if (containsPoint(_colorblindRightButton->getGlobalBounds(), mousePos)) {
+                    cycleColorblindMode(1);
                 }
 
                 // Check back button
                 if (containsPoint(_backButton->getGlobalBounds(), mousePos)) {
                     return AccessibilityResult::Back;
                 }
-            }
-
-            if (event.type == render::EventType::MouseButtonReleased) {
-                _isDraggingContrastSlider = false;
             }
         }
 
@@ -266,30 +268,22 @@ void AccessibilityMenu::render() {
     // Draw title
     _window.draw(*_titleText);
 
-    // Draw reference square with contrast applied
-    Settings& settings = Settings::getInstance();
-
+    // Draw reference label
     _window.draw(*_referenceLabel);
 
-    // Note: Shader support is not available in the render interface
-    // Apply contrast via color modulation as fallback
-    auto referenceSquareCopy = _window.createRectangleShape(render::Vector2f(
-        _referenceSquare->getGlobalBounds().width,
-        _referenceSquare->getGlobalBounds().height
-    ));
-    referenceSquareCopy->setPosition(
-        _referenceSquare->getGlobalBounds().left,
-        _referenceSquare->getGlobalBounds().top
-    );
-    render::Color grayWithContrast = settings.applyContrast(render::Color(128, 128, 128));
-    referenceSquareCopy->setFillColor(grayWithContrast);
-    _window.draw(*referenceSquareCopy);
+    // Draw reference squares WITHOUT colorblind filter
+    // These should always show the original colors as a reference
+    _window.draw(*_referenceSquare1);
+    _window.draw(*_referenceSquare2);
+    _window.draw(*_referenceSquare3);
 
-    // Draw contrast settings
-    _window.draw(*_contrastLabel);
-    _window.draw(*_contrastValue);
-    _window.draw(*_contrastSliderTrack);
-    _window.draw(*_contrastSliderHandle);
+    // Draw colorblind mode settings
+    _window.draw(*_colorblindLabel);
+    _window.draw(*_colorblindValue);
+    _window.draw(*_colorblindLeftButton);
+    _window.draw(*_colorblindLeftText);
+    _window.draw(*_colorblindRightButton);
+    _window.draw(*_colorblindRightText);
 
     // Draw back button
     _window.draw(*_backButton);
