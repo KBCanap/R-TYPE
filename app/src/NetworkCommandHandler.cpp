@@ -11,7 +11,7 @@ NetworkCommandHandler::NetworkCommandHandler(registry &registry,
 
 void NetworkCommandHandler::onCreateEntity(
     const network::CreateEntityCommand &cmd) {
-    entity new_entity;
+    entity new_entity(0);
 
     switch (cmd.entity_type) {
     case network::EntityType::PLAYER:
@@ -31,7 +31,7 @@ void NetworkCommandHandler::onCreateEntity(
         return;
     }
 
-    if (new_entity._id == 0) {
+    if (new_entity == entity(0)) {
         return;
     }
 
@@ -41,7 +41,7 @@ void NetworkCommandHandler::onCreateEntity(
     registry_.add_component<component::network_state>(
         new_entity, component::network_state());
 
-    net_id_to_entity_[cmd.net_id] = new_entity;
+    net_id_to_entity_.emplace(cmd.net_id, new_entity);
 }
 
 void NetworkCommandHandler::onUpdateEntity(

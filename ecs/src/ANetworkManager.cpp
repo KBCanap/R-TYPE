@@ -53,9 +53,21 @@ void ANetworkManager::startReadTCPHeader() {
 
     tcp_socket_->asyncReadExactly(
         tcp_header_buffer_, 4, [this](bool success, size_t bytes_transferred) {
+            // Check if we're in a state where we should still read TCP
+            auto current_state = getConnectionState();
+            if (current_state == ConnectionState::IN_GAME ||
+                current_state == ConnectionState::DISCONNECTED) {
+                // Stop reading TCP in game mode or when disconnected
+                return;
+            }
+
             if (!success || bytes_transferred != 4) {
-                std::cerr << "Failed to read TCP header" << std::endl;
-                updateState(ConnectionState::ERROR);
+                // Only log error if we're still in a connected state
+                if (current_state != ConnectionState::DISCONNECTED &&
+                    current_state != ConnectionState::ERROR) {
+                    std::cerr << "Failed to read TCP header" << std::endl;
+                    updateState(ConnectionState::ERROR);
+                }
                 return;
             }
 
@@ -192,6 +204,7 @@ void ANetworkManager::processCompleteTCPMessage(
 void ANetworkManager::disconnect() {
     updateState(ConnectionState::DISCONNECTED);
 
+    // Close sockets first to stop async operations
     if (tcp_socket_ && tcp_socket_->isOpen()) {
         tcp_socket_->disconnect();
     }
@@ -200,13 +213,19 @@ void ANetworkManager::disconnect() {
         udp_socket_->close();
     }
 
+    // Stop io_context after closing sockets
     if (io_context_) {
         io_context_->stop();
     }
 
+    // Wait for io_thread to finish
     if (io_thread_.joinable()) {
         io_thread_.join();
     }
+
+    // Reset sockets after thread has joined
+    tcp_socket_.reset();
+    udp_socket_.reset();
 
     player_id_ = 0;
     udp_port_ = 0;
@@ -367,6 +386,13 @@ void ANetworkManager::startAsyncUDPReceive() {
 
     udp_socket_->asyncReceive(
         udp_read_buffer_, [this](bool success, size_t bytes_transferred) {
+            // Check if we're still connected before processing
+            auto current_state = getConnectionState();
+            if (current_state == ConnectionState::DISCONNECTED ||
+                current_state == ConnectionState::ERROR) {
+                return;
+            }
+
             if (success && bytes_transferred > 0) {
                 std::vector<uint8_t> data(udp_read_buffer_.begin(),
                                           udp_read_buffer_.begin() +
@@ -382,7 +408,11 @@ void ANetworkManager::startAsyncUDPReceive() {
                 }
             }
 
-            startAsyncUDPReceive();
+            // Only continue receiving if we're still connected
+            if (current_state != ConnectionState::DISCONNECTED &&
+                current_state != ConnectionState::ERROR) {
+                startAsyncUDPReceive();
+            }
         });
 }
 
