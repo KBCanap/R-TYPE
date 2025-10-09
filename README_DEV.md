@@ -337,17 +337,90 @@ project-root/
 ```
 
 ### Configure Presets
-| Preset | Platform | Purpose | Tests |
-|--------|----------|---------|-------|
-| `win-config-dev` | Windows | Development with debug + tests | ✅ |
-| `win-config-release` | Windows | Production release | ❌ |
-| `linux-config-dev` | Linux | Development with debug + tests | ✅ |
-| `linux-config-release` | Linux | Production release | ❌ |
+| Preset | Plateforme | But | Tests |
+|--------|------------|-----|-------|
+| `linux-config-dev` | Linux | Développement avec debug + tests | ✅ |
+| `linux-config-release` | Linux | Release de production | ❌ |
 
 ### Build Presets
-| Preset | Configuration | Platform |
-|--------|---------------|----------|
-| `win-build-dev` | Debug + Tests | Windows |
-| `win-build-release` | Release | Windows |
+| Preset | Configuration | Plateforme |
+|--------|---------------|------------|
 | `linux-build-dev` | Debug + Tests | Linux |
 | `linux-build-release` | Release | Linux |
+
+# Architecture des Composants Réseau
+
+## Composants Réseau ECS
+
+#### `network_entity`
+Marque une entité comme synchronisée sur le réseau:
+- **`network_id`**: ID unique assigné par le serveur
+- **`owner_player_id`**: Joueur qui possède l'entité
+- **`is_local`**: Entité locale ou distante
+- **`last_update_time`**: Timestamp de la dernière mise à jour
+
+#### `network_state`
+Stocke l'état réseau pour l'interpolation:
+- **`last_position/velocity`**: Dernières valeurs connues
+- **`last_sequence`**: Numéro de séquence du paquet
+- **`interpolation_time`**: Temps d'interpolation entre les mises à jour
+
+#### `network_input`
+Gère l'input client avec prédiction:
+- **`input_sequence`**: Numéro de séquence de l'input
+- **`input_data`**: Données d'input pour la prédiction côté client
+
+## Architecture des Messages
+
+**TCP (fiable, critique)**:
+- Connect/Disconnect
+- Game Start
+- Gestion d'erreurs
+
+**UDP (temps réel, non-critique)**:
+- Création/Mise à jour/Destruction d'entités
+- Input joueur
+- État global du jeu
+
+## Flux d'Opération
+
+1. **Connexion**: Le client se connecte au serveur via TCP
+2. **Synchronisation**: Réception de l'état initial du jeu
+3. **Mise à jour temps réel**:
+    - Envoi de l'input joueur via UDP
+    - Réception des mises à jour d'entités
+    - Application des changements à l'ECS local
+4. **Interpolation**: Lissage des mouvements entre les mises à jour réseau
+
+## Packet Processor
+
+Responsable de:
+- **Sérialisation/Désérialisation**: Conversion des données de jeu
+- **Gestion des Séquences**: Numérotation des paquets UDP pour la fiabilité
+- **Parsing des Messages**: Interprétation des types de messages (ENTITY_CREATE, ENTITY_UPDATE, etc.)
+
+Cette architecture permet une séparation claire entre la logique réseau et la logique de jeu, facilitant la maintenance et optimisant les performances réseau.
+
+## Référence Rapide Architecture Client-Réseau
+
+| Fichier | Emplacement | Dépend de | But |
+|------------------------------|-------------|-------------------------------|-------------------|
+| `INetwork.hpp` | ECS Engine | Rien | Interface abstraite |
+| `NetworkSystem.hpp/cpp` | ECS Engine | INetwork, NetworkCommands | Transport de données brutes |
+| `NetworkCommands.hpp` | ECS Engine | INetwork | Interface de commandes |
+| `NetworkComponents.hpp` | ECS Engine | components.hpp | Composants ECS |
+| `ANetworkManager.hpp/cpp` | ECS Engine | INetwork, ISocket | Abstraction socket |
+| `ISocket.hpp` | ECS Engine | Rien | Interface socket |
+| `PacketProcessor.hpp/cpp` | Client | INetwork | Logique protocole |
+| `NetworkManager.hpp/cpp` | Client | ANetworkManager, ASIO | I/O concret |
+| `NetworkCommandHandler.hpp` | Client | NetworkCommands, PacketProc | Gestion protocole |
+| `ASIOSocket.hpp/cpp` | Client | iSocket, ASIO | Implémentation ASIO |
+
+## Architecture ECS/Client-Réseau
+
+Ce projet emploie une architecture réseau modulaire en couches:
+- **ECS Engine**: Interfaces abstraites et réseau (`ecs/include/network/`)
+- **Application Client**: Implémentations concrètes ASIO (`app/src/network/`)
+- **Couche Protocole**: Gestion des paquets et sérialisation
+
+Pour la documentation détaillée des classes et méthodes réseau: Générez la documentation Doxygen

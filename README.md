@@ -6,6 +6,9 @@ We implemented a multi-threaded server using [Asio](https://think-async.com/Asio
 
 ##  Dependencies
 
+[![SFML Logo](https://www.sfml-dev.org/download/goodies/sfml-icon.svg)](https://www.sfml-dev.org)
+
+
 - [CMake](https://cmake.org/) **≥ 3.20**
 - **Windows**: [Visual Studio 2022 Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (workload *Desktop development with C++*)
 - **Linux**: `g++` or `clang++`, `make` (package `build-essential` on Debian/Ubuntu)
@@ -25,7 +28,7 @@ They provide ready-to-use configurations for **Windows (MSVC)** and **Linux (Mak
 
 ```powershell
 # Clone the repository
-git clone <repo ulr>
+git clone https://github.com/KBCanap/R-TYPE.git (Optionnal)<repo name>
 cd <repo name>
 
 # Configure for development (with tests)
