@@ -245,9 +245,7 @@ void Game::render(float dt) {
             hp_text->setFont(*_scoreFont);
             hp_text->setString("HP " + std::to_string(player_health->current_hp) + "/" + std::to_string(player_health->max_hp));
             hp_text->setCharacterSize(24);
-
-            Settings& settings = Settings::getInstance();
-            hp_text->setFillColor(settings.applyContrast(render::Color::White()));
+            hp_text->setFillColor(render::Color::White());
             hp_text->setPosition(20, 20);
 
             _window.draw(*hp_text);
@@ -260,9 +258,7 @@ void Game::render(float dt) {
             score_text->setFont(*_scoreFont);
             score_text->setString("Score " + std::to_string(player_score->current_score));
             score_text->setCharacterSize(24);
-
-            Settings& settings = Settings::getInstance();
-            score_text->setFillColor(settings.applyContrast(render::Color::White()));
+            score_text->setFillColor(render::Color::White());
 
             render::Vector2u window_size = _window.getSize();
             render::FloatRect text_bounds = score_text->getLocalBounds();

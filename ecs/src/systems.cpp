@@ -198,23 +198,15 @@ void render_system(registry& r,
                 static_cast<float>(window_size.y) / texture_size.y
             );
 
-            // Apply contrast to background sprites
+            // Apply colorblind filter to background sprites
             Settings& settings = Settings::getInstance();
-            render::IShader* contrastShader = settings.getContrastShader(window);
+            render::IShader* colorblindShader = settings.getColorblindShader(window);
 
-            if (contrastShader) {
-                window.draw(*sprite1, *contrastShader);
-                window.draw(*sprite2, *contrastShader);
+            if (colorblindShader) {
+                window.draw(*sprite1, *colorblindShader);
+                window.draw(*sprite2, *colorblindShader);
             } else {
-                // Fallback: use color modulation
-                render::Color contrastColor(
-                    static_cast<uint8_t>(255 * settings.getContrast()),
-                    static_cast<uint8_t>(255 * settings.getContrast()),
-                    static_cast<uint8_t>(255 * settings.getContrast()),
-                    255
-                );
-                sprite1->setColor(contrastColor);
-                sprite2->setColor(contrastColor);
+                // No shader (mode is None or shader failed to load)
                 window.draw(*sprite1);
                 window.draw(*sprite2);
             }
@@ -294,28 +286,33 @@ void render_system(registry& r,
                         draw->sprite->setTextureRect(draw->sprite_rect);
                     }
 
-                    // Apply contrast with color modulation
+                    // Apply colorblind filter using shader if available
                     Settings& settings = Settings::getInstance();
-                    render::Color contrastColor(
-                        static_cast<uint8_t>(255 * settings.getContrast()),
-                        static_cast<uint8_t>(255 * settings.getContrast()),
-                        static_cast<uint8_t>(255 * settings.getContrast()),
-                        255
-                    );
-                    draw->sprite->setColor(contrastColor);
+                    render::IShader* colorblindShader = settings.getColorblindShader(window);
 
-                    // Draw using interface
+                    if (colorblindShader) {
+                        // Use shader for colorblind simulation
+                        window.draw(*draw->sprite, *colorblindShader);
+                        continue; // Skip the draw below
+                    }
+
+                    // Draw using interface (no filter)
                     window.draw(*draw->sprite);
                 }
             } else {
                 auto shape = window.createRectangleShape(render::Vector2f(draw->size, draw->size));
                 shape->setPosition(pos->x, pos->y);
+                shape->setFillColor(draw->color);
 
-                // Apply contrast to shape color
+                // Apply colorblind filter to shapes
                 Settings& settings = Settings::getInstance();
-                shape->setFillColor(settings.applyContrast(draw->color));
+                render::IShader* colorblindShader = settings.getColorblindShader(window);
 
-                window.draw(*shape);
+                if (colorblindShader) {
+                    window.draw(*shape, *colorblindShader);
+                } else {
+                    window.draw(*shape);
+                }
             }
         }
     }
