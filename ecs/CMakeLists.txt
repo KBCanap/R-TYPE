@@ -12,6 +12,9 @@ set(ECS_SOURCES
     src/projectile_pattern.cpp
     src/ai_movement_pattern.cpp
     src/weapon.cpp
+    # Network sources
+    src/NetworkSystem.cpp
+    src/ANetworkManager.cpp
 )
 
 # Création de la bibliothèque partagée
@@ -19,6 +22,11 @@ add_library(ecs SHARED ${ECS_SOURCES})
 
 # Configuration des répertoires d'inclusion
 target_include_directories(ecs PUBLIC include)
+
+# Lier avec ASIO pour les types dans les headers network
+if(TARGET asio_interface)
+    target_link_libraries(ecs PUBLIC asio_interface)
+endif()
 
 # Installation
 install(TARGETS ecs
