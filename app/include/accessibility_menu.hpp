@@ -1,6 +1,7 @@
 #pragma once
 #include "../../ecs/include/render/IRenderWindow.hpp"
 #include "audio_manager.hpp"
+#include "settings.hpp"
 #include <memory>
 
 enum class AccessibilityResult { None, Back, Resumed };
@@ -15,8 +16,7 @@ public:
 private:
     void createButtons();
     void updateButtonScale();
-    void updateContrastSlider(float mouseX);
-    void updateContrastSliderPosition();
+    void cycleColorblindMode(int direction); // direction: -1 for previous, +1 for next
 
 private:
     render::IRenderWindow& _window;
@@ -25,18 +25,19 @@ private:
     std::unique_ptr<render::IFont> _font;
     std::unique_ptr<render::IText> _titleText;
 
-    // Contrast settings
-    float _currentContrast;
-    std::unique_ptr<render::IText> _contrastLabel;
-    std::unique_ptr<render::IText> _contrastValue;
-    std::unique_ptr<render::IShape> _contrastSliderTrack;
-    std::unique_ptr<render::IShape> _contrastSliderHandle;
-    bool _isDraggingContrastSlider;
-    float _contrastSliderMin;
-    float _contrastSliderMax;
+    // Colorblind mode settings
+    ColorblindMode _currentMode;
+    std::unique_ptr<render::IText> _colorblindLabel;
+    std::unique_ptr<render::IText> _colorblindValue;
+    std::unique_ptr<render::IShape> _colorblindLeftButton;
+    std::unique_ptr<render::IText> _colorblindLeftText;
+    std::unique_ptr<render::IShape> _colorblindRightButton;
+    std::unique_ptr<render::IText> _colorblindRightText;
 
-    // Reference square for contrast testing
-    std::unique_ptr<render::IShape> _referenceSquare;
+    // Reference squares for colorblind testing (with different colors)
+    std::unique_ptr<render::IShape> _referenceSquare1; // Red
+    std::unique_ptr<render::IShape> _referenceSquare2; // Green
+    std::unique_ptr<render::IShape> _referenceSquare3; // Blue
     std::unique_ptr<render::IText> _referenceLabel;
 
     // Back button

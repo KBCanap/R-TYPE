@@ -1,5 +1,6 @@
 #include "../include/systems.hpp"
 #include "../../app/include/settings.hpp"
+#include "../../app/include/key_bindings.hpp"
 #include "../include/render/IRenderWindow.hpp"
 #include "../include/render/IRenderAudio.hpp"
 #include <cmath>
@@ -177,8 +178,8 @@ void render_system(registry& r,
             render::Vector2u window_size = window.getSize();
             render::Vector2u texture_size = bg->texture->getSize();
 
-            if (bg->offset_x <= -static_cast<float>(texture_size.x)) {
-                bg->offset_x = 0.0f;
+            if (bg->offset_x <= -static_cast<float>(window_size.x)) {
+                bg->offset_x += static_cast<float>(window_size.x);
             }
 
             auto sprite1 = window.createSprite();
@@ -197,23 +198,15 @@ void render_system(registry& r,
                 static_cast<float>(window_size.y) / texture_size.y
             );
 
-            // Apply contrast to background sprites
+            // Apply colorblind filter to background sprites
             Settings& settings = Settings::getInstance();
-            render::IShader* contrastShader = settings.getContrastShader(window);
+            render::IShader* colorblindShader = settings.getColorblindShader(window);
 
-            if (contrastShader) {
-                window.draw(*sprite1, *contrastShader);
-                window.draw(*sprite2, *contrastShader);
+            if (colorblindShader) {
+                window.draw(*sprite1, *colorblindShader);
+                window.draw(*sprite2, *colorblindShader);
             } else {
-                // Fallback: use color modulation
-                render::Color contrastColor(
-                    static_cast<uint8_t>(255 * settings.getContrast()),
-                    static_cast<uint8_t>(255 * settings.getContrast()),
-                    static_cast<uint8_t>(255 * settings.getContrast()),
-                    255
-                );
-                sprite1->setColor(contrastColor);
-                sprite2->setColor(contrastColor);
+                // No shader (mode is None or shader failed to load)
                 window.draw(*sprite1);
                 window.draw(*sprite2);
             }
@@ -293,28 +286,33 @@ void render_system(registry& r,
                         draw->sprite->setTextureRect(draw->sprite_rect);
                     }
 
-                    // Apply contrast with color modulation
+                    // Apply colorblind filter using shader if available
                     Settings& settings = Settings::getInstance();
-                    render::Color contrastColor(
-                        static_cast<uint8_t>(255 * settings.getContrast()),
-                        static_cast<uint8_t>(255 * settings.getContrast()),
-                        static_cast<uint8_t>(255 * settings.getContrast()),
-                        255
-                    );
-                    draw->sprite->setColor(contrastColor);
+                    render::IShader* colorblindShader = settings.getColorblindShader(window);
 
-                    // Draw using interface
+                    if (colorblindShader) {
+                        // Use shader for colorblind simulation
+                        window.draw(*draw->sprite, *colorblindShader);
+                        continue; // Skip the draw below
+                    }
+
+                    // Draw using interface (no filter)
                     window.draw(*draw->sprite);
                 }
             } else {
                 auto shape = window.createRectangleShape(render::Vector2f(draw->size, draw->size));
                 shape->setPosition(pos->x, pos->y);
+                shape->setFillColor(draw->color);
 
-                // Apply contrast to shape color
+                // Apply colorblind filter to shapes
                 Settings& settings = Settings::getInstance();
-                shape->setFillColor(settings.applyContrast(draw->color));
+                render::IShader* colorblindShader = settings.getColorblindShader(window);
 
-                window.draw(*shape);
+                if (colorblindShader) {
+                    window.draw(*shape, *colorblindShader);
+                } else {
+                    window.draw(*shape);
+                }
             }
         }
     }
@@ -613,7 +611,24 @@ void update_key_state(const render::Event& event) {
 
 void input_system(registry& /*r*/,
                   sparse_array<component::input>& inputs,
-                  render::IRenderWindow& /*window*/) {
+                  render::IRenderWindow& /*window*/,
+                  KeyBindings* keyBindings) {
+    // Use default keys if no KeyBindings provided
+    render::Key key_left = render::Key::Left;
+    render::Key key_right = render::Key::Right;
+    render::Key key_up = render::Key::Up;
+    render::Key key_down = render::Key::Down;
+    render::Key key_fire = render::Key::Space;
+
+    // Get custom key bindings if available
+    if (keyBindings) {
+        key_left = keyBindings->getBinding(GameAction::MoveLeft);
+        key_right = keyBindings->getBinding(GameAction::MoveRight);
+        key_up = keyBindings->getBinding(GameAction::MoveUp);
+        key_down = keyBindings->getBinding(GameAction::MoveDown);
+        key_fire = keyBindings->getBinding(GameAction::Fire);
+    }
+
     // Mettre à jour tous les inputs en fonction de l'état des touches
     for (size_t i = 0; i < inputs.size(); ++i) {
         auto& input = inputs[i];
@@ -625,12 +640,12 @@ void input_system(registry& /*r*/,
             bool prev_down = input->down;
             bool prev_fire = input->fire;
 
-            // Mettre à jour l'état actuel des touches via Event
-            input->left = g_pressed_keys.count(render::Key::Left) > 0;
-            input->right = g_pressed_keys.count(render::Key::Right) > 0;
-            input->up = g_pressed_keys.count(render::Key::Up) > 0;
-            input->down = g_pressed_keys.count(render::Key::Down) > 0;
-            input->fire = g_pressed_keys.count(render::Key::Space) > 0;
+            // Mettre à jour l'état actuel des touches via Event avec touches configurées
+            input->left = g_pressed_keys.count(key_left) > 0;
+            input->right = g_pressed_keys.count(key_right) > 0;
+            input->up = g_pressed_keys.count(key_up) > 0;
+            input->down = g_pressed_keys.count(key_down) > 0;
+            input->fire = g_pressed_keys.count(key_fire) > 0;
 
             // Détecter les moments où les touches sont pressées (transition de false à true)
             input->left_pressed = !prev_left && input->left;

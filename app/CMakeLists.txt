@@ -15,6 +15,8 @@ set(APP_SOURCES
     src/tick_system.cpp
     src/options_menu.cpp
     src/accessibility_menu.cpp
+    src/keybindings_menu.cpp
+    src/key_bindings.cpp
     src/player_manager.cpp
     src/enemy_manager.cpp
     src/boss_manager.cpp

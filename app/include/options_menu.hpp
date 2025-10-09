@@ -1,10 +1,11 @@
 #pragma once
 #include "../../ecs/include/render/IRenderWindow.hpp"
 #include "audio_manager.hpp"
+#include "key_bindings.hpp"
 #include <vector>
 #include <memory>
 
-enum class OptionsResult { None, Back, ResolutionChanged, SoundToggled, Accessibility };
+enum class OptionsResult { None, Back, ResolutionChanged, SoundToggled, Accessibility, KeyBindings };
 
 struct Resolution {
     unsigned int width;
@@ -14,7 +15,7 @@ struct Resolution {
 
 class OptionsMenu {
 public:
-    OptionsMenu(render::IRenderWindow& win, AudioManager& audioMgr);
+    OptionsMenu(render::IRenderWindow& win, AudioManager& audioMgr, KeyBindings& keyBindings);
 
     OptionsResult run();
     void render();
@@ -32,6 +33,7 @@ private:
 private:
     render::IRenderWindow& _window;
     AudioManager& _audioManager;
+    KeyBindings& _keyBindings;
 
     std::unique_ptr<render::IFont> _font;
     std::unique_ptr<render::IText> _titleText;
@@ -56,6 +58,10 @@ private:
     // Accessibility button
     std::unique_ptr<render::IShape> _accessibilityButton;
     std::unique_ptr<render::IText> _accessibilityButtonText;
+
+    // Key Bindings button
+    std::unique_ptr<render::IShape> _keyBindingsButton;
+    std::unique_ptr<render::IText> _keyBindingsButtonText;
 
     // Back button
     std::unique_ptr<render::IShape> _backButton;

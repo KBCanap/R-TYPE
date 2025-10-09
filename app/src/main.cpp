@@ -6,6 +6,7 @@
 #include "registery.hpp"
 #include "components.hpp"
 #include "../include/audio_manager.hpp"
+#include "../include/key_bindings.hpp"
 #include "render/RenderFactory.hpp"
 #include <memory>
 #include <iostream>
@@ -24,6 +25,7 @@ int main() {
 
     registry reg;
     AudioManager audioManager(*audioSystem);
+    KeyBindings keyBindings;
 
     // Enregistre les composants
     reg.register_component<component::position>();
