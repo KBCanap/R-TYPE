@@ -3,6 +3,7 @@
 #include "components.hpp"
 #include "audio_manager.hpp"
 #include "options_menu.hpp"
+#include "key_bindings.hpp"
 #include "../../ecs/include/render/IRenderWindow.hpp"
 #include <vector>
 #include <memory>
@@ -11,7 +12,7 @@ enum class MenuResult { None, Play, Options, Quit };
 
 class Menu {
 public:
-    Menu(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr);
+    Menu(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr, KeyBindings& keyBindings);
 
     MenuResult run();                  // Boucle du menu
     void update(float dt);             // Update background et ennemis
@@ -28,6 +29,7 @@ private:
     registry& _registry;
     render::IRenderWindow& _window;
     AudioManager& _audioManager;
+    KeyBindings& _keyBindings;
 
     std::unique_ptr<render::ITexture> _bgTexture;
     std::unique_ptr<render::ISprite> _bgSprite1;

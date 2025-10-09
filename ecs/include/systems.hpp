@@ -4,6 +4,9 @@
 #include "render/IRenderWindow.hpp"
 #include "render/IRenderAudio.hpp"
 
+// Forward declaration
+class KeyBindings;
+
 namespace systems {
     void update_key_state(const render::Event& event);
 
@@ -41,7 +44,8 @@ namespace systems {
 
     void input_system(registry& r,
                       sparse_array<component::input>& inputs,
-                      render::IRenderWindow& window);
+                      render::IRenderWindow& window,
+                      KeyBindings* keyBindings = nullptr);
 
     void weapon_system(registry& r,
                        sparse_array<component::weapon>& weapons,
