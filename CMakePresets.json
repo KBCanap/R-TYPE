@@ -9,43 +9,6 @@
 
     "configurePresets": [
         {
-            "name": "win-config-dev",
-            "displayName": "Windows Configure (Dev, MSVC + Tests)",
-            "generator": "Visual Studio 17 2022",
-            "architecture": { "value": "x64" },
-            "binaryDir": "${sourceDir}/build/win",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "17",
-                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build/win/bin",
-                "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
-                "RTYPE_BUILD_TESTS": "ON",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
-        },
-        {
-            "name": "win-config-release",
-            "displayName": "Windows Configure (Release, MSVC)",
-            "generator": "Visual Studio 17 2022",
-            "architecture": { "value": "x64" },
-            "binaryDir": "${sourceDir}/build/win-release",
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "17",
-                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build/win-release/bin",
-                "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
-                "RTYPE_BUILD_TESTS": "OFF"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
-        },
-        {
             "name": "linux-config-dev",
             "displayName": "Linux Configure (Debug + Tests, Makefiles)",
             "generator": "Unix Makefiles",
@@ -86,19 +49,6 @@
 
     "buildPresets": [
         {
-            "name": "win-build-dev",
-            "displayName": "Windows Build Dev (Debug + Tests)",
-            "configurePreset": "win-config-dev",
-            "configuration": "Debug"
-        },
-        {
-            "name": "win-build-release",
-            "displayName": "Windows Build Release",
-            "configurePreset": "win-config-release",
-            "configuration": "Release",
-            "jobs": 4
-        },
-        {
             "name": "linux-build-dev",
             "displayName": "Linux Build Dev (Debug + Tests)",
             "configurePreset": "linux-config-dev",
@@ -114,16 +64,6 @@
 
     "testPresets": [
         {
-            "name": "win-test",
-            "displayName": "Windows Tests (Debug)",
-            "configurePreset": "win-config-dev",
-            "configuration": "Debug",
-            "output": {
-                "outputOnFailure": true,
-                "verbosity": "verbose"
-            }
-        },
-        {
             "name": "linux-test-dev",
             "displayName": "Linux Tests (Debug, Dev)",
             "configurePreset": "linux-config-dev",
@@ -136,12 +76,6 @@
     ],
 
     "packagePresets": [
-        {
-            "name": "win-package-release",
-            "displayName": "Windows Package (Release)",
-            "configurePreset": "win-config-release",
-            "generators": [ "ZIP" ]
-        },
         {
             "name": "linux-package-release",
             "displayName": "Linux Package (Release)",

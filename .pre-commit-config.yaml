@@ -1,0 +1,16 @@
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v18.1.8
+    hooks:
+      - id: clang-format
+        name: clang-format (C/C++)
+        args: [--style=file]
+        files: >
+          (?x)^
+          (?!
+            (?:third_party|3rdparty|external|vendor|deps|submodules)/
+            |
+            (?:build|build-.*|out|dist|_?generated|_?build|\.cache)/
+          )
+          .*\.(c|cc|cpp|cxx|h|hh|hpp|hxx)$
