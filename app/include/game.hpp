@@ -6,6 +6,7 @@
 #include "components.hpp"
 #include "game_menu.hpp"
 #include "audio_manager.hpp"
+#include "key_bindings.hpp"
 #include "tick_system.hpp"
 #include "player_manager.hpp"
 #include "enemy_manager.hpp"
@@ -14,7 +15,7 @@
 
 class Game {
 public:
-    Game(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr);
+    Game(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr, KeyBindings& keyBindings);
 
     void run();  // Boucle principale du jeu avec système de tick
 
@@ -31,6 +32,7 @@ private:
     registry& _registry;
     render::IRenderWindow& _window;
     AudioManager& _audioManager;
+    KeyBindings& _keyBindings;
 
     // Managers for different game aspects
     PlayerManager _playerManager;

@@ -2,14 +2,15 @@
 #include "../include/settings.hpp"
 #include "../include/options_menu.hpp"
 #include "../include/accessibility_menu.hpp"
+#include "../include/keybindings_menu.hpp"
 #include "systems.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <chrono>
 
-Game::Game(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr)
-    : _registry(reg), _window(win), _audioManager(audioMgr),
+Game::Game(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr, KeyBindings& keyBindings)
+    : _registry(reg), _window(win), _audioManager(audioMgr), _keyBindings(keyBindings),
       _playerManager(reg, win),
       _enemyManager(reg, win),
       _bossManager(reg, win),
@@ -82,11 +83,15 @@ void Game::handleEvents(bool& running, float /*dt*/) {
                     _playerManager.changePlayerWeaponToSpread(_player);
                 }
                 if (event.key.code == render::Key::P) {
-                    OptionsMenu optionsMenu(_window, _audioManager);
+                    OptionsMenu optionsMenu(_window, _audioManager, _keyBindings);
                     OptionsResult result = optionsMenu.run();
                     if (result == OptionsResult::Accessibility) {
                         AccessibilityMenu accessibilityMenu(_window, _audioManager);
                         accessibilityMenu.run();
+                    }
+                    if (result == OptionsResult::KeyBindings) {
+                        KeyBindingsMenu keyBindingsMenu(_window, _audioManager, _keyBindings);
+                        keyBindingsMenu.run();
                     }
                 }
             }
@@ -125,7 +130,7 @@ void Game::update(float dt) {
     auto& inputs = _registry.get_components<component::input>();
 
     // Input system - always runs to capture input state
-    systems::input_system(_registry, inputs, _window);
+    systems::input_system(_registry, inputs, _window, &_keyBindings);
 
     // AI input system for enemies - always runs
     auto& ai_inputs = _registry.get_components<component::ai_input>();
@@ -240,9 +245,7 @@ void Game::render(float dt) {
             hp_text->setFont(*_scoreFont);
             hp_text->setString("HP " + std::to_string(player_health->current_hp) + "/" + std::to_string(player_health->max_hp));
             hp_text->setCharacterSize(24);
-
-            Settings& settings = Settings::getInstance();
-            hp_text->setFillColor(settings.applyContrast(render::Color::White()));
+            hp_text->setFillColor(render::Color::White());
             hp_text->setPosition(20, 20);
 
             _window.draw(*hp_text);
@@ -255,9 +258,7 @@ void Game::render(float dt) {
             score_text->setFont(*_scoreFont);
             score_text->setString("Score " + std::to_string(player_score->current_score));
             score_text->setCharacterSize(24);
-
-            Settings& settings = Settings::getInstance();
-            score_text->setFillColor(settings.applyContrast(render::Color::White()));
+            score_text->setFillColor(render::Color::White());
 
             render::Vector2u window_size = _window.getSize();
             render::FloatRect text_bounds = score_text->getLocalBounds();
