@@ -11,7 +11,7 @@ GameOverMenu::GameOverMenu(render::IRenderWindow& window, AudioManager& audioMgr
     : _window(window), _audioManager(audioMgr), _visible(false), _selectedButton(0)
 {
     initializeMenu();
-}
+} 
 
 void GameOverMenu::initializeMenu() {
 

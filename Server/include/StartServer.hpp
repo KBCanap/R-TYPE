@@ -17,6 +17,7 @@
 #include "Protocole.hpp"
 #include "GameSession.hpp"
 #include "TcpServer.hpp"
+#include "GameServer.hpp"
 
 class StartServer {
     public:
@@ -34,8 +35,10 @@ class StartServer {
     private:
         int _port;
         std::unique_ptr<TCPServer> _tcp_server;
+        std::unique_ptr<GameServer> _game_server;
         Protocol _protocol;
         GameSession _game_session;
+        bool _game_started{false};
 
         std::atomic<bool> _running{true};
 

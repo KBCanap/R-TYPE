@@ -112,7 +112,7 @@ class PacketProcessor {
      * @param timestamp Client timestamp for latency calculation
      * @return Serialized CLIENT_PING packet
      */
-    static UDPPacket createClientPing(uint32_t timestamp);
+    static UDPPacket createClientPing(uint32_t timestamp, uint8_t player_id);
 
     /**
      * @brief Convert float to network byte order

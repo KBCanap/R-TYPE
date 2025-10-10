@@ -55,13 +55,33 @@ void StartServer::stop()
 
 void StartServer::networkLoop()
 {
+    auto last_time = std::chrono::steady_clock::now();
+    const float target_dt = 1.0f / 60.0f;  // 60 FPS
+
     while (_running) {
+        auto current_time = std::chrono::steady_clock::now();
+        float dt = std::chrono::duration<float>(current_time - last_time).count();
+        last_time = current_time;
+
+        // Process TCP messages
         auto messages = _tcp_server->poll();
-        
+
         if (!messages.empty()) {
             for (const auto& message : messages) {
                 processMessage(message);
             }
+        }
+
+        // Update game logic if game has started
+        if (_game_started && _game_server) {
+            _game_server->update(dt);
+        }
+
+        // Sleep to maintain target framerate
+        auto elapsed = std::chrono::steady_clock::now() - current_time;
+        auto sleep_time = std::chrono::duration<float>(target_dt) - elapsed;
+        if (sleep_time.count() > 0) {
+            std::this_thread::sleep_for(sleep_time);
         }
     }
 }
@@ -146,6 +166,15 @@ void StartServer::startGame()
     std::cout << "All clients ready! Starting game..." << std::endl;
 
     uint16_t udp_port = static_cast<uint16_t>(8080);
+
+    // Create GameServer
+    _game_server = std::make_unique<GameServer>(udp_port);
+
+    // Start game with session info
+    _game_server->startGame(_game_session);
+
+    _game_started = true;
+
     std::string game_start_message = _protocol.createGameStart(udp_port);
 
     auto connected_clients = _game_session.getConnectedClients();
@@ -153,7 +182,7 @@ void StartServer::startGame()
         std::cout << "Sending GAME_START to client " << client_id << std::endl;
         sendToClient(client_id, game_start_message);
     }
-    
+
     std::cout << "Game started with UDP port: " << udp_port << std::endl;
 }
 

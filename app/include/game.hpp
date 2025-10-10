@@ -13,18 +13,28 @@
 #include "boss_manager.hpp"
 #include "../../ecs/include/render/IRenderWindow.hpp"
 
+// Forward declaration
+namespace network {
+    class NetworkManager;
+}
+
 class Game {
 public:
-    Game(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr, KeyBindings& keyBindings);
+    Game(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr, KeyBindings& keyBindings, network::NetworkManager* netMgr = nullptr);
 
     void run();  // Boucle principale du jeu avec système de tick
 
 private:
     void handleEvents(bool& running, float dt);
     void update(float dt);
+    void updateMultiplayer(float dt);  // New: multiplayer-specific update
     void render(float dt);
     void resetGame();
     bool isPlayerAlive() const;
+
+    // Network helpers
+    void sendPlayerInput(float dt);
+    void processNetworkEntities();
 
     // Core game logic only - details moved to managers
 
@@ -33,6 +43,8 @@ private:
     render::IRenderWindow& _window;
     AudioManager& _audioManager;
     KeyBindings& _keyBindings;
+    network::NetworkManager* _networkManager;  // nullptr for solo mode
+    bool _isMultiplayer;
 
     // Managers for different game aspects
     PlayerManager _playerManager;
@@ -62,4 +74,9 @@ private:
     bool _shouldExit = false;
 
     std::unique_ptr<render::IFont> _scoreFont;  // Font for displaying score using r-type.otf
+
+    // Multiplayer state
+    std::unordered_map<uint32_t, std::optional<entity>> _networkEntities;  // Maps network_id to entity
+    float _inputSendTimer = 0.0f;
+    float _inputSendInterval = 0.016f;  // Send input ~60 times per second
 };
