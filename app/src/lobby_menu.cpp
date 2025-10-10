@@ -47,38 +47,38 @@ void LobbyMenu::createUI() {
     _titleText->setFont(*_font);
     _titleText->setString("WAITING FOR PLAYERS");
     _titleText->setCharacterSize(40);
-    _titleText->setFillColor(settings.applyContrast(render::Color::White()));
+    _titleText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
 
     // Player ID text
     _playerIdText = _window.createText();
     _playerIdText->setFont(*_font);
     _playerIdText->setString("YOU ARE PLAYER " + std::to_string(_myPlayerId));
     _playerIdText->setCharacterSize(30);
-    _playerIdText->setFillColor(settings.applyContrast(render::Color(150, 200, 255)));
+    _playerIdText->setFillColor(settings.applyColorblindFilter(render::Color(150, 200, 255)));
 
     // Ready button
     _readyButton = _window.createRectangleShape(render::Vector2f(350, 70));
     _readyButton->setFillColor(render::Color(70, 180, 70));
-    _readyButton->setOutlineColor(settings.applyContrast(render::Color::White()));
+    _readyButton->setOutlineColor(settings.applyColorblindFilter(render::Color::White()));
     _readyButton->setOutlineThickness(3);
 
     _readyButtonText = _window.createText();
     _readyButtonText->setFont(*_font);
     _readyButtonText->setString("READY");
     _readyButtonText->setCharacterSize(28);
-    _readyButtonText->setFillColor(settings.applyContrast(render::Color::White()));
+    _readyButtonText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
 
     // Disconnect button
     _disconnectButton = _window.createRectangleShape(render::Vector2f(350, 70));
     _disconnectButton->setFillColor(render::Color(180, 70, 70));
-    _disconnectButton->setOutlineColor(settings.applyContrast(render::Color::White()));
+    _disconnectButton->setOutlineColor(settings.applyColorblindFilter(render::Color::White()));
     _disconnectButton->setOutlineThickness(3);
 
     _disconnectButtonText = _window.createText();
     _disconnectButtonText->setFont(*_font);
     _disconnectButtonText->setString("DISCONNECT");
     _disconnectButtonText->setCharacterSize(28);
-    _disconnectButtonText->setFillColor(settings.applyContrast(render::Color::White()));
+    _disconnectButtonText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
 
     updateButtonScale();
 }
