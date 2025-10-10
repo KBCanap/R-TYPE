@@ -48,50 +48,50 @@ void ConnectionMenu::createUI() {
     _titleText->setFont(*_font);
     _titleText->setString("SELECT GAME MODE");
     _titleText->setCharacterSize(50);
-    _titleText->setFillColor(settings.applyContrast(render::Color::White()));
+    _titleText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
 
     // Instructions
     _instructionText = _window.createText();
     _instructionText->setFont(*_font);
     _instructionText->setString("Choose your preferred mode");
     _instructionText->setCharacterSize(20);
-    _instructionText->setFillColor(settings.applyContrast(render::Color(150, 150, 150)));
+    _instructionText->setFillColor(settings.applyColorblindFilter(render::Color(150, 150, 150)));
 
     // Solo button
     _soloButton = _window.createRectangleShape(render::Vector2f(400, 70));
     _soloButton->setFillColor(render::Color(70, 70, 180));
-    _soloButton->setOutlineColor(settings.applyContrast(render::Color::White()));
+    _soloButton->setOutlineColor(settings.applyColorblindFilter(render::Color::White()));
     _soloButton->setOutlineThickness(3);
 
     _soloButtonText = _window.createText();
     _soloButtonText->setFont(*_font);
     _soloButtonText->setString("SOLO");
     _soloButtonText->setCharacterSize(28);
-    _soloButtonText->setFillColor(settings.applyContrast(render::Color::White()));
+    _soloButtonText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
 
     // Multiplayer button
     _multiplayerButton = _window.createRectangleShape(render::Vector2f(400, 70));
     _multiplayerButton->setFillColor(render::Color(70, 180, 70));
-    _multiplayerButton->setOutlineColor(settings.applyContrast(render::Color::White()));
+    _multiplayerButton->setOutlineColor(settings.applyColorblindFilter(render::Color::White()));
     _multiplayerButton->setOutlineThickness(3);
 
     _multiplayerButtonText = _window.createText();
     _multiplayerButtonText->setFont(*_font);
     _multiplayerButtonText->setString("MULTIPLAYER");
     _multiplayerButtonText->setCharacterSize(28);
-    _multiplayerButtonText->setFillColor(settings.applyContrast(render::Color::White()));
+    _multiplayerButtonText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
 
     // Back button
     _backButton = _window.createRectangleShape(render::Vector2f(400, 70));
     _backButton->setFillColor(render::Color(180, 70, 70));
-    _backButton->setOutlineColor(settings.applyContrast(render::Color::White()));
+    _backButton->setOutlineColor(settings.applyColorblindFilter(render::Color::White()));
     _backButton->setOutlineThickness(3);
 
     _backButtonText = _window.createText();
     _backButtonText->setFont(*_font);
     _backButtonText->setString("BACK");
     _backButtonText->setCharacterSize(28);
-    _backButtonText->setFillColor(settings.applyContrast(render::Color::White()));
+    _backButtonText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
 
     updateButtonScale();
 }

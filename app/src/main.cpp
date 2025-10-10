@@ -36,7 +36,7 @@ int main() {
     bool running = true;
     while (running && window->isOpen()) {
         // Main menu
-        Menu menu(reg, *window, audioManager);
+        Menu menu(reg, *window, audioManager, keyBindings);
         MenuResult menuResult = menu.run();
 
         if (menuResult == MenuResult::Quit) {
@@ -53,7 +53,7 @@ int main() {
             if (connResult == ConnectionMenuResult::Solo) {
                 // Start solo game
                 std::cout << "[Main] Starting SOLO game..." << std::endl;
-                Game game(reg, *window, audioManager);
+                Game game(reg, *window, audioManager, keyBindings);
                 game.run();
                 std::cout << "[Main] Solo game ended, returning to main menu..." << std::endl;
             }
