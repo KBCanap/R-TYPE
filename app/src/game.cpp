@@ -73,6 +73,42 @@ void Game::handleEvents(bool& running, float /*dt*/) {
             _victoryMenu.onWindowResize();
         }
 
+        // Handle game over menu
+        if (_gameOver) {
+            MenuAction action = _gameOverMenu.handleEvents(event);
+            if (action == MenuAction::REPLAY) {
+                // In multiplayer, REPLAY means return to menu (exit game)
+                // In solo, REPLAY means restart the game
+                if (_isMultiplayer) {
+                    running = false;
+                    _shouldExit = true;
+                } else {
+                    resetGame();
+                }
+            } else if (action == MenuAction::QUIT) {
+                running = false;
+                _shouldExit = true;
+            }
+        }
+
+        // Handle victory menu
+        if (_victory) {
+            MenuAction action = _victoryMenu.handleEvents(event);
+            if (action == MenuAction::REPLAY) {
+                // In multiplayer, REPLAY means return to menu (exit game)
+                // In solo, REPLAY means restart the game
+                if (_isMultiplayer) {
+                    running = false;
+                    _shouldExit = true;
+                } else {
+                    resetGame();
+                }
+            } else if (action == MenuAction::QUIT) {
+                running = false;
+                _shouldExit = true;
+            }
+        }
+
         // Handle key presses
         if (event.type == render::EventType::KeyPressed) {
             // Escape to exit
@@ -82,8 +118,8 @@ void Game::handleEvents(bool& running, float /*dt*/) {
                 return;
             }
 
-            // Handle weapon switching
-            if (!_gameOver && !_victory) {
+            // Handle weapon switching (solo mode only)
+            if (!_gameOver && !_victory && !_isMultiplayer) {
                 if (event.key.code == render::Key::Num1) {
                     _playerManager.changePlayerWeaponToSingle(_player);
                 }
@@ -107,26 +143,6 @@ void Game::handleEvents(bool& running, float /*dt*/) {
                         KeyBindingsMenu keyBindingsMenu(_window, _audioManager, _keyBindings);
                         keyBindingsMenu.run();
                     }
-                }
-            }
-
-            // Handle game over menu
-            if (_gameOver) {
-                if (event.key.code == render::Key::Enter) {
-                    resetGame();
-                } else if (event.key.code == render::Key::Q) {
-                    running = false;
-                    _shouldExit = true;
-                }
-            }
-
-            // Handle victory menu
-            if (_victory) {
-                if (event.key.code == render::Key::Enter) {
-                    resetGame();
-                } else if (event.key.code == render::Key::Q) {
-                    running = false;
-                    _shouldExit = true;
                 }
             }
         }
@@ -680,6 +696,15 @@ void Game::processNetworkEntities() {
 
             if (opt_ent) {
                 entity ent = *opt_ent;
+
+                // Check if this is a boss being destroyed (victory condition)
+                auto& drawables = _registry.get_components<component::drawable>();
+                if (ent < drawables.size() && drawables[ent] &&
+                    drawables[ent]->tag == "boss" && !_victory) {
+                    _victory = true;
+                    _victoryMenu.setVisible(true);
+                    // Keep the current music playing for victory
+                }
 
                 // Create explosion effect if entity has position
                 if (ent < positions.size() && positions[ent]) {
