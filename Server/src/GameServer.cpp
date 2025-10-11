@@ -805,11 +805,6 @@ void GameServer::spawnMultipleProjectiles(uint32_t owner_net_id, bool is_enemy, 
 
     // Calculate angles for each projectile (EXACTLY like solo mode)
     const float PI = 3.14159265359f;
-    float base_angle = 0.0f;
-
-    if (count > 1) {
-        base_angle = -angle_spread * (count - 1) / 2.0f;
-    }
 
     for (int i = 0; i < count; ++i) {
         uint32_t net_id = generateNetId();
@@ -821,7 +816,12 @@ void GameServer::spawnMultipleProjectiles(uint32_t owner_net_id, bool is_enemy, 
         projectile.pos_y = owner_it->second.pos_y;
 
         // Calculate angle for this projectile (in degrees)
-        float angle_deg = base_angle + (angle_spread * i);
+        // For spread: distribute evenly around 0 degrees
+        // Example with 3 projectiles and 20° spread: -20°, 0°, +20°
+        float angle_deg = 0.0f;
+        if (count > 1) {
+            angle_deg = -angle_spread + (2.0f * angle_spread * i) / (count - 1);
+        }
         float angle_rad = angle_deg * PI / 180.0f;
 
         // Calculate velocity components (base speed 0.008)
@@ -857,11 +857,12 @@ void GameServer::updateProjectiles(float /*dt*/)
 
     for (auto& [net_id, entity] : _entities) {
         if (entity.type == EntityType::PROJECTILE || entity.type == EntityType::ALLIED_PROJECTILE) {
-            // Move projectile
+            // Move projectile in both X and Y directions
             entity.pos_x += entity.vel_x;
+            entity.pos_y += entity.vel_y;
 
             // Remove projectiles that went off-screen
-            if (entity.pos_x < -0.1f || entity.pos_x > 1.1f) {
+            if (entity.pos_x < -0.1f || entity.pos_x > 1.1f || entity.pos_y < -0.1f || entity.pos_y > 1.1f) {
                 _entities_to_destroy.push_back(net_id);
             }
         }
