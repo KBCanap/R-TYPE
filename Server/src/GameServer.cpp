@@ -9,6 +9,7 @@
 #include <iostream>
 #include <cstring>
 #include <algorithm>
+#include <cmath>
 
 // Player spawn positions (relative to screen width/height)
 static constexpr float PLAYER_SPAWN_POSITIONS[][2] = {
@@ -23,7 +24,7 @@ static constexpr uint32_t PLAYER_DEFAULT_HEALTH = 100;
 GameServer::GameServer(uint16_t udp_port)
     : _udp_port(udp_port), _next_net_id(1), _game_score(0),
       _enemy_spawn_timer(0.0f), _enemy_spawn_interval(2.0f),
-      _game_time(0.0f), _game_started(false)
+      _game_time(0.0f), _boss_spawned(false), _boss_net_id(0), _game_started(false)
 {
     try {
         _socket = std::make_unique<asio::ip::udp::socket>(
@@ -116,6 +117,7 @@ void GameServer::update(float dt)
     updateCollisions();
     cleanupDeadEntities();
     broadcastEntityUpdates();
+    broadcastGameState();
 }
 
 void GameServer::handleUDPPackets()
@@ -239,6 +241,16 @@ void GameServer::broadcastEntityUpdates()
 
     auto update_packet = serializeEntityUpdate(entities_to_sync);
     broadcastUDPMessage(update_packet);
+}
+
+void GameServer::broadcastGameState()
+{
+    if (!_game_started) {
+        return;
+    }
+
+    auto game_state_packet = serializeGameState();
+    broadcastUDPMessage(game_state_packet);
 }
 
 void GameServer::sendEntityCreate(const ServerEntity& entity, const std::string& endpoint)
@@ -466,9 +478,45 @@ std::vector<uint8_t> GameServer::serializeEntityDestroy(uint32_t net_id)
     return packet;
 }
 
+std::vector<uint8_t> GameServer::serializeGameState()
+{
+    std::vector<uint8_t> packet;
+
+    // Message type (1 byte)
+    packet.push_back(static_cast<uint8_t>(UDPMessageType::GAME_STATE));
+
+    // Data length (3 bytes, 24-bit) - 4 bytes for game score
+    packet.push_back(0);           // High byte
+    packet.push_back(0);           // Middle byte
+    packet.push_back(4);           // Low byte (4 bytes payload)
+
+    // Sequence number (4 bytes)
+    packet.push_back(0);
+    packet.push_back(0);
+    packet.push_back(0);
+    packet.push_back(0);
+
+    // Payload: game_score (4 bytes)
+    packet.push_back((_game_score >> 24) & 0xFF);
+    packet.push_back((_game_score >> 16) & 0xFF);
+    packet.push_back((_game_score >> 8) & 0xFF);
+    packet.push_back(_game_score & 0xFF);
+
+    return packet;
+}
+
 // Game Logic Systems
 void GameServer::updateEnemySpawning(float dt)
 {
+    // Check if boss should spawn (at 100 points)
+    if (!_boss_spawned && _game_score >= 100) {
+        std::lock_guard<std::mutex> lock(_mutex);
+        spawnBoss();
+        _boss_spawned = true;
+        std::cout << "[GAME] Boss spawned at score " << _game_score << std::endl;
+        return; // Don't spawn regular enemies when boss spawns
+    }
+
     _enemy_spawn_timer += dt;
 
     if (_enemy_spawn_timer >= _enemy_spawn_interval) {
@@ -478,7 +526,14 @@ void GameServer::updateEnemySpawning(float dt)
         float spawn_y = 0.2f + (static_cast<float>(rand()) / RAND_MAX) * 0.6f; // Random between 0.2 and 0.8
 
         std::lock_guard<std::mutex> lock(_mutex);
-        spawnEnemy(0.95f, spawn_y);
+
+        // Randomly choose enemy type (50% ENEMY, 50% ENEMY_SPREAD) - exactly like solo
+        int enemy_type = rand() % 2;  // 0 or 1
+        if (enemy_type == 0) {
+            spawnEnemy(0.95f, spawn_y);  // Enemy with wave movement (weapon_type 0 or 1)
+        } else {
+            spawnEnemySpread(0.95f, spawn_y);  // Spread enemy with zigzag movement (weapon_type 2)
+        }
 
         // Gradually increase spawn rate
         if (_enemy_spawn_interval > 0.8f) {
@@ -497,13 +552,35 @@ void GameServer::spawnEnemy(float pos_x, float pos_y)
     enemy.type = EntityType::ENEMY;
     enemy.pos_x = pos_x;
     enemy.pos_y = pos_y;
-    enemy.vel_x = -0.002f;  // Move left
+    enemy.vel_x = 0.0f;  // Velocity will be calculated by pattern
     enemy.vel_y = 0.0f;
-    enemy.health = 1;       // Enemies die in 1 hit
+    enemy.health = 10;   // 10 HP for 1-hit kill
     enemy.owner_player_id = 0;
     enemy.width = 0.05f;
     enemy.height = 0.05f;
     enemy.last_fire_time = _game_time;
+
+    // Wave movement pattern (exactly like solo mode)
+    enemy.movement_pattern = MovementPattern::WAVE;
+    enemy.pattern_amplitude = 50.0f;      // 50 pixels amplitude
+    enemy.pattern_frequency = 0.01f;      // Frequency from solo mode
+    enemy.pattern_base_speed = 120.0f;    // 120 pixels/sec
+    enemy.pattern_time = 0.0f;
+
+    // Randomly choose weapon: 50% single shot (weapon_type 0), 50% burst (weapon_type 1)
+    int weapon_variant = rand() % 2;
+    if (weapon_variant == 0) {
+        // Single shot weapon (weapon_type 0 in solo)
+        enemy.projectile_count = 1;
+        enemy.projectile_angle_spread = 0.0f;
+        enemy.fire_cooldown = 1.0f + (static_cast<float>(rand()) / RAND_MAX);  // 1-2 seconds
+    } else {
+        // Burst weapon (weapon_type 1 in solo) - Note: burst not implemented yet, use single for now
+        enemy.projectile_count = 1;
+        enemy.projectile_angle_spread = 0.0f;
+        enemy.fire_cooldown = 1.0f + (static_cast<float>(rand()) / RAND_MAX);  // 1-2 seconds
+        // TODO: Implement burst firing mechanism
+    }
 
     _entities[net_id] = enemy;
 
@@ -513,15 +590,133 @@ void GameServer::spawnEnemy(float pos_x, float pos_y)
     }
 }
 
-void GameServer::updateEnemyAI(float /*dt*/)
+void GameServer::spawnEnemySpread(float pos_x, float pos_y)
+{
+    // NOTE: Caller must already hold _mutex lock
+    uint32_t net_id = generateNetId();
+
+    ServerEntity enemy;
+    enemy.net_id = net_id;
+    enemy.type = EntityType::ENEMY_SPREAD;
+    enemy.pos_x = pos_x;
+    enemy.pos_y = pos_y;
+    enemy.vel_x = 0.0f;  // Velocity will be calculated by pattern
+    enemy.vel_y = 0.0f;
+    enemy.health = 10;   // 10 HP for 1-hit kill
+    enemy.owner_player_id = 0;
+    enemy.width = 0.05f;  // Slightly larger hitbox
+    enemy.height = 0.05f;
+    enemy.last_fire_time = _game_time;
+
+    // Zigzag movement pattern (exactly like solo mode)
+    enemy.movement_pattern = MovementPattern::ZIGZAG;
+    enemy.pattern_amplitude = 60.0f;     // 60 pixels amplitude
+    enemy.pattern_frequency = 0.015f;    // Frequency from solo mode
+    enemy.pattern_base_speed = 130.0f;   // 130 pixels/sec
+    enemy.pattern_time = 0.0f;
+
+    // Spread weapon (3 projectiles with 20 degree spread, exactly like solo)
+    enemy.projectile_count = 3;
+    enemy.projectile_angle_spread = 20.0f;
+    enemy.fire_cooldown = 1.0f / 0.8f;  // Weapon fire_rate = 0.8, so interval = 1/0.8 = 1.25s
+
+    _entities[net_id] = enemy;
+
+    // Broadcast entity creation to all clients
+    for (const auto& [client_id, endpoint] : _client_endpoints) {
+        sendEntityCreate(enemy, endpoint);
+    }
+}
+
+void GameServer::spawnBoss()
+{
+    // NOTE: Caller must already hold _mutex lock
+    uint32_t net_id = generateNetId();
+
+    ServerEntity boss;
+    boss.net_id = net_id;
+    boss.type = EntityType::BOSS;
+    boss.pos_x = 0.85f;  // Near right side but not at edge
+    boss.pos_y = 0.5f;   // Start in middle
+    boss.vel_x = 0.0f;
+    boss.vel_y = 100.0f;  // Vertical movement speed 100 pixels/sec (exactly like solo)
+    boss.health = 1000;   // Boss has 1000 HP (exactly like solo)
+    boss.owner_player_id = 0;
+    boss.width = 0.08f;   // Larger hitbox for boss
+    boss.height = 0.14f;
+    boss.last_fire_time = _game_time;
+
+    // Boss movement - straight up/down (bounce handled in AI, exactly like solo)
+    boss.movement_pattern = MovementPattern::STRAIGHT;
+    boss.pattern_amplitude = 0.0f;
+    boss.pattern_frequency = 0.0f;
+    boss.pattern_base_speed = 0.0f;
+    boss.pattern_time = 0.0f;
+
+    // Boss weapon: spread pattern with high fire rate (exactly like solo)
+    // fire_rate = 2.0 means 1/2.0 = 0.5 seconds between shots
+    boss.projectile_count = 5;
+    boss.projectile_angle_spread = 15.0f;
+    boss.fire_cooldown = 1.0f / 2.0f;  // fire_rate = 2.0, so interval = 0.5 seconds
+
+    _entities[net_id] = boss;
+    _boss_net_id = net_id;
+
+    // Broadcast entity creation to all clients
+    for (const auto& [client_id, endpoint] : _client_endpoints) {
+        sendEntityCreate(boss, endpoint);
+    }
+
+    std::cout << "[GAME] Boss created with NET_ID=" << net_id << std::endl;
+}
+
+void GameServer::updateEnemyAI(float dt)
 {
     std::lock_guard<std::mutex> lock(_mutex);
 
+    // We assume a reference screen size of 1920x1080 for consistent velocity calculations
+    const float REFERENCE_WIDTH = 1920.0f;
+    const float REFERENCE_HEIGHT = 1080.0f;
+
     for (auto& [net_id, entity] : _entities) {
-        if (entity.type == EntityType::ENEMY) {
+        if (entity.type == EntityType::ENEMY || entity.type == EntityType::ENEMY_SPREAD) {
+            // Update movement pattern time
+            entity.pattern_time += dt;
+
+            // Calculate movement based on pattern (EXACTLY like solo mode)
+            float vel_x_pixels = 0.0f;
+            float vel_y_pixels = 0.0f;
+
+            if (entity.movement_pattern == MovementPattern::WAVE) {
+                // Wave pattern: sinusoidal vertical movement based on X position
+                // Exactly like solo: vy = amplitude * sin(frequency * pos_x + phase_offset)
+                vel_x_pixels = -entity.pattern_base_speed;
+                float pos_x_pixels = entity.pos_x * REFERENCE_WIDTH;
+                vel_y_pixels = entity.pattern_amplitude * std::sin(entity.pattern_frequency * pos_x_pixels);
+            }
+            else if (entity.movement_pattern == MovementPattern::ZIGZAG) {
+                // Zigzag pattern: triangular wave based on time
+                // Exactly like solo: triangle wave using time
+                vel_x_pixels = -entity.pattern_base_speed;
+                float triangle_wave = std::abs(std::fmod(entity.pattern_frequency * entity.pattern_time, 2.0f) - 1.0f) * 2.0f - 1.0f;
+                vel_y_pixels = entity.pattern_amplitude * triangle_wave;
+            }
+            else {
+                // Straight movement
+                vel_x_pixels = -entity.pattern_base_speed;
+                vel_y_pixels = 0.0f;
+            }
+
+            // Convert pixel velocities to relative velocities and apply dt
+            entity.vel_x = vel_x_pixels / REFERENCE_WIDTH;
+            entity.vel_y = vel_y_pixels / REFERENCE_HEIGHT;
+
             // Move enemy
-            entity.pos_x += entity.vel_x;
-            entity.pos_y += entity.vel_y;
+            entity.pos_x += entity.vel_x * dt;
+            entity.pos_y += entity.vel_y * dt;
+
+            // Clamp Y position to screen bounds
+            entity.pos_y = std::max(0.0f, std::min(1.0f, entity.pos_y));
 
             // Remove enemies that went off-screen (left side)
             if (entity.pos_x < -0.1f) {
@@ -529,10 +724,40 @@ void GameServer::updateEnemyAI(float /*dt*/)
                 continue;
             }
 
-            // Enemy shooting logic - shoot every 2 seconds
-            float fire_cooldown = 2.0f;
-            if (_game_time - entity.last_fire_time >= fire_cooldown) {
-                spawnProjectile(net_id, true);  // Enemy projectile
+            // Enemy shooting logic
+            if (_game_time - entity.last_fire_time >= entity.fire_cooldown) {
+                if (entity.projectile_count > 1) {
+                    std::cout << "[SHOOT] " << (entity.type == EntityType::ENEMY_SPREAD ? "ENEMY_SPREAD" : "ENEMY")
+                              << " NET_ID=" << net_id << " firing " << entity.projectile_count
+                              << " projectiles with " << entity.projectile_angle_spread << "° spread" << std::endl;
+                    spawnMultipleProjectiles(net_id, true, entity.projectile_count, entity.projectile_angle_spread);
+                } else {
+                    spawnProjectile(net_id, true);
+                }
+                entity.last_fire_time = _game_time;
+            }
+        }
+        else if (entity.type == EntityType::BOSS) {
+            // Boss vertical movement with bounce (EXACTLY like solo mode)
+            // Convert pixel velocity to relative velocity
+            float vel_y_relative = entity.vel_y / REFERENCE_HEIGHT;
+            entity.pos_y += vel_y_relative * dt;
+
+            // Bounce at screen edges (exactly like solo: 50px top, 100px bottom margin)
+            float top_margin = 50.0f / REFERENCE_HEIGHT;
+            float bottom_margin = (REFERENCE_HEIGHT - 100.0f) / REFERENCE_HEIGHT;
+
+            if (entity.pos_y <= top_margin) {
+                entity.pos_y = top_margin;
+                entity.vel_y = std::abs(entity.vel_y);  // Bounce down
+            } else if (entity.pos_y >= bottom_margin) {
+                entity.pos_y = bottom_margin;
+                entity.vel_y = -std::abs(entity.vel_y);  // Bounce up
+            }
+
+            // Boss shooting logic
+            if (_game_time - entity.last_fire_time >= entity.fire_cooldown) {
+                spawnMultipleProjectiles(net_id, true, entity.projectile_count, entity.projectile_angle_spread);
                 entity.last_fire_time = _game_time;
             }
         }
@@ -567,6 +792,62 @@ void GameServer::spawnProjectile(uint32_t owner_net_id, bool is_enemy)
     // Broadcast entity creation to all clients
     for (const auto& [client_id, endpoint] : _client_endpoints) {
         sendEntityCreate(projectile, endpoint);
+    }
+}
+
+void GameServer::spawnMultipleProjectiles(uint32_t owner_net_id, bool is_enemy, int count, float angle_spread)
+{
+    // NOTE: Caller must already hold _mutex lock
+    auto owner_it = _entities.find(owner_net_id);
+    if (owner_it == _entities.end()) {
+        return;
+    }
+
+    // Calculate angles for each projectile (EXACTLY like solo mode)
+    const float PI = 3.14159265359f;
+    float base_angle = 0.0f;
+
+    if (count > 1) {
+        base_angle = -angle_spread * (count - 1) / 2.0f;
+    }
+
+    for (int i = 0; i < count; ++i) {
+        uint32_t net_id = generateNetId();
+
+        ServerEntity projectile;
+        projectile.net_id = net_id;
+        projectile.type = is_enemy ? EntityType::PROJECTILE : EntityType::ALLIED_PROJECTILE;
+        projectile.pos_x = owner_it->second.pos_x + (is_enemy ? -0.05f : 0.05f);
+        projectile.pos_y = owner_it->second.pos_y;
+
+        // Calculate angle for this projectile (in degrees)
+        float angle_deg = base_angle + (angle_spread * i);
+        float angle_rad = angle_deg * PI / 180.0f;
+
+        // Calculate velocity components (base speed 0.008)
+        float base_speed = 0.008f;
+        float speed_x = base_speed * std::cos(angle_rad);
+        float speed_y = base_speed * std::sin(angle_rad);
+
+        // Force X direction based on team (like solo mode does with abs())
+        if (is_enemy) {
+            projectile.vel_x = -std::abs(speed_x);  // Enemy projectiles go left
+        } else {
+            projectile.vel_x = std::abs(speed_x);   // Player projectiles go right
+        }
+        projectile.vel_y = speed_y;
+        projectile.health = 1;
+        projectile.owner_player_id = owner_it->second.owner_player_id;
+        projectile.width = 0.02f;
+        projectile.height = 0.01f;
+        projectile.last_fire_time = 0.0f;
+
+        _entities[net_id] = projectile;
+
+        // Broadcast entity creation to all clients
+        for (const auto& [client_id, endpoint] : _client_endpoints) {
+            sendEntityCreate(projectile, endpoint);
+        }
     }
 }
 
@@ -625,12 +906,14 @@ void GameServer::updateCollisions()
             }
 
             // Handle different collision types
-            // Allied projectile vs Enemy
-            if (a.type == EntityType::ALLIED_PROJECTILE && b.type == EntityType::ENEMY) {
+            // Allied projectile vs Enemy (any type)
+            if (a.type == EntityType::ALLIED_PROJECTILE &&
+                (b.type == EntityType::ENEMY || b.type == EntityType::ENEMY_SPREAD || b.type == EntityType::BOSS)) {
                 damageEntity(id_b, 10);  // 10 damage
                 _entities_to_destroy.push_back(id_a);  // Destroy projectile
             }
-            else if (b.type == EntityType::ALLIED_PROJECTILE && a.type == EntityType::ENEMY) {
+            else if (b.type == EntityType::ALLIED_PROJECTILE &&
+                     (a.type == EntityType::ENEMY || a.type == EntityType::ENEMY_SPREAD || a.type == EntityType::BOSS)) {
                 damageEntity(id_a, 10);
                 _entities_to_destroy.push_back(id_b);
             }
@@ -644,11 +927,13 @@ void GameServer::updateCollisions()
                 _entities_to_destroy.push_back(id_b);
             }
             // Enemy vs Player (collision damage)
-            else if (a.type == EntityType::ENEMY && b.type == EntityType::PLAYER) {
+            else if ((a.type == EntityType::ENEMY || a.type == EntityType::ENEMY_SPREAD || a.type == EntityType::BOSS) &&
+                     b.type == EntityType::PLAYER) {
                 damageEntity(id_b, 30);  // Big damage
                 damageEntity(id_a, 30);  // Enemy also takes damage
             }
-            else if (b.type == EntityType::ENEMY && a.type == EntityType::PLAYER) {
+            else if ((b.type == EntityType::ENEMY || b.type == EntityType::ENEMY_SPREAD || b.type == EntityType::BOSS) &&
+                     a.type == EntityType::PLAYER) {
                 damageEntity(id_a, 30);
                 damageEntity(id_b, 30);
             }
@@ -668,6 +953,8 @@ void GameServer::damageEntity(uint32_t net_id, uint32_t damage)
     switch (it->second.type) {
         case EntityType::PLAYER: entity_type_name = "PLAYER"; break;
         case EntityType::ENEMY: entity_type_name = "ENEMY"; break;
+        case EntityType::ENEMY_SPREAD: entity_type_name = "ENEMY_SPREAD"; break;
+        case EntityType::BOSS: entity_type_name = "BOSS"; break;
         case EntityType::PROJECTILE: entity_type_name = "ENEMY_PROJECTILE"; break;
         case EntityType::ALLIED_PROJECTILE: entity_type_name = "ALLIED_PROJECTILE"; break;
         default: entity_type_name = "UNKNOWN"; break;
@@ -682,7 +969,12 @@ void GameServer::damageEntity(uint32_t net_id, uint32_t damage)
 
         // Add score if enemy died
         if (it->second.type == EntityType::ENEMY) {
-            _game_score += 100;
+            _game_score += 10;
+        } else if (it->second.type == EntityType::ENEMY_SPREAD) {
+            _game_score += 10;  // Same as regular enemy
+        } else if (it->second.type == EntityType::BOSS) {
+            _game_score += 1000;  // Boss worth much more
+            _boss_spawned = false;  // Allow boss to respawn in future
         }
     } else {
         it->second.health -= damage;

@@ -51,6 +51,11 @@ class NetworkManager : public ANetworkManager {
     uint32_t getAssignedNetId() const { return assigned_player_net_id_; }
 
     /**
+     * @brief Get game score
+     */
+    uint32_t getGameScore() const { return game_score_; }
+
+    /**
      * @brief Process incoming messages
      */
     void processMessages();
@@ -82,6 +87,9 @@ class NetworkManager : public ANetworkManager {
 
     // Network entities from server
     std::unordered_map<uint32_t, NetworkEntity> network_entities_;
+
+    // Game state
+    uint32_t game_score_ = 0;
 };
 
 } // namespace network

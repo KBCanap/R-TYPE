@@ -20,7 +20,9 @@
 // Entity types matching the network protocol
 enum class EntityType : uint8_t {
     PLAYER = 0x01,
-    ENEMY = 0x02,
+    ENEMY = 0x02,           // Enemy with wave movement (single OR burst shot - random)
+    ENEMY_SPREAD = 0x05,    // Spread shooting enemy (spread shot, zigzag movement)
+    BOSS = 0x06,            // Boss enemy
     PROJECTILE = 0x03,
     ALLIED_PROJECTILE = 0x04
 };
@@ -36,6 +38,13 @@ enum class UDPMessageType : uint8_t {
     PLAYER_INPUT = 0x20
 };
 
+// Movement pattern types for enemies
+enum class MovementPattern {
+    STRAIGHT,  // Move straight left
+    WAVE,      // Sinusoidal wave movement
+    ZIGZAG     // Zigzag movement
+};
+
 // Entity structure on server
 struct ServerEntity {
     uint32_t net_id;
@@ -49,6 +58,18 @@ struct ServerEntity {
     float width;  // Hitbox for collision
     float height;
     float last_fire_time; // For firing cooldown
+
+    // Movement pattern data
+    MovementPattern movement_pattern = MovementPattern::STRAIGHT;
+    float pattern_amplitude = 0.0f;      // Amplitude for wave/zigzag
+    float pattern_frequency = 0.0f;      // Frequency for wave/zigzag
+    float pattern_base_speed = 0.0f;     // Base horizontal speed
+    float pattern_time = 0.0f;           // Time accumulator for pattern
+
+    // Weapon data
+    int projectile_count = 1;            // Number of projectiles per shot
+    float projectile_angle_spread = 0.0f; // Angle spread for multi-projectile shots
+    float fire_cooldown = 2.0f;          // Time between shots
 };
 
 // UDP Packet received from client
@@ -74,6 +95,7 @@ public:
 
     // Send updates to all clients
     void broadcastEntityUpdates();
+    void broadcastGameState();
 
     // Handle incoming UDP packets
     void handleUDPPackets();
@@ -93,7 +115,10 @@ private:
     uint32_t generateNetId();
     void spawnPlayer(uint8_t player_id, ClientId client_id);
     void spawnEnemy(float pos_x, float pos_y);
+    void spawnEnemySpread(float pos_x, float pos_y);
+    void spawnBoss();
     void spawnProjectile(uint32_t owner_net_id, bool is_enemy);
+    void spawnMultipleProjectiles(uint32_t owner_net_id, bool is_enemy, int count, float angle_spread);
     void sendEntityCreate(const ServerEntity& entity, const std::string& endpoint);
     void sendEntityDestroy(uint32_t net_id);
     void sendPlayerAssignment(uint32_t net_id, const std::string& endpoint);
@@ -112,6 +137,7 @@ private:
     std::vector<uint8_t> serializeEntityDestroy(uint32_t net_id);
     std::vector<uint8_t> serializePlayerAssignment(uint32_t net_id);
     std::vector<uint8_t> serializeEntityUpdate(const std::vector<ServerEntity>& entities);
+    std::vector<uint8_t> serializeGameState();
 
     uint16_t _udp_port;
     std::unordered_map<uint32_t, ServerEntity> _entities;
@@ -125,6 +151,10 @@ private:
     float _enemy_spawn_timer;
     float _enemy_spawn_interval;
     float _game_time;
+
+    // Boss tracking
+    bool _boss_spawned;
+    uint32_t _boss_net_id;
 
     // UDP server
     asio::io_context _io_context;

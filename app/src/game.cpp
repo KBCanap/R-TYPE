@@ -277,6 +277,20 @@ void Game::render(float dt) {
                 _window.draw(*hp_text);
             }
         }
+
+        // Display score in multiplayer mode
+        uint32_t game_score = _networkManager->getGameScore();
+        auto score_text = _window.createText();
+        score_text->setFont(*_scoreFont);
+        score_text->setString("Score " + std::to_string(game_score));
+        score_text->setCharacterSize(24);
+        score_text->setFillColor(render::Color::White());
+
+        render::Vector2u window_size = _window.getSize();
+        render::FloatRect text_bounds = score_text->getLocalBounds();
+        score_text->setPosition(window_size.x - text_bounds.width - 20, 20);
+
+        _window.draw(*score_text);
     } else if (_player) {
         // Solo mode - use _player directly
         auto& healths = _registry.get_components<component::health>();
@@ -535,6 +549,18 @@ void Game::processNetworkEntities() {
                     textureRect = render::IntRect();  // Full sprite
                     scale = 1.0f;
                     break;
+                case 0x05: // ENEMY_SPREAD
+                    texturePath = "assets/sprites/r-typesheet3.gif";
+                    tag = "enemy_spread";
+                    textureRect = render::IntRect();  // Full sprite
+                    scale = 3.0f;
+                    break;
+                case 0x06: // BOSS
+                    texturePath = "assets/sprites/r-typesheet17.gif";
+                    tag = "boss";
+                    textureRect = render::IntRect();  // Full sprite
+                    scale = 2.0f;
+                    break;
                 case 0x03: // PROJECTILE (enemy)
                     texturePath = "assets/sprites/r-typesheet1.gif";
                     tag = "projectile_enemy";
@@ -574,6 +600,27 @@ void Game::processNetworkEntities() {
                 enemy_anim->frames.push_back(render::IntRect(0, 0, 50, 58));     // Frame 1
                 enemy_anim->frames.push_back(render::IntRect(51, 0, 57, 58));    // Frame 2
                 enemy_anim->frames.push_back(render::IntRect(116, 0, 49, 58));   // Frame 3
+            } else if (netEntity.type == 0x05) { // ENEMY_SPREAD
+                // Spread enemy animation (12 frames from r-typesheet3.gif)
+                auto& enemy_anim = _registry.add_component<component::animation>(ent, component::animation(0.5f, true));
+                enemy_anim->frames.push_back(render::IntRect(0, 0, 17, 18));      // Frame 1
+                enemy_anim->frames.push_back(render::IntRect(17, 0, 17, 18));     // Frame 2
+                enemy_anim->frames.push_back(render::IntRect(34, 0, 17, 18));     // Frame 3
+                enemy_anim->frames.push_back(render::IntRect(51, 0, 17, 18));     // Frame 4
+                enemy_anim->frames.push_back(render::IntRect(68, 0, 17, 18));     // Frame 5
+                enemy_anim->frames.push_back(render::IntRect(85, 0, 17, 18));     // Frame 6
+                enemy_anim->frames.push_back(render::IntRect(102, 0, 17, 18));    // Frame 7
+                enemy_anim->frames.push_back(render::IntRect(119, 0, 17, 18));    // Frame 8
+                enemy_anim->frames.push_back(render::IntRect(136, 0, 17, 18));    // Frame 9
+                enemy_anim->frames.push_back(render::IntRect(153, 0, 17, 18));    // Frame 10
+                enemy_anim->frames.push_back(render::IntRect(170, 0, 17, 18));    // Frame 11
+                enemy_anim->frames.push_back(render::IntRect(187, 0, 17, 18));    // Frame 12
+            } else if (netEntity.type == 0x06) { // BOSS
+                // Boss animation (8 frames from r-typesheet17.gif)
+                auto& boss_anim = _registry.add_component<component::animation>(ent, component::animation(0.1f, true));
+                for (int i = 0; i < 8; ++i) {
+                    boss_anim->frames.push_back(render::IntRect(i * 65, 0, 65, 132));
+                }
             }
 
             // Add health component

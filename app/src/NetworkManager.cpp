@@ -295,7 +295,16 @@ void NetworkManager::processMessages() {
                     network_entities_.erase(net_id);
                 }
                 break;
-                
+
+            case UDPMessageType::GAME_STATE:
+                if (packet.payload.size() >= 4) {
+                    game_score_ = (static_cast<uint32_t>(packet.payload[0]) << 24) |
+                                 (static_cast<uint32_t>(packet.payload[1]) << 16) |
+                                 (static_cast<uint32_t>(packet.payload[2]) << 8) |
+                                 static_cast<uint32_t>(packet.payload[3]);
+                }
+                break;
+
             default:
                 break;
         }

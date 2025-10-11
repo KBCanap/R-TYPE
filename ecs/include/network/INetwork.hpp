@@ -54,7 +54,9 @@ enum class UDPMessageType : uint8_t {
  */
 enum class EntityType : uint8_t {
     PLAYER = 0x01,
-    ENEMY = 0x02,
+    ENEMY = 0x02,           // Enemy with wave movement (single OR burst shot - random)
+    ENEMY_SPREAD = 0x05,    // Spread shooting enemy (spread shot, zigzag movement)
+    BOSS = 0x06,            // Boss enemy
     PROJECTILE = 0x03,
     ALLIED_PROJECTILE = 0x04
 };
