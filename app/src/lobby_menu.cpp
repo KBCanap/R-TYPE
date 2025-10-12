@@ -2,10 +2,10 @@
 #include "../include/settings.hpp"
 #include <iostream>
 
-LobbyMenu::LobbyMenu(render::IRenderWindow& win, AudioManager& audioMgr, network::INetwork& netMgr)
+LobbyMenu::LobbyMenu(render::IRenderWindow &win, AudioManager &audioMgr,
+                     network::INetwork &netMgr)
     : _window(win), _audioManager(audioMgr), _networkManager(netMgr),
-      _isReady(false), _waitingForGameStart(false), _bgScrollSpeed(100.f)
-{
+      _isReady(false), _waitingForGameStart(false), _bgScrollSpeed(100.f) {
     _baseWindowSize = _window.getSize();
     _windowSize = _baseWindowSize;
     _myPlayerId = _networkManager.getPlayerID();
@@ -40,45 +40,51 @@ LobbyMenu::LobbyMenu(render::IRenderWindow& win, AudioManager& audioMgr, network
 }
 
 void LobbyMenu::createUI() {
-    Settings& settings = Settings::getInstance();
+    Settings &settings = Settings::getInstance();
 
     // Title
     _titleText = _window.createText();
     _titleText->setFont(*_font);
     _titleText->setString("WAITING FOR PLAYERS");
     _titleText->setCharacterSize(40);
-    _titleText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
+    _titleText->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
 
     // Player ID text
     _playerIdText = _window.createText();
     _playerIdText->setFont(*_font);
     _playerIdText->setString("YOU ARE PLAYER " + std::to_string(_myPlayerId));
     _playerIdText->setCharacterSize(30);
-    _playerIdText->setFillColor(settings.applyColorblindFilter(render::Color(150, 200, 255)));
+    _playerIdText->setFillColor(
+        settings.applyColorblindFilter(render::Color(150, 200, 255)));
 
     // Ready button
     _readyButton = _window.createRectangleShape(render::Vector2f(350, 70));
     _readyButton->setFillColor(render::Color(70, 180, 70));
-    _readyButton->setOutlineColor(settings.applyColorblindFilter(render::Color::White()));
+    _readyButton->setOutlineColor(
+        settings.applyColorblindFilter(render::Color::White()));
     _readyButton->setOutlineThickness(3);
 
     _readyButtonText = _window.createText();
     _readyButtonText->setFont(*_font);
     _readyButtonText->setString("READY");
     _readyButtonText->setCharacterSize(28);
-    _readyButtonText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
+    _readyButtonText->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
 
     // Disconnect button
     _disconnectButton = _window.createRectangleShape(render::Vector2f(350, 70));
     _disconnectButton->setFillColor(render::Color(180, 70, 70));
-    _disconnectButton->setOutlineColor(settings.applyColorblindFilter(render::Color::White()));
+    _disconnectButton->setOutlineColor(
+        settings.applyColorblindFilter(render::Color::White()));
     _disconnectButton->setOutlineThickness(3);
 
     _disconnectButtonText = _window.createText();
     _disconnectButtonText->setFont(*_font);
     _disconnectButtonText->setString("DISCONNECT");
     _disconnectButtonText->setCharacterSize(28);
-    _disconnectButtonText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
+    _disconnectButtonText->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
 
     updateButtonScale();
 }
@@ -94,23 +100,21 @@ void LobbyMenu::updateButtonScale() {
 
     // Player ID
     render::FloatRect playerIdBounds = _playerIdText->getLocalBounds();
-    _playerIdText->setPosition(centerX - playerIdBounds.width / 2, centerY - 120);
+    _playerIdText->setPosition(centerX - playerIdBounds.width / 2,
+                               centerY - 120);
 
     // Ready button
     _readyButton->setPosition(centerX - 175, centerY + 20);
     render::FloatRect readyBtnBounds = _readyButtonText->getLocalBounds();
-    _readyButtonText->setPosition(
-        centerX - readyBtnBounds.width / 2,
-        centerY + 40
-    );
+    _readyButtonText->setPosition(centerX - readyBtnBounds.width / 2,
+                                  centerY + 40);
 
     // Disconnect button
     _disconnectButton->setPosition(centerX - 175, centerY + 110);
-    render::FloatRect disconnectBtnBounds = _disconnectButtonText->getLocalBounds();
-    _disconnectButtonText->setPosition(
-        centerX - disconnectBtnBounds.width / 2,
-        centerY + 130
-    );
+    render::FloatRect disconnectBtnBounds =
+        _disconnectButtonText->getLocalBounds();
+    _disconnectButtonText->setPosition(centerX - disconnectBtnBounds.width / 2,
+                                       centerY + 130);
 
     // Update background scale
     float scaleX = static_cast<float>(_windowSize.x) / _bgTexture->getSize().x;
@@ -125,9 +129,11 @@ void LobbyMenu::updateButtonScale() {
 void LobbyMenu::handleNetworkMessages() {
     // Poll TCP messages
     auto tcpMessages = _networkManager.pollTCP();
-    for (const auto& msg : tcpMessages) {
+    for (const auto &msg : tcpMessages) {
         if (msg.msg_type == network::MessageType::TCP_GAME_START) {
-            std::cout << "[Lobby] Received TCP_GAME_START! Transitioning to game..." << std::endl;
+            std::cout
+                << "[Lobby] Received TCP_GAME_START! Transitioning to game..."
+                << std::endl;
             _waitingForGameStart = true;
         } else if (msg.msg_type == network::MessageType::TCP_ERROR) {
             std::cerr << "[Lobby] Received TCP_ERROR from server!" << std::endl;
@@ -146,7 +152,8 @@ void LobbyMenu::sendReadyMessage() {
     // Send TCP_READY according to RFC:
     // MSG_TYPE = 0x04, DATA_LENGTH = 0 (no payload)
     // Format: 04 00 00 00
-    std::cout << "[Lobby] Sending TCP_READY (0x04 0x00 0x00 0x00)..." << std::endl;
+    std::cout << "[Lobby] Sending TCP_READY (0x04 0x00 0x00 0x00)..."
+              << std::endl;
 
     bool success = _networkManager.sendTCP(network::MessageType::TCP_READY, {});
 
@@ -179,19 +186,23 @@ void LobbyMenu::render() {
 }
 
 LobbyResult LobbyMenu::run() {
-    std::cout << "[Lobby] Entering lobby as Player " << static_cast<int>(_myPlayerId) << std::endl;
+    std::cout << "[Lobby] Entering lobby as Player "
+              << static_cast<int>(_myPlayerId) << std::endl;
 
     while (_window.isOpen()) {
         // Calculate delta time
         auto currentTime = std::chrono::steady_clock::now();
-        float dt = std::chrono::duration<float>(currentTime - _lastTime).count();
+        float dt =
+            std::chrono::duration<float>(currentTime - _lastTime).count();
         _lastTime = currentTime;
 
         // Handle network messages
         handleNetworkMessages();
 
         // Check if game is starting
-        if (_waitingForGameStart && _networkManager.getConnectionState() == network::ConnectionState::GAME_STARTING) {
+        if (_waitingForGameStart &&
+            _networkManager.getConnectionState() ==
+                network::ConnectionState::GAME_STARTING) {
             std::cout << "[Lobby] Game starting! Exiting lobby..." << std::endl;
             return LobbyResult::StartGame;
         }
@@ -231,8 +242,9 @@ LobbyResult LobbyMenu::run() {
                     float centerY = _windowSize.y / 2.0f;
 
                     // Check ready button (centerY + 20, size 350x70)
-                    if (!_isReady && mouseX >= centerX - 175 && mouseX <= centerX + 175 &&
-                        mouseY >= centerY + 20 && mouseY <= centerY + 90) {
+                    if (!_isReady && mouseX >= centerX - 175 &&
+                        mouseX <= centerX + 175 && mouseY >= centerY + 20 &&
+                        mouseY <= centerY + 90) {
                         sendReadyMessage();
                     }
 

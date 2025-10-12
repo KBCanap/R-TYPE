@@ -3,10 +3,13 @@
 
 namespace component {
 
-projectile_pattern::projectile_pattern(const std::string& type, float p1, float p2, float p3, float p4)
+projectile_pattern::projectile_pattern(const std::string &type, float p1,
+                                       float p2, float p3, float p4)
     : pattern_type(type), param1(p1), param2(p2), param3(p3), param4(p4) {}
 
-void projectile_pattern::apply_pattern(float& vx, float& vy, float pos_x, float pos_y, float age, float speed, bool friendly) const {
+void projectile_pattern::apply_pattern(float &vx, float &vy, float pos_x,
+                                       float pos_y, float age, float speed,
+                                       bool friendly) const {
     if (custom_function) {
         custom_function(vx, vy, pos_x, pos_y, age, speed, friendly);
         return;
@@ -50,7 +53,8 @@ void projectile_pattern::apply_pattern(float& vx, float& vy, float pos_x, float 
     } else if (pattern_type == "spread") {
         // Mouvement en éventail - applique un angle progressif aux projectiles
         // param1 = spread_angle (angle total de l'éventail)
-        // Le spread est géré au niveau de l'arme, ce pattern garde juste la direction initiale
+        // Le spread est géré au niveau de l'arme, ce pattern garde juste la
+        // direction initiale
         float current_speed = std::sqrt(vx * vx + vy * vy);
         if (current_speed > 0) {
             float scale = speed / current_speed;
@@ -65,11 +69,13 @@ projectile_pattern projectile_pattern::straight() {
     return projectile_pattern("straight");
 }
 
-projectile_pattern projectile_pattern::wave(float amplitude, float frequency, float phase_offset) {
+projectile_pattern projectile_pattern::wave(float amplitude, float frequency,
+                                            float phase_offset) {
     return projectile_pattern("wave", amplitude, frequency, phase_offset);
 }
 
-projectile_pattern projectile_pattern::spiral(float amplitude, float turn_speed, float phase_offset) {
+projectile_pattern projectile_pattern::spiral(float amplitude, float turn_speed,
+                                              float phase_offset) {
     return projectile_pattern("spiral", amplitude, turn_speed, phase_offset);
 }
 
@@ -81,4 +87,4 @@ projectile_pattern projectile_pattern::spread(float spread_angle) {
     return projectile_pattern("spread", spread_angle);
 }
 
-}
+} // namespace component

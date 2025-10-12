@@ -7,20 +7,21 @@
 enum class AccessibilityResult { None, Back, Resumed };
 
 class AccessibilityMenu {
-public:
-    AccessibilityMenu(render::IRenderWindow& win, AudioManager& audioMgr);
+  public:
+    AccessibilityMenu(render::IRenderWindow &win, AudioManager &audioMgr);
 
     AccessibilityResult run();
     void render();
 
-private:
+  private:
     void createButtons();
     void updateButtonScale();
-    void cycleColorblindMode(int direction); // direction: -1 for previous, +1 for next
+    void cycleColorblindMode(
+        int direction); // direction: -1 for previous, +1 for next
 
-private:
-    render::IRenderWindow& _window;
-    AudioManager& _audioManager;
+  private:
+    render::IRenderWindow &_window;
+    AudioManager &_audioManager;
 
     std::unique_ptr<render::IFont> _font;
     std::unique_ptr<render::IText> _titleText;

@@ -8,7 +8,7 @@ namespace sfml {
 
 // SFML Sound wrapper
 class SFMLSound : public ISound {
-public:
+  public:
     SFMLSound() = default;
     void play() override;
     void pause() override;
@@ -16,33 +16,33 @@ public:
     void setVolume(float volume) override;
     void setLoop(bool loop) override;
     void setPitch(float pitch) override;
-    void setBuffer(ISoundBuffer& buffer) override;
+    void setBuffer(ISoundBuffer &buffer) override;
     float getVolume() const override;
     bool getLoop() const override;
     AudioStatus getStatus() const override;
 
-private:
+  private:
     sf::Sound _sound;
     AudioStatus fromSFMLStatus(sf::Sound::Status status) const;
 };
 
 // SFML SoundBuffer wrapper
 class SFMLSoundBuffer : public ISoundBuffer {
-public:
+  public:
     SFMLSoundBuffer() = default;
-    bool loadFromFile(const std::string& filename) override;
+    bool loadFromFile(const std::string &filename) override;
     float getDuration() const override;
-    sf::SoundBuffer& getNativeBuffer() { return _buffer; }
+    sf::SoundBuffer &getNativeBuffer() { return _buffer; }
 
-private:
+  private:
     sf::SoundBuffer _buffer;
 };
 
 // SFML Music wrapper
 class SFMLMusic : public IMusic {
-public:
+  public:
     SFMLMusic() = default;
-    bool openFromFile(const std::string& filename) override;
+    bool openFromFile(const std::string &filename) override;
     void play() override;
     void pause() override;
     void stop() override;
@@ -56,24 +56,24 @@ public:
     float getDuration() const override;
     float getPlayingOffset() const override;
 
-private:
+  private:
     sf::Music _music;
     AudioStatus fromSFMLStatus(sf::Music::Status status) const;
 };
 
 // SFML RenderAudio implementation
 class SFMLRenderAudio : public IRenderAudio {
-public:
+  public:
     SFMLRenderAudio() = default;
     ~SFMLRenderAudio() override = default;
 
-    ISound* createSound() override;
-    ISoundBuffer* createSoundBuffer() override;
-    IMusic* createMusic() override;
+    ISound *createSound() override;
+    ISoundBuffer *createSoundBuffer() override;
+    IMusic *createMusic() override;
     void setGlobalVolume(float volume) override;
     float getGlobalVolume() const override;
 
-private:
+  private:
     float _globalVolume = 100.0f;
 };
 

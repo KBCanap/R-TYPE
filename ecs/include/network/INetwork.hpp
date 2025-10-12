@@ -3,7 +3,6 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include <optional>
 
 namespace network {
 
@@ -54,9 +53,9 @@ enum class UDPMessageType : uint8_t {
  */
 enum class EntityType : uint8_t {
     PLAYER = 0x01,
-    ENEMY = 0x02,           // Enemy with wave movement (single OR burst shot - random)
-    ENEMY_SPREAD = 0x05,    // Spread shooting enemy (spread shot, zigzag movement)
-    BOSS = 0x06,            // Boss enemy
+    ENEMY = 0x02, // Enemy with wave movement (single OR burst shot - random)
+    ENEMY_SPREAD = 0x05, // Spread shooting enemy (spread shot, zigzag movement)
+    BOSS = 0x06,         // Boss enemy
     PROJECTILE = 0x03,
     ALLIED_PROJECTILE = 0x04
 };
@@ -73,10 +72,10 @@ enum class InputEventType : uint8_t { MOVE = 0x01, SHOOT = 0x02, QUIT = 0x03 };
  */
 enum class Direction : uint8_t {
     NONE = 0x00,
-    UP = 0x01,       // bit 0
-    DOWN = 0x02,     // bit 1
-    LEFT = 0x04,     // bit 2
-    RIGHT = 0x08     // bit 3
+    UP = 0x01,   // bit 0
+    DOWN = 0x02, // bit 1
+    LEFT = 0x04, // bit 2
+    RIGHT = 0x08 // bit 3
 };
 
 /**

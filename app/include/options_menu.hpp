@@ -2,10 +2,17 @@
 #include "../../ecs/include/render/IRenderWindow.hpp"
 #include "audio_manager.hpp"
 #include "key_bindings.hpp"
-#include <vector>
 #include <memory>
+#include <vector>
 
-enum class OptionsResult { None, Back, ResolutionChanged, SoundToggled, Accessibility, KeyBindings };
+enum class OptionsResult {
+    None,
+    Back,
+    ResolutionChanged,
+    SoundToggled,
+    Accessibility,
+    KeyBindings
+};
 
 struct Resolution {
     unsigned int width;
@@ -14,26 +21,29 @@ struct Resolution {
 };
 
 class OptionsMenu {
-public:
-    OptionsMenu(render::IRenderWindow& win, AudioManager& audioMgr, KeyBindings& keyBindings);
+  public:
+    OptionsMenu(render::IRenderWindow &win, AudioManager &audioMgr,
+                KeyBindings &keyBindings);
 
     OptionsResult run();
     void render();
 
     // Getters for settings
-    Resolution getCurrentResolution() const { return _resolutions[_currentResolution]; }
+    Resolution getCurrentResolution() const {
+        return _resolutions[_currentResolution];
+    }
     bool isSoundEnabled() const { return _soundEnabled; }
 
-private:
+  private:
     void createButtons();
     void updateButtonScale();
     void handleResolutionChange();
     void toggleSound();
 
-private:
-    render::IRenderWindow& _window;
-    AudioManager& _audioManager;
-    KeyBindings& _keyBindings;
+  private:
+    render::IRenderWindow &_window;
+    AudioManager &_audioManager;
+    KeyBindings &_keyBindings;
 
     std::unique_ptr<render::IFont> _font;
     std::unique_ptr<render::IText> _titleText;

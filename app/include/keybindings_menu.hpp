@@ -2,29 +2,30 @@
 #include "../../ecs/include/render/IRenderWindow.hpp"
 #include "audio_manager.hpp"
 #include "key_bindings.hpp"
-#include <vector>
 #include <memory>
+#include <vector>
 
 enum class KeyBindingsResult { None, Back };
 
 class KeyBindingsMenu {
-public:
-    KeyBindingsMenu(render::IRenderWindow& win, AudioManager& audioMgr, KeyBindings& keyBindings);
+  public:
+    KeyBindingsMenu(render::IRenderWindow &win, AudioManager &audioMgr,
+                    KeyBindings &keyBindings);
 
     KeyBindingsResult run();
     void render();
 
-private:
+  private:
     void createButtons();
     void updateButtonScale();
     void startRebinding(GameAction action);
     void handleKeyPress(render::Key key);
     void resetToDefaults();
 
-private:
-    render::IRenderWindow& _window;
-    AudioManager& _audioManager;
-    KeyBindings& _keyBindings;
+  private:
+    render::IRenderWindow &_window;
+    AudioManager &_audioManager;
+    KeyBindings &_keyBindings;
 
     std::unique_ptr<render::IFont> _font;
     std::unique_ptr<render::IText> _titleText;
