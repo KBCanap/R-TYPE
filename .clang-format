@@ -1,0 +1,4 @@
+BasedOnStyle: LLVM  # Use a base style (e.g., LLVM, Google, Chromium, etc.)
+IndentWidth: 4      # Set indentation width
+ColumnLimit: 80     # Maximum line length
+BreakTemplateDeclarations: Yes  #Don't include template in the funtion line

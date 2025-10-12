@@ -1,0 +1,2 @@
+# Toujours garder les hooks en LF (win)
+.githooks/* text eol=lf

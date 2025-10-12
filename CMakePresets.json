@@ -1,0 +1,86 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20
+    },
+
+    "vendor": { "info": "R-TYPE presets" },
+
+    "configurePresets": [
+        {
+            "name": "linux-config-dev",
+            "displayName": "Linux Configure (Debug + Tests, Makefiles)",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/dev",
+            "cacheVariables": {
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build/dev/bin",
+                "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "RTYPE_BUILD_TESTS": "ON",
+                "RTYPE_WERROR": "OFF"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "linux-config-release",
+            "displayName": "Linux Configure (Release, Makefiles)",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/linux",
+            "cacheVariables": {
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build/linux/bin",
+                "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        }
+    ],
+
+    "buildPresets": [
+        {
+            "name": "linux-build-dev",
+            "displayName": "Linux Build Dev (Debug + Tests)",
+            "configurePreset": "linux-config-dev",
+            "configuration": "Debug"
+        },
+        {
+            "name": "linux-build-release",
+            "displayName": "Linux Build Release",
+            "configurePreset": "linux-config-release",
+            "configuration": "Release"
+        }
+    ],
+
+    "testPresets": [
+        {
+            "name": "linux-test-dev",
+            "displayName": "Linux Tests (Debug, Dev)",
+            "configurePreset": "linux-config-dev",
+            "configuration": "Debug",
+            "output": {
+                "outputOnFailure": true,
+                "verbosity": "verbose"
+            }
+        }
+    ],
+
+    "packagePresets": [
+        {
+            "name": "linux-package-release",
+            "displayName": "Linux Package (Release)",
+            "configurePreset": "linux-config-release",
+            "generators": [ "TGZ", "DEB" ]
+        }
+    ]
+}
