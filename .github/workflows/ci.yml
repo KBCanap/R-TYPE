@@ -114,6 +114,7 @@ jobs:
         cmake --build --preset linux-build-dev
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
+
   mirror-to-epitech:
     name: Mirror to Epitech Repository
     runs-on: ubuntu-latest
