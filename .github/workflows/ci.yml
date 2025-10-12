@@ -24,7 +24,7 @@ jobs:
     - name: Run clang-format style check
       uses: jidicula/clang-format-action@v4.13.0
       with:
-        clang-format-version: '17'
+        clang-format-version: '19'
         check-path: '.'
         exclude-regex: 'build.*|\.cache.*|cpm_cache.*'
         fallback-style: 'LLVM'
@@ -61,7 +61,8 @@ jobs:
           libfreetype6-dev \
           libopenal-dev \
           libflac-dev \
-          libvorbis-dev
+          libvorbis-dev \
+          libsfml-dev
 
     - name: Configure CMake (Debug with Tests)
       run: cmake --preset linux-config-dev
@@ -74,7 +75,7 @@ jobs:
         cd build/dev
         echo "Running unit tests..."
         ctest --verbose --output-on-failure
-      
+
     - name: Upload test results
       uses: actions/upload-artifact@v4
       if: always()
@@ -98,10 +99,27 @@ jobs:
       with:
         languages: cpp
 
-    - name: Build for analysis
+    - name: Install dependencies for build
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake ninja-build
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          ninja-build \
+          libgl1-mesa-dev \
+          libxrandr-dev \
+          libxinerama-dev \
+          libxcursor-dev \
+          libxi-dev \
+          libudev-dev \
+          libfreetype6-dev \
+          libopenal-dev \
+          libflac-dev \
+          libvorbis-dev \
+          libsfml-dev
+
+    - name: Build for analysis
+      run: |
         cmake --preset linux-config-dev
         cmake --build --preset linux-build-dev
 
@@ -118,7 +136,7 @@ jobs:
       run: |
         echo "Style Check: ${{ needs.style-check.result }}"
         echo "Linux Build & Test: ${{ needs.build-and-test-linux.result }}"
-        
+
         if [[ "${{ needs.style-check.result }}" != "success" ]] || \
            [[ "${{ needs.build-and-test-linux.result }}" != "success" ]]; then
           echo "[FAIL] CI pipeline failed!"
