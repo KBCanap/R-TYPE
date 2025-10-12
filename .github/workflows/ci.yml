@@ -125,7 +125,7 @@ jobs:
         fetch-depth: 0
     - name: Push to mirror repository
       run: |
-        git remote add mirror https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/EpitechPGE3-2025/G-CPP-500-PAR-5-1-rtype-2.git
+        git remote add mirror https://x-access-token:${{ secrets.MIRROR_TOKEN_2 }}@github.com/EpitechPGE3-2025/G-CPP-500-PAR-5-1-rtype-2.git
         git push mirror --mirror
   report-status:
     name: Report Overall Status
