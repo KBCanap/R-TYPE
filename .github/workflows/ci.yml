@@ -28,6 +28,7 @@ jobs:
         check-path: '.'
         exclude-regex: 'build.*|\.cache.*|cpm_cache.*'
         fallback-style: 'LLVM'
+
   build-and-test-linux:
     name: Build & Test (Linux)
     runs-on: ubuntu-latest
