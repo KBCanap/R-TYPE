@@ -13,13 +13,27 @@ void NetworkCommandHandler::onCreateEntity(
     const network::CreateEntityCommand &cmd) {
     entity new_entity(0);
 
+    std::cout << "[CLIENT] Creating entity type: " << static_cast<int>(cmd.entity_type) << " NET_ID: " << cmd.net_id << std::endl;
+
     switch (cmd.entity_type) {
     case network::EntityType::PLAYER:
+        std::cout << "[CLIENT] -> Creating PLAYER" << std::endl;
         new_entity = createPlayerEntity(cmd);
         break;
 
     case network::EntityType::ENEMY:
+        std::cout << "[CLIENT] -> Creating ENEMY (wave)" << std::endl;
         new_entity = createEnemyEntity(cmd);
+        break;
+
+    case network::EntityType::ENEMY_SPREAD:
+        std::cout << "[CLIENT] -> Creating ENEMY_SPREAD (zigzag)" << std::endl;
+        new_entity = createEnemySpreadEntity(cmd);
+        break;
+
+    case network::EntityType::BOSS:
+        std::cout << "[CLIENT] -> Creating BOSS" << std::endl;
+        new_entity = createBossEntity(cmd);
         break;
 
     case network::EntityType::PROJECTILE:
@@ -28,6 +42,7 @@ void NetworkCommandHandler::onCreateEntity(
         break;
 
     default:
+        std::cerr << "[CLIENT] Unknown entity type: " << static_cast<int>(cmd.entity_type) << std::endl;
         return;
     }
 
@@ -155,21 +170,131 @@ entity NetworkCommandHandler::createPlayerEntity(
 
 entity NetworkCommandHandler::createEnemyEntity(
     const network::CreateEntityCommand &cmd) {
-    entity enemy = enemy_manager_.spawnEnemy();
+    auto enemy = registry_.spawn_entity();
 
-    auto &positions = registry_.get_components<component::position>();
-    if (enemy < positions.size() && positions[enemy]) {
-        positions[enemy]->x = cmd.position_x;
-        positions[enemy]->y = cmd.position_y;
-    }
+    registry_.add_component<component::position>(
+        enemy, component::position(cmd.position_x, cmd.position_y));
 
-    auto &healths = registry_.get_components<component::health>();
-    if (enemy < healths.size() && healths[enemy]) {
-        healths[enemy]->current_hp = cmd.health;
-        healths[enemy]->max_hp = cmd.health;
-    }
+    registry_.add_component<component::velocity>(
+        enemy, component::velocity(0.0f, 0.0f));
+
+    // Wave enemy - use r-typesheet9.gif
+    registry_.add_component<component::drawable>(
+        enemy, component::drawable("assets/sprites/r-typesheet9.gif",
+                                   render::IntRect(), 1.0f, "enemy"));
+
+    registry_.add_component<component::hitbox>(
+        enemy, component::hitbox(50.0f, 58.0f, 0.0f, 0.0f));
+
+    registry_.add_component<component::health>(
+        enemy, component::health(cmd.health));
+
+    // No weapon component needed - server handles all shooting in multiplayer
+
+    // Add AI input with wave movement pattern (movement only, no shooting)
+    float fire_interval = 1.5f;
+    component::ai_movement_pattern movement_pattern =
+        component::ai_movement_pattern::wave(50.0f, 0.01f, 120.0f);
+    registry_.add_component<component::ai_input>(
+        enemy, component::ai_input(true, fire_interval, movement_pattern));
+
+    // Add animation frames for wave enemy (3 frames)
+    auto& anim = registry_.add_component<component::animation>(
+        enemy, component::animation(0.5f, true));
+    anim->frames.push_back(render::IntRect(0, 0, 50, 58));     // Frame 1
+    anim->frames.push_back(render::IntRect(51, 0, 57, 58));    // Frame 2
+    anim->frames.push_back(render::IntRect(116, 0, 49, 58));   // Frame 3
 
     return enemy;
+}
+
+entity NetworkCommandHandler::createEnemySpreadEntity(
+    const network::CreateEntityCommand &cmd) {
+    auto enemy = registry_.spawn_entity();
+
+    registry_.add_component<component::position>(
+        enemy, component::position(cmd.position_x, cmd.position_y));
+
+    registry_.add_component<component::velocity>(
+        enemy, component::velocity(0.0f, 0.0f));
+
+    // Spread enemy - use r-typesheet3.gif
+    registry_.add_component<component::drawable>(
+        enemy, component::drawable("assets/sprites/r-typesheet3.gif",
+                                   render::IntRect(), 3.0f, "enemy_spread"));
+
+    registry_.add_component<component::hitbox>(
+        enemy, component::hitbox(51.0f, 54.0f, 0.0f, 0.0f));
+
+    registry_.add_component<component::health>(
+        enemy, component::health(cmd.health));
+
+    // No weapon component needed - server handles all shooting in multiplayer
+
+    // Add AI input with zigzag movement pattern (movement only, no shooting)
+    float fire_interval = 1.25f;
+    component::ai_movement_pattern movement_pattern =
+        component::ai_movement_pattern::zigzag(60.0f, 0.015f, 130.0f);
+    registry_.add_component<component::ai_input>(
+        enemy, component::ai_input(true, fire_interval, movement_pattern));
+
+    // Add animation frames for spread enemy (12 frames)
+    auto& anim = registry_.add_component<component::animation>(
+        enemy, component::animation(0.5f, true));
+    anim->frames.push_back(render::IntRect(0, 0, 17, 18));      // Frame 1
+    anim->frames.push_back(render::IntRect(17, 0, 17, 18));     // Frame 2
+    anim->frames.push_back(render::IntRect(34, 0, 17, 18));     // Frame 3
+    anim->frames.push_back(render::IntRect(51, 0, 17, 18));     // Frame 4
+    anim->frames.push_back(render::IntRect(68, 0, 17, 18));     // Frame 5
+    anim->frames.push_back(render::IntRect(85, 0, 17, 18));     // Frame 6
+    anim->frames.push_back(render::IntRect(102, 0, 17, 18));    // Frame 7
+    anim->frames.push_back(render::IntRect(119, 0, 17, 18));    // Frame 8
+    anim->frames.push_back(render::IntRect(136, 0, 17, 18));    // Frame 9
+    anim->frames.push_back(render::IntRect(153, 0, 17, 18));    // Frame 10
+    anim->frames.push_back(render::IntRect(170, 0, 17, 18));    // Frame 11
+    anim->frames.push_back(render::IntRect(187, 0, 17, 18));    // Frame 12
+
+    return enemy;
+}
+
+entity NetworkCommandHandler::createBossEntity(
+    const network::CreateEntityCommand &cmd) {
+    auto boss = registry_.spawn_entity();
+
+    registry_.add_component<component::position>(
+        boss, component::position(cmd.position_x, cmd.position_y));
+
+    registry_.add_component<component::velocity>(
+        boss, component::velocity(0.0f, 100.0f));
+
+    // Boss - use r-typesheet17.gif
+    registry_.add_component<component::drawable>(
+        boss, component::drawable("assets/sprites/r-typesheet17.gif",
+                                  render::IntRect(), 2.0f, "boss"));
+
+    registry_.add_component<component::hitbox>(
+        boss, component::hitbox(130.0f, 220.0f, 0.0f, 0.0f));
+
+    registry_.add_component<component::health>(
+        boss, component::health(cmd.health));
+
+    // No weapon component needed - server handles all shooting in multiplayer
+
+    // Boss AI input - no movement pattern (bounce is handled by position_system)
+    auto boss_ai = registry_.add_component<component::ai_input>(
+        boss, component::ai_input(true, 0.5f,
+                                  component::ai_movement_pattern::straight(0.0f)));
+    // Disable AI movement so it doesn't override the bounce behavior
+    boss_ai->movement_pattern.base_speed = 0.0f;
+
+    // Boss animation: 8 frames
+    auto& boss_anim = registry_.add_component<component::animation>(
+        boss, component::animation(0.1f, true));
+    for (int i = 0; i < 8; ++i) {
+        boss_anim->frames.push_back(render::IntRect(i * 65, 0, 65, 132));
+    }
+
+    return boss;
 }
 
 entity NetworkCommandHandler::createProjectileEntity(

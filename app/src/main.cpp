@@ -78,12 +78,12 @@ int main() {
 
                     if (lobbyResult == LobbyResult::StartGame) {
                         std::cout << "[Main] Starting MULTIPLAYER game..." << std::endl;
-                        std::cout << "[Main] Multiplayer game implementation coming soon!" << std::endl;
-                        std::cout << "[Main] Returning to main menu..." << std::endl;
-                        // TODO: Launch multiplayer game with network manager
-                        // The Game class needs to be modified to accept NetworkManager
-                        // Game game(reg, *window, audioManager, networkManager);
-                        // game.run();
+
+                        // Launch multiplayer game with network manager
+                        Game game(reg, *window, audioManager, keyBindings, networkManager.get());
+                        game.run();
+
+                        std::cout << "[Main] Multiplayer game ended, returning to main menu..." << std::endl;
 
                         // Disconnect gracefully
                         networkManager->disconnect();
