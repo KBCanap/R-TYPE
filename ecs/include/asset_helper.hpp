@@ -2,7 +2,7 @@
 #include <string>
 
 // Fonction helper pour construire les chemins d'assets
-inline std::string getAssetPath(const std::string& filename) {
+inline std::string getAssetPath(const std::string &filename) {
 #ifdef ASSETS_PATH
     return std::string(ASSETS_PATH) + filename;
 #else

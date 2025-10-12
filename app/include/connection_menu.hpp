@@ -1,14 +1,14 @@
 #pragma once
 #include "../../ecs/include/render/IRenderWindow.hpp"
 #include "audio_manager.hpp"
+#include <chrono>
 #include <memory>
 #include <string>
-#include <chrono>
 
 enum class ConnectionMenuResult {
-    Solo,           // Play solo (offline)
-    Multiplayer,    // Play multiplayer (online)
-    Back            // Go back to main menu
+    Solo,        // Play solo (offline)
+    Multiplayer, // Play multiplayer (online)
+    Back         // Go back to main menu
 };
 
 struct ConnectionInfo {
@@ -17,23 +17,23 @@ struct ConnectionInfo {
 };
 
 class ConnectionMenu {
-public:
-    ConnectionMenu(render::IRenderWindow& win, AudioManager& audioMgr);
+  public:
+    ConnectionMenu(render::IRenderWindow &win, AudioManager &audioMgr);
 
     /**
      * @brief Run the connection menu
      * @param outConnectionInfo Output parameter for server connection info
      * @return ConnectionMenuResult indicating user choice
      */
-    ConnectionMenuResult run(ConnectionInfo& outConnectionInfo);
+    ConnectionMenuResult run(ConnectionInfo &outConnectionInfo);
 
-private:
+  private:
     void createUI();
     void updateButtonScale();
     void render();
 
-    render::IRenderWindow& _window;
-    AudioManager& _audioManager;
+    render::IRenderWindow &_window;
+    AudioManager &_audioManager;
 
     std::unique_ptr<render::IFont> _font;
     std::unique_ptr<render::ITexture> _bgTexture;

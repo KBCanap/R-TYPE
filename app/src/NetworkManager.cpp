@@ -64,7 +64,10 @@ bool NetworkManager::sendPlayerInput(const PlayerInputData &input) {
 }
 
 bool NetworkManager::sendClientPing(uint32_t timestamp) {
-    UDPPacket ping_packet = PacketProcessor::createClientPing(timestamp);
+    uint8_t player_id = getPlayerID();
+
+    UDPPacket ping_packet =
+        PacketProcessor::createClientPing(timestamp, player_id);
     ping_packet.sequence_num = packet_processor_.getNextSendSequence();
     return sendUDP(ping_packet);
 }
@@ -85,8 +88,6 @@ void NetworkManager::handlePlayerAssignment(const UDPPacket &packet) {
     }
 
     updateState(ConnectionState::IN_GAME);
-
-    std::cout << "PLAYER_ASSIGNMENT received: NET_ID = " << net_id << std::endl;
 }
 
 void NetworkManager::initializeUDPSocket() {
@@ -112,9 +113,6 @@ void NetworkManager::initializeUDPSocket() {
         last_ping_time_ = std::chrono::steady_clock::now();
         ping_start_time_ = last_ping_time_;
         ping_retry_count_ = 0;
-
-        std::cout << "CLIENT_PING sent(timestamp : " << current_time << ") "
-                  << std::endl;
     } else {
         std::cerr << "Failed to send CLIENT_PING" << std::endl;
         updateState(ConnectionState::ERROR);
@@ -168,8 +166,6 @@ void NetworkManager::update(float dt) {
                 if (sendClientPing(current_time)) {
                     ping_retry_count_++;
                     last_ping_time_ = now;
-                    std::cout << "Retrying CLIENT_PING (" << ping_retry_count_
-                              << "/" << MAX_PING_RETRIES << ")" << std::endl;
                 } else {
                     std::cerr << "Failed to retry CLIENT_PING" << std::endl;
                     updateState(ConnectionState::ERROR);
@@ -191,6 +187,139 @@ void NetworkManager::resetConnectionState() {
     player_assigned_ = false;
     udp_ping_sent_ = false;
     ping_retry_count_ = 0;
+}
+
+void NetworkManager::sendPlayerInput(uint8_t direction) {
+    UDPPacket packet;
+    packet.msg_type = UDPMessageType::PLAYER_INPUT;
+    packet.sequence_num = packet_processor_.getNextSendSequence();
+
+    // Payload: 1 byte event_type (0x00 = movement) + 1 byte direction
+    packet.payload = {0x00, direction};
+    packet.data_length = 2;
+
+    sendUDP(packet);
+}
+
+void NetworkManager::processMessages() {
+    // Poll TCP messages
+    auto tcp_messages = pollTCP();
+    // TCP messages handling could be added here in the future
+    (void)tcp_messages; // Suppress unused variable warning
+
+    // Poll UDP packets
+    auto udp_packets = pollUDP();
+    for (const auto &packet : udp_packets) {
+        switch (packet.msg_type) {
+        case UDPMessageType::ENTITY_CREATE:
+            if (packet.payload.size() >= 17) {
+                // Parse ENTITY_CREATE: NET_ID (4) + type (1) + health (4) +
+                // pos_x (4) + pos_y (4)
+                uint32_t net_id =
+                    (static_cast<uint32_t>(packet.payload[0]) << 24) |
+                    (static_cast<uint32_t>(packet.payload[1]) << 16) |
+                    (static_cast<uint32_t>(packet.payload[2]) << 8) |
+                    static_cast<uint32_t>(packet.payload[3]);
+
+                uint8_t type = packet.payload[4];
+
+                uint32_t health =
+                    (static_cast<uint32_t>(packet.payload[5]) << 24) |
+                    (static_cast<uint32_t>(packet.payload[6]) << 16) |
+                    (static_cast<uint32_t>(packet.payload[7]) << 8) |
+                    static_cast<uint32_t>(packet.payload[8]);
+
+                uint32_t pos_x_bits =
+                    (static_cast<uint32_t>(packet.payload[9]) << 24) |
+                    (static_cast<uint32_t>(packet.payload[10]) << 16) |
+                    (static_cast<uint32_t>(packet.payload[11]) << 8) |
+                    static_cast<uint32_t>(packet.payload[12]);
+                float pos_x;
+                std::memcpy(&pos_x, &pos_x_bits, sizeof(float));
+
+                uint32_t pos_y_bits =
+                    (static_cast<uint32_t>(packet.payload[13]) << 24) |
+                    (static_cast<uint32_t>(packet.payload[14]) << 16) |
+                    (static_cast<uint32_t>(packet.payload[15]) << 8) |
+                    static_cast<uint32_t>(packet.payload[16]);
+                float pos_y;
+                std::memcpy(&pos_y, &pos_y_bits, sizeof(float));
+
+                NetworkEntity entity;
+                entity.type = type;
+                entity.pos_x = pos_x;
+                entity.pos_y = pos_y;
+                entity.health = health;
+
+                network_entities_[net_id] = entity;
+            }
+            break;
+
+        case UDPMessageType::ENTITY_UPDATE:
+            // Parse multiple entities (16 bytes each)
+            for (size_t i = 0; i + 16 <= packet.payload.size(); i += 16) {
+                uint32_t net_id =
+                    (static_cast<uint32_t>(packet.payload[i]) << 24) |
+                    (static_cast<uint32_t>(packet.payload[i + 1]) << 16) |
+                    (static_cast<uint32_t>(packet.payload[i + 2]) << 8) |
+                    static_cast<uint32_t>(packet.payload[i + 3]);
+
+                uint32_t health =
+                    (static_cast<uint32_t>(packet.payload[i + 4]) << 24) |
+                    (static_cast<uint32_t>(packet.payload[i + 5]) << 16) |
+                    (static_cast<uint32_t>(packet.payload[i + 6]) << 8) |
+                    static_cast<uint32_t>(packet.payload[i + 7]);
+
+                uint32_t pos_x_bits =
+                    (static_cast<uint32_t>(packet.payload[i + 8]) << 24) |
+                    (static_cast<uint32_t>(packet.payload[i + 9]) << 16) |
+                    (static_cast<uint32_t>(packet.payload[i + 10]) << 8) |
+                    static_cast<uint32_t>(packet.payload[i + 11]);
+                float pos_x;
+                std::memcpy(&pos_x, &pos_x_bits, sizeof(float));
+
+                uint32_t pos_y_bits =
+                    (static_cast<uint32_t>(packet.payload[i + 12]) << 24) |
+                    (static_cast<uint32_t>(packet.payload[i + 13]) << 16) |
+                    (static_cast<uint32_t>(packet.payload[i + 14]) << 8) |
+                    static_cast<uint32_t>(packet.payload[i + 15]);
+                float pos_y;
+                std::memcpy(&pos_y, &pos_y_bits, sizeof(float));
+
+                auto it = network_entities_.find(net_id);
+                if (it != network_entities_.end()) {
+                    it->second.pos_x = pos_x;
+                    it->second.pos_y = pos_y;
+                    it->second.health = health;
+                }
+            }
+            break;
+
+        case UDPMessageType::ENTITY_DESTROY:
+            if (packet.payload.size() >= 4) {
+                uint32_t net_id =
+                    (static_cast<uint32_t>(packet.payload[0]) << 24) |
+                    (static_cast<uint32_t>(packet.payload[1]) << 16) |
+                    (static_cast<uint32_t>(packet.payload[2]) << 8) |
+                    static_cast<uint32_t>(packet.payload[3]);
+
+                network_entities_.erase(net_id);
+            }
+            break;
+
+        case UDPMessageType::GAME_STATE:
+            if (packet.payload.size() >= 4) {
+                game_score_ = (static_cast<uint32_t>(packet.payload[0]) << 24) |
+                              (static_cast<uint32_t>(packet.payload[1]) << 16) |
+                              (static_cast<uint32_t>(packet.payload[2]) << 8) |
+                              static_cast<uint32_t>(packet.payload[3]);
+            }
+            break;
+
+        default:
+            break;
+        }
+    }
 }
 
 } // namespace network

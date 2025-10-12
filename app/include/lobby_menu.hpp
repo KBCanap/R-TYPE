@@ -1,19 +1,20 @@
 #pragma once
-#include "../../ecs/include/render/IRenderWindow.hpp"
 #include "../../ecs/include/network/INetwork.hpp"
+#include "../../ecs/include/render/IRenderWindow.hpp"
 #include "audio_manager.hpp"
-#include <memory>
 #include <chrono>
+#include <memory>
 
 enum class LobbyResult {
-    StartGame,      // All players ready, game starting
-    Disconnect,     // Player wants to disconnect
-    Error           // Connection error
+    StartGame,  // All players ready, game starting
+    Disconnect, // Player wants to disconnect
+    Error       // Connection error
 };
 
 class LobbyMenu {
-public:
-    LobbyMenu(render::IRenderWindow& win, AudioManager& audioMgr, network::INetwork& netMgr);
+  public:
+    LobbyMenu(render::IRenderWindow &win, AudioManager &audioMgr,
+              network::INetwork &netMgr);
 
     /**
      * @brief Run the lobby menu
@@ -21,16 +22,16 @@ public:
      */
     LobbyResult run();
 
-private:
+  private:
     void createUI();
     void updateButtonScale();
     void render();
     void handleNetworkMessages();
     void sendReadyMessage();
 
-    render::IRenderWindow& _window;
-    AudioManager& _audioManager;
-    network::INetwork& _networkManager;
+    render::IRenderWindow &_window;
+    AudioManager &_audioManager;
+    network::INetwork &_networkManager;
 
     std::unique_ptr<render::IFont> _font;
     std::unique_ptr<render::ITexture> _bgTexture;

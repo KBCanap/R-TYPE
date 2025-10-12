@@ -2,12 +2,10 @@
 #include "../include/settings.hpp"
 #include <iostream>
 
-ConnectionMenu::ConnectionMenu(render::IRenderWindow& win, AudioManager& audioMgr)
-    : _window(win), _audioManager(audioMgr),
-      _serverHost("127.0.0.1"),
-      _serverPort("8080"),
-      _bgScrollSpeed(100.f)
-{
+ConnectionMenu::ConnectionMenu(render::IRenderWindow &win,
+                               AudioManager &audioMgr)
+    : _window(win), _audioManager(audioMgr), _serverHost("127.0.0.1"),
+      _serverPort("8080"), _bgScrollSpeed(100.f) {
     _baseWindowSize = _window.getSize();
     _windowSize = _baseWindowSize;
 
@@ -41,57 +39,66 @@ ConnectionMenu::ConnectionMenu(render::IRenderWindow& win, AudioManager& audioMg
 }
 
 void ConnectionMenu::createUI() {
-    Settings& settings = Settings::getInstance();
+    Settings &settings = Settings::getInstance();
 
     // Title
     _titleText = _window.createText();
     _titleText->setFont(*_font);
     _titleText->setString("SELECT GAME MODE");
     _titleText->setCharacterSize(50);
-    _titleText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
+    _titleText->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
 
     // Instructions
     _instructionText = _window.createText();
     _instructionText->setFont(*_font);
     _instructionText->setString("Choose your preferred mode");
     _instructionText->setCharacterSize(20);
-    _instructionText->setFillColor(settings.applyColorblindFilter(render::Color(150, 150, 150)));
+    _instructionText->setFillColor(
+        settings.applyColorblindFilter(render::Color(150, 150, 150)));
 
     // Solo button
     _soloButton = _window.createRectangleShape(render::Vector2f(400, 70));
     _soloButton->setFillColor(render::Color(70, 70, 180));
-    _soloButton->setOutlineColor(settings.applyColorblindFilter(render::Color::White()));
+    _soloButton->setOutlineColor(
+        settings.applyColorblindFilter(render::Color::White()));
     _soloButton->setOutlineThickness(3);
 
     _soloButtonText = _window.createText();
     _soloButtonText->setFont(*_font);
     _soloButtonText->setString("SOLO");
     _soloButtonText->setCharacterSize(28);
-    _soloButtonText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
+    _soloButtonText->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
 
     // Multiplayer button
-    _multiplayerButton = _window.createRectangleShape(render::Vector2f(400, 70));
+    _multiplayerButton =
+        _window.createRectangleShape(render::Vector2f(400, 70));
     _multiplayerButton->setFillColor(render::Color(70, 180, 70));
-    _multiplayerButton->setOutlineColor(settings.applyColorblindFilter(render::Color::White()));
+    _multiplayerButton->setOutlineColor(
+        settings.applyColorblindFilter(render::Color::White()));
     _multiplayerButton->setOutlineThickness(3);
 
     _multiplayerButtonText = _window.createText();
     _multiplayerButtonText->setFont(*_font);
     _multiplayerButtonText->setString("MULTIPLAYER");
     _multiplayerButtonText->setCharacterSize(28);
-    _multiplayerButtonText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
+    _multiplayerButtonText->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
 
     // Back button
     _backButton = _window.createRectangleShape(render::Vector2f(400, 70));
     _backButton->setFillColor(render::Color(180, 70, 70));
-    _backButton->setOutlineColor(settings.applyColorblindFilter(render::Color::White()));
+    _backButton->setOutlineColor(
+        settings.applyColorblindFilter(render::Color::White()));
     _backButton->setOutlineThickness(3);
 
     _backButtonText = _window.createText();
     _backButtonText->setFont(*_font);
     _backButtonText->setString("BACK");
     _backButtonText->setCharacterSize(28);
-    _backButtonText->setFillColor(settings.applyColorblindFilter(render::Color::White()));
+    _backButtonText->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
 
     updateButtonScale();
 }
@@ -107,31 +114,27 @@ void ConnectionMenu::updateButtonScale() {
 
     // Instructions
     render::FloatRect instrBounds = _instructionText->getLocalBounds();
-    _instructionText->setPosition(centerX - instrBounds.width / 2, centerY - 180);
+    _instructionText->setPosition(centerX - instrBounds.width / 2,
+                                  centerY - 180);
 
     // Solo button
     _soloButton->setPosition(centerX - 200, centerY - 80);
     render::FloatRect soloBtnBounds = _soloButtonText->getLocalBounds();
-    _soloButtonText->setPosition(
-        centerX - soloBtnBounds.width / 2,
-        centerY - 60
-    );
+    _soloButtonText->setPosition(centerX - soloBtnBounds.width / 2,
+                                 centerY - 60);
 
     // Multiplayer button
     _multiplayerButton->setPosition(centerX - 200, centerY + 20);
-    render::FloatRect multiplayerBtnBounds = _multiplayerButtonText->getLocalBounds();
+    render::FloatRect multiplayerBtnBounds =
+        _multiplayerButtonText->getLocalBounds();
     _multiplayerButtonText->setPosition(
-        centerX - multiplayerBtnBounds.width / 2,
-        centerY + 40
-    );
+        centerX - multiplayerBtnBounds.width / 2, centerY + 40);
 
     // Back button
     _backButton->setPosition(centerX - 200, centerY + 120);
     render::FloatRect backBtnBounds = _backButtonText->getLocalBounds();
-    _backButtonText->setPosition(
-        centerX - backBtnBounds.width / 2,
-        centerY + 140
-    );
+    _backButtonText->setPosition(centerX - backBtnBounds.width / 2,
+                                 centerY + 140);
 
     // Update background scale
     float scaleX = static_cast<float>(_windowSize.x) / _bgTexture->getSize().x;
@@ -163,13 +166,14 @@ void ConnectionMenu::render() {
     _window.display();
 }
 
-ConnectionMenuResult ConnectionMenu::run(ConnectionInfo& outConnectionInfo) {
+ConnectionMenuResult ConnectionMenu::run(ConnectionInfo &outConnectionInfo) {
     int selectedButton = 0; // 0=solo, 1=multiplayer, 2=back
 
     while (_window.isOpen()) {
         // Calculate delta time
         auto currentTime = std::chrono::steady_clock::now();
-        float dt = std::chrono::duration<float>(currentTime - _lastTime).count();
+        float dt =
+            std::chrono::duration<float>(currentTime - _lastTime).count();
         _lastTime = currentTime;
 
         // Background scroll
@@ -216,7 +220,8 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo& outConnectionInfo) {
                         mouseY >= centerY + 20 && mouseY <= centerY + 90) {
                         outConnectionInfo.serverHost = _serverHost;
                         try {
-                            outConnectionInfo.serverPort = static_cast<uint16_t>(std::stoi(_serverPort));
+                            outConnectionInfo.serverPort =
+                                static_cast<uint16_t>(std::stoi(_serverPort));
                         } catch (...) {
                             outConnectionInfo.serverPort = 8080;
                         }
@@ -271,7 +276,8 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo& outConnectionInfo) {
                 if (event.key.code == render::Key::Num2) {
                     outConnectionInfo.serverHost = _serverHost;
                     try {
-                        outConnectionInfo.serverPort = static_cast<uint16_t>(std::stoi(_serverPort));
+                        outConnectionInfo.serverPort =
+                            static_cast<uint16_t>(std::stoi(_serverPort));
                     } catch (...) {
                         outConnectionInfo.serverPort = 8080;
                     }
@@ -288,7 +294,8 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo& outConnectionInfo) {
                     } else if (selectedButton == 1) {
                         outConnectionInfo.serverHost = _serverHost;
                         try {
-                            outConnectionInfo.serverPort = static_cast<uint16_t>(std::stoi(_serverPort));
+                            outConnectionInfo.serverPort =
+                                static_cast<uint16_t>(std::stoi(_serverPort));
                         } catch (...) {
                             outConnectionInfo.serverPort = 8080;
                         }

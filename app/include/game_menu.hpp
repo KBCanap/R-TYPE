@@ -3,28 +3,24 @@
 #include "audio_manager.hpp"
 #include <memory>
 
-enum class MenuAction {
-    NONE,
-    REPLAY,
-    QUIT
-};
+enum class MenuAction { NONE, REPLAY, QUIT };
 
 class GameOverMenu {
-public:
-    GameOverMenu(render::IRenderWindow& window, AudioManager& audioMgr);
+  public:
+    GameOverMenu(render::IRenderWindow &window, AudioManager &audioMgr);
 
-    MenuAction handleEvents(const render::Event& event);
+    MenuAction handleEvents(const render::Event &event);
     void render();
     void setVisible(bool visible);
     bool isVisible() const;
     void onWindowResize();
 
-private:
+  private:
     void initializeMenu();
     void updateButtonColors();
 
-    render::IRenderWindow& _window;
-    AudioManager& _audioManager;
+    render::IRenderWindow &_window;
+    AudioManager &_audioManager;
     bool _visible;
     int _selectedButton;
 
@@ -38,27 +34,28 @@ private:
     std::unique_ptr<render::IShape> _overlay;
 
     const render::Color NORMAL_BUTTON_COLOR = render::Color(100, 100, 100, 200);
-    const render::Color SELECTED_BUTTON_COLOR = render::Color(150, 150, 150, 200);
+    const render::Color SELECTED_BUTTON_COLOR =
+        render::Color(150, 150, 150, 200);
     const render::Color TEXT_COLOR = render::Color::White();
     const render::Color SELECTED_TEXT_COLOR = render::Color::Yellow();
 };
 
 class VictoryMenu {
-public:
-    VictoryMenu(render::IRenderWindow& window, AudioManager& audioMgr);
+  public:
+    VictoryMenu(render::IRenderWindow &window, AudioManager &audioMgr);
 
-    MenuAction handleEvents(const render::Event& event);
+    MenuAction handleEvents(const render::Event &event);
     void render();
     void setVisible(bool visible);
     bool isVisible() const;
     void onWindowResize();
 
-private:
+  private:
     void initializeMenu();
     void updateButtonColors();
 
-    render::IRenderWindow& _window;
-    AudioManager& _audioManager;
+    render::IRenderWindow &_window;
+    AudioManager &_audioManager;
     bool _visible;
     int _selectedButton;
 
@@ -72,7 +69,8 @@ private:
     std::unique_ptr<render::IShape> _overlay;
 
     const render::Color NORMAL_BUTTON_COLOR = render::Color(100, 100, 100, 200);
-    const render::Color SELECTED_BUTTON_COLOR = render::Color(150, 150, 150, 200);
+    const render::Color SELECTED_BUTTON_COLOR =
+        render::Color(150, 150, 150, 200);
     const render::Color TEXT_COLOR = render::Color::White();
     const render::Color SELECTED_TEXT_COLOR = render::Color::Yellow();
 };

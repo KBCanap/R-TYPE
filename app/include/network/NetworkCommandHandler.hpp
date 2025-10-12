@@ -8,8 +8,8 @@
 #include "../enemy_manager.hpp"
 #include "../player_manager.hpp"
 #include "PacketProcessor.hpp"
+#include <optional>
 #include <unordered_map>
-#include <optional> 
 
 /**
  * @class NetworkCommandHandler
@@ -68,6 +68,20 @@ class NetworkCommandHandler : public network::INetworkCommandHandler {
      * @return Created entity
      */
     entity createEnemyEntity(const network::CreateEntityCommand &cmd);
+
+    /**
+     * @brief Create enemy spread entity from command
+     * @param cmd Create entity command
+     * @return Created entity
+     */
+    entity createEnemySpreadEntity(const network::CreateEntityCommand &cmd);
+
+    /**
+     * @brief Create boss entity from command
+     * @param cmd Create entity command
+     * @return Created entity
+     */
+    entity createBossEntity(const network::CreateEntityCommand &cmd);
 
     /**
      * @brief Create projectile entity from command
