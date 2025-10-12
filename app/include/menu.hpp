@@ -1,35 +1,37 @@
 #pragma once
-#include "registery.hpp"
-#include "components.hpp"
-#include "audio_manager.hpp"
-#include "options_menu.hpp"
-#include "key_bindings.hpp"
 #include "../../ecs/include/render/IRenderWindow.hpp"
-#include <vector>
+#include "audio_manager.hpp"
+#include "components.hpp"
+#include "key_bindings.hpp"
+#include "options_menu.hpp"
+#include "registery.hpp"
 #include <memory>
+#include <vector>
 
 enum class MenuResult { None, Play, Options, Quit };
 
 class Menu {
-public:
-    Menu(registry& reg, render::IRenderWindow& win, AudioManager& audioMgr, KeyBindings& keyBindings);
+  public:
+    Menu(registry &reg, render::IRenderWindow &win, AudioManager &audioMgr,
+         KeyBindings &keyBindings);
 
-    MenuResult run();                  // Boucle du menu
-    void update(float dt);             // Update background et ennemis
-    void render();                     // Dessin de tout
+    MenuResult run();      // Boucle du menu
+    void update(float dt); // Update background et ennemis
+    void render();         // Dessin de tout
 
-private:
-    void createButtons();              // Création boutons et textes
-    void createEnemies();              // Création ennemis
-    void resetEnemies();               // Reset positions ennemis
-    void updateButtonScale();          // Reposition et resize boutons/texte
-    void updateEnemyPositions();       // Met à jour les positions des ennemis lors du resize
+  private:
+    void createButtons();        // Création boutons et textes
+    void createEnemies();        // Création ennemis
+    void resetEnemies();         // Reset positions ennemis
+    void updateButtonScale();    // Reposition et resize boutons/texte
+    void updateEnemyPositions(); // Met à jour les positions des ennemis lors du
+                                 // resize
 
-private:
-    registry& _registry;
-    render::IRenderWindow& _window;
-    AudioManager& _audioManager;
-    KeyBindings& _keyBindings;
+  private:
+    registry &_registry;
+    render::IRenderWindow &_window;
+    AudioManager &_audioManager;
+    KeyBindings &_keyBindings;
 
     std::unique_ptr<render::ITexture> _bgTexture;
     std::unique_ptr<render::ISprite> _bgSprite1;

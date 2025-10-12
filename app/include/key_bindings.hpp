@@ -3,16 +3,10 @@
 #include <map>
 #include <string>
 
-enum class GameAction {
-    MoveLeft,
-    MoveRight,
-    MoveUp,
-    MoveDown,
-    Fire
-};
+enum class GameAction { MoveLeft, MoveRight, MoveUp, MoveDown, Fire };
 
 class KeyBindings {
-public:
+  public:
     KeyBindings() {
         // Bindings par défaut
         _bindings[GameAction::MoveLeft] = render::Key::Left;
@@ -55,9 +49,11 @@ public:
     static std::string getKeyName(render::Key key);
 
     // Méthodes pour la persistance
-    std::map<GameAction, render::Key>& getBindingsMap() { return _bindings; }
-    const std::map<GameAction, render::Key>& getBindingsMap() const { return _bindings; }
+    std::map<GameAction, render::Key> &getBindingsMap() { return _bindings; }
+    const std::map<GameAction, render::Key> &getBindingsMap() const {
+        return _bindings;
+    }
 
-private:
+  private:
     std::map<GameAction, render::Key> _bindings;
 };

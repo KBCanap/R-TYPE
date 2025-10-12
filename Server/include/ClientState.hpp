@@ -20,7 +20,7 @@ enum class ClientStateType {
 };
 
 class ClientState {
-public:
+  public:
     ClientState();
     ~ClientState() = default;
 
@@ -32,12 +32,12 @@ public:
     ClientStateType getState() const { return _state; }
     uint8_t getPlayerId() const { return _player_id; }
     bool isReady() const { return _state == ClientStateType::READY; }
-    bool isConnected() const { 
-        return _state != ClientStateType::DISCONNECTED && 
-               _state != ClientStateType::CONNECTING; 
+    bool isConnected() const {
+        return _state != ClientStateType::DISCONNECTED &&
+               _state != ClientStateType::CONNECTING;
     }
 
-private:
+  private:
     ClientStateType _state;
     uint8_t _player_id;
 };

@@ -1,18 +1,18 @@
 #pragma once
+#include "../../ecs/include/render/IRenderWindow.hpp"
 #include <memory>
 #include <string>
-#include "../../ecs/include/render/IRenderWindow.hpp"
 
 enum class ColorblindMode {
-    None = 0,           // No filter
-    Protanopia = 1,     // Red-blind (1% of males)
-    Deuteranopia = 2,   // Green-blind (1% of males)
-    Tritanopia = 3      // Blue-blind (rare)
+    None = 0,         // No filter
+    Protanopia = 1,   // Red-blind (1% of males)
+    Deuteranopia = 2, // Green-blind (1% of males)
+    Tritanopia = 3    // Blue-blind (rare)
 };
 
 class Settings {
-public:
-    static Settings& getInstance() {
+  public:
+    static Settings &getInstance() {
         static Settings instance;
         return instance;
     }
@@ -28,16 +28,23 @@ public:
     // Get colorblind mode name for display
     std::string getColorblindModeName() const {
         switch (_colorblindMode) {
-            case ColorblindMode::None: return "None";
-            case ColorblindMode::Protanopia: return "Protanopia";
-            case ColorblindMode::Deuteranopia: return "Deuteranopia";
-            case ColorblindMode::Tritanopia: return "Tritanopia";
-            default: return "None";
+        case ColorblindMode::None:
+            return "None";
+        case ColorblindMode::Protanopia:
+            return "Protanopia";
+        case ColorblindMode::Deuteranopia:
+            return "Deuteranopia";
+        case ColorblindMode::Tritanopia:
+            return "Tritanopia";
+        default:
+            return "None";
         }
     }
 
-    // Utility function to apply colorblind filter to a render::Color (CPU fallback)
-    render::Color applyColorblindFilter(const render::Color& originalColor) const {
+    // Utility function to apply colorblind filter to a render::Color (CPU
+    // fallback)
+    render::Color
+    applyColorblindFilter(const render::Color &originalColor) const {
         if (_colorblindMode == ColorblindMode::None) {
             return originalColor;
         }
@@ -52,23 +59,23 @@ public:
         // Apply colorblind transformation matrices
         // Based on Brettel, Viénot and Mollon JPEG algorithm
         switch (_colorblindMode) {
-            case ColorblindMode::Protanopia: // Red-blind
-                newR = 0.567f * r + 0.433f * g;
-                newG = 0.558f * r + 0.442f * g;
-                newB = 0.242f * g + 0.758f * b;
-                break;
-            case ColorblindMode::Deuteranopia: // Green-blind
-                newR = 0.625f * r + 0.375f * g;
-                newG = 0.700f * r + 0.300f * g;
-                newB = 0.300f * g + 0.700f * b;
-                break;
-            case ColorblindMode::Tritanopia: // Blue-blind
-                newR = 0.950f * r + 0.050f * g;
-                newG = 0.433f * g + 0.567f * b;
-                newB = 0.475f * g + 0.525f * b;
-                break;
-            default:
-                break;
+        case ColorblindMode::Protanopia: // Red-blind
+            newR = 0.567f * r + 0.433f * g;
+            newG = 0.558f * r + 0.442f * g;
+            newB = 0.242f * g + 0.758f * b;
+            break;
+        case ColorblindMode::Deuteranopia: // Green-blind
+            newR = 0.625f * r + 0.375f * g;
+            newG = 0.700f * r + 0.300f * g;
+            newB = 0.300f * g + 0.700f * b;
+            break;
+        case ColorblindMode::Tritanopia: // Blue-blind
+            newR = 0.950f * r + 0.050f * g;
+            newG = 0.433f * g + 0.567f * b;
+            newB = 0.475f * g + 0.525f * b;
+            break;
+        default:
+            break;
         }
 
         // Clamp values to [0, 1]
@@ -77,16 +84,15 @@ public:
         newB = std::max(0.0f, std::min(1.0f, newB));
 
         // Convert back to 0-255 range
-        return render::Color(
-            static_cast<uint8_t>(newR * 255),
-            static_cast<uint8_t>(newG * 255),
-            static_cast<uint8_t>(newB * 255),
-            originalColor.a  // Keep alpha unchanged
+        return render::Color(static_cast<uint8_t>(newR * 255),
+                             static_cast<uint8_t>(newG * 255),
+                             static_cast<uint8_t>(newB * 255),
+                             originalColor.a // Keep alpha unchanged
         );
     }
 
     // Get colorblind shader for GPU acceleration
-    render::IShader* getColorblindShader(render::IRenderWindow& window) {
+    render::IShader *getColorblindShader(render::IRenderWindow &window) {
         if (_colorblindMode == ColorblindMode::None) {
             return nullptr; // No shader needed
         }
@@ -125,7 +131,8 @@ public:
                 }
             )";
 
-            if (_colorblindShader->loadFromMemory(fragmentShaderSource, render::ShaderType::Fragment)) {
+            if (_colorblindShader->loadFromMemory(
+                    fragmentShaderSource, render::ShaderType::Fragment)) {
                 _colorblindShader->setUniform("texture", 0);
             } else {
                 // Fallback: shader loading failed
@@ -134,16 +141,15 @@ public:
         }
 
         if (_colorblindShader) {
-            _colorblindShader->setUniform("mode", static_cast<int>(_colorblindMode));
+            _colorblindShader->setUniform("mode",
+                                          static_cast<int>(_colorblindMode));
         }
 
         return _colorblindShader.get();
     }
 
     // Check if colorblind shader is available
-    bool hasColorblindShader() const {
-        return _colorblindShader != nullptr;
-    }
+    bool hasColorblindShader() const { return _colorblindShader != nullptr; }
 
     // Sound settings
     void setSoundEnabled(bool enabled) { _soundEnabled = enabled; }
@@ -157,8 +163,10 @@ public:
     unsigned int getResolutionWidth() const { return _resolutionWidth; }
     unsigned int getResolutionHeight() const { return _resolutionHeight; }
 
-private:
-    Settings() : _colorblindMode(ColorblindMode::None), _soundEnabled(true), _resolutionWidth(800), _resolutionHeight(600) {}
+  private:
+    Settings()
+        : _colorblindMode(ColorblindMode::None), _soundEnabled(true),
+          _resolutionWidth(800), _resolutionHeight(600) {}
 
     ColorblindMode _colorblindMode;
     bool _soundEnabled;
@@ -167,6 +175,6 @@ private:
     std::unique_ptr<render::IShader> _colorblindShader;
 
     // Delete copy constructor and assignment operator
-    Settings(const Settings&) = delete;
-    Settings& operator=(const Settings&) = delete;
+    Settings(const Settings &) = delete;
+    Settings &operator=(const Settings &) = delete;
 };

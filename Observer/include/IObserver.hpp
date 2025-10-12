@@ -6,7 +6,7 @@
  *
  */
 class IObserver {
-public:
+  public:
     virtual ~IObserver() = default;
-    virtual void OnEvent(const Event& event) = 0;
+    virtual void OnEvent(const Event &event) = 0;
 };

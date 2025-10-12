@@ -2,16 +2,18 @@
 #include <stdexcept>
 
 // Helper function to check if a FloatRect contains a point
-static bool containsPoint(const render::FloatRect& rect, const render::Vector2f& point) {
+static bool containsPoint(const render::FloatRect &rect,
+                          const render::Vector2f &point) {
     return point.x >= rect.left && point.x <= rect.left + rect.width &&
            point.y >= rect.top && point.y <= rect.top + rect.height;
 }
 
-GameOverMenu::GameOverMenu(render::IRenderWindow& window, AudioManager& audioMgr)
-    : _window(window), _audioManager(audioMgr), _visible(false), _selectedButton(0)
-{
+GameOverMenu::GameOverMenu(render::IRenderWindow &window,
+                           AudioManager &audioMgr)
+    : _window(window), _audioManager(audioMgr), _visible(false),
+      _selectedButton(0) {
     initializeMenu();
-} 
+}
 
 void GameOverMenu::initializeMenu() {
 
@@ -22,7 +24,8 @@ void GameOverMenu::initializeMenu() {
     float centerX = windowSize.x / 2.0f;
     float centerY = windowSize.y / 2.0f;
 
-    _overlay = _window.createRectangleShape(render::Vector2f(windowSize.x, windowSize.y));
+    _overlay = _window.createRectangleShape(
+        render::Vector2f(windowSize.x, windowSize.y));
     _overlay->setFillColor(render::Color(0, 0, 0, 128));
 
     _gameOverText = _window.createText();
@@ -31,7 +34,8 @@ void GameOverMenu::initializeMenu() {
     _gameOverText->setCharacterSize(72);
     _gameOverText->setFillColor(render::Color::Red());
     render::FloatRect gameOverBounds = _gameOverText->getLocalBounds();
-    _gameOverText->setPosition(centerX - gameOverBounds.width / 2, centerY - 150);
+    _gameOverText->setPosition(centerX - gameOverBounds.width / 2,
+                               centerY - 150);
 
     _replayButton = _window.createRectangleShape(render::Vector2f(200, 60));
     _replayButton->setPosition(centerX - 100, centerY - 30);
@@ -60,29 +64,33 @@ void GameOverMenu::initializeMenu() {
     updateButtonColors();
 }
 
-MenuAction GameOverMenu::handleEvents(const render::Event& event) {
-    if (!_visible) return MenuAction::NONE;
+MenuAction GameOverMenu::handleEvents(const render::Event &event) {
+    if (!_visible)
+        return MenuAction::NONE;
 
     if (event.type == render::EventType::KeyPressed) {
         switch (event.key.code) {
-            case render::Key::Up:
-                _selectedButton = (_selectedButton - 1 + 2) % 2;
-                updateButtonColors();
-                break;
-            case render::Key::Down:
-                _selectedButton = (_selectedButton + 1) % 2;
-                updateButtonColors();
-                break;
-            case render::Key::Enter:
-            case render::Key::Space:
-                return (_selectedButton == 0) ? MenuAction::REPLAY : MenuAction::QUIT;
-            case render::Key::Escape:
-                return MenuAction::QUIT;
-            default:
-                break;
+        case render::Key::Up:
+            _selectedButton = (_selectedButton - 1 + 2) % 2;
+            updateButtonColors();
+            break;
+        case render::Key::Down:
+            _selectedButton = (_selectedButton + 1) % 2;
+            updateButtonColors();
+            break;
+        case render::Key::Enter:
+        case render::Key::Space:
+            return (_selectedButton == 0) ? MenuAction::REPLAY
+                                          : MenuAction::QUIT;
+        case render::Key::Escape:
+            return MenuAction::QUIT;
+        default:
+            break;
         }
-    } else if (event.type == render::EventType::MouseButtonPressed && event.mouseButton.button == render::Mouse::Left) {
-        render::Vector2f mousePos(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y));
+    } else if (event.type == render::EventType::MouseButtonPressed &&
+               event.mouseButton.button == render::Mouse::Left) {
+        render::Vector2f mousePos(static_cast<float>(event.mouseButton.x),
+                                  static_cast<float>(event.mouseButton.y));
 
         if (containsPoint(_replayButton->getGlobalBounds(), mousePos)) {
             return MenuAction::REPLAY;
@@ -90,7 +98,8 @@ MenuAction GameOverMenu::handleEvents(const render::Event& event) {
             return MenuAction::QUIT;
         }
     } else if (event.type == render::EventType::MouseMoved) {
-        render::Vector2f mousePos(static_cast<float>(event.mouseMove.x), static_cast<float>(event.mouseMove.y));
+        render::Vector2f mousePos(static_cast<float>(event.mouseMove.x),
+                                  static_cast<float>(event.mouseMove.y));
 
         if (containsPoint(_replayButton->getGlobalBounds(), mousePos)) {
             if (_selectedButton != 0) {
@@ -109,7 +118,8 @@ MenuAction GameOverMenu::handleEvents(const render::Event& event) {
 }
 
 void GameOverMenu::render() {
-    if (!_visible) return;
+    if (!_visible)
+        return;
 
     _window.draw(*_overlay);
     _window.draw(*_gameOverText);
@@ -127,9 +137,7 @@ void GameOverMenu::setVisible(bool visible) {
     }
 }
 
-bool GameOverMenu::isVisible() const {
-    return _visible;
-}
+bool GameOverMenu::isVisible() const { return _visible; }
 
 void GameOverMenu::updateButtonColors() {
     if (_selectedButton == 0) {
@@ -145,13 +153,11 @@ void GameOverMenu::updateButtonColors() {
     }
 }
 
-void GameOverMenu::onWindowResize() {
-    initializeMenu();
-}
+void GameOverMenu::onWindowResize() { initializeMenu(); }
 
-VictoryMenu::VictoryMenu(render::IRenderWindow& window, AudioManager& audioMgr)
-    : _window(window), _audioManager(audioMgr), _visible(false), _selectedButton(0)
-{
+VictoryMenu::VictoryMenu(render::IRenderWindow &window, AudioManager &audioMgr)
+    : _window(window), _audioManager(audioMgr), _visible(false),
+      _selectedButton(0) {
     initializeMenu();
 }
 
@@ -164,7 +170,8 @@ void VictoryMenu::initializeMenu() {
     float centerX = windowSize.x / 2.0f;
     float centerY = windowSize.y / 2.0f;
 
-    _overlay = _window.createRectangleShape(render::Vector2f(windowSize.x, windowSize.y));
+    _overlay = _window.createRectangleShape(
+        render::Vector2f(windowSize.x, windowSize.y));
     _overlay->setFillColor(render::Color(0, 0, 0, 128));
 
     _victoryText = _window.createText();
@@ -202,29 +209,33 @@ void VictoryMenu::initializeMenu() {
     updateButtonColors();
 }
 
-MenuAction VictoryMenu::handleEvents(const render::Event& event) {
-    if (!_visible) return MenuAction::NONE;
+MenuAction VictoryMenu::handleEvents(const render::Event &event) {
+    if (!_visible)
+        return MenuAction::NONE;
 
     if (event.type == render::EventType::KeyPressed) {
         switch (event.key.code) {
-            case render::Key::Up:
-                _selectedButton = (_selectedButton - 1 + 2) % 2;
-                updateButtonColors();
-                break;
-            case render::Key::Down:
-                _selectedButton = (_selectedButton + 1) % 2;
-                updateButtonColors();
-                break;
-            case render::Key::Enter:
-            case render::Key::Space:
-                return (_selectedButton == 0) ? MenuAction::REPLAY : MenuAction::QUIT;
-            case render::Key::Escape:
-                return MenuAction::QUIT;
-            default:
-                break;
+        case render::Key::Up:
+            _selectedButton = (_selectedButton - 1 + 2) % 2;
+            updateButtonColors();
+            break;
+        case render::Key::Down:
+            _selectedButton = (_selectedButton + 1) % 2;
+            updateButtonColors();
+            break;
+        case render::Key::Enter:
+        case render::Key::Space:
+            return (_selectedButton == 0) ? MenuAction::REPLAY
+                                          : MenuAction::QUIT;
+        case render::Key::Escape:
+            return MenuAction::QUIT;
+        default:
+            break;
         }
-    } else if (event.type == render::EventType::MouseButtonPressed && event.mouseButton.button == render::Mouse::Left) {
-        render::Vector2f mousePos(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y));
+    } else if (event.type == render::EventType::MouseButtonPressed &&
+               event.mouseButton.button == render::Mouse::Left) {
+        render::Vector2f mousePos(static_cast<float>(event.mouseButton.x),
+                                  static_cast<float>(event.mouseButton.y));
 
         if (containsPoint(_replayButton->getGlobalBounds(), mousePos)) {
             return MenuAction::REPLAY;
@@ -232,7 +243,8 @@ MenuAction VictoryMenu::handleEvents(const render::Event& event) {
             return MenuAction::QUIT;
         }
     } else if (event.type == render::EventType::MouseMoved) {
-        render::Vector2f mousePos(static_cast<float>(event.mouseMove.x), static_cast<float>(event.mouseMove.y));
+        render::Vector2f mousePos(static_cast<float>(event.mouseMove.x),
+                                  static_cast<float>(event.mouseMove.y));
 
         if (containsPoint(_replayButton->getGlobalBounds(), mousePos)) {
             if (_selectedButton != 0) {
@@ -251,7 +263,8 @@ MenuAction VictoryMenu::handleEvents(const render::Event& event) {
 }
 
 void VictoryMenu::render() {
-    if (!_visible) return;
+    if (!_visible)
+        return;
 
     _window.draw(*_overlay);
     _window.draw(*_victoryText);
@@ -269,9 +282,7 @@ void VictoryMenu::setVisible(bool visible) {
     }
 }
 
-bool VictoryMenu::isVisible() const {
-    return _visible;
-}
+bool VictoryMenu::isVisible() const { return _visible; }
 
 void VictoryMenu::updateButtonColors() {
     if (_selectedButton == 0) {
@@ -287,6 +298,4 @@ void VictoryMenu::updateButtonColors() {
     }
 }
 
-void VictoryMenu::onWindowResize() {
-    initializeMenu();
-}
+void VictoryMenu::onWindowResize() { initializeMenu(); }

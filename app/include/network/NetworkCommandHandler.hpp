@@ -8,8 +8,8 @@
 #include "../enemy_manager.hpp"
 #include "../player_manager.hpp"
 #include "PacketProcessor.hpp"
+#include <optional>
 #include <unordered_map>
-#include <optional> 
 
 /**
  * @class NetworkCommandHandler

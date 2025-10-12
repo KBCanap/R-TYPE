@@ -1,35 +1,35 @@
-#include "include/EventBus.hpp"
 #include "include/Event.hpp"
+#include "include/EventBus.hpp"
 #include <iostream>
 #include <string>
 
-
 struct DamagePayload {
-    class Entity* target;
+    class Entity *target;
     int amount;
 };
 
 struct XPPayload {
-    class Entity* target;
+    class Entity *target;
     int amount;
 };
 
 struct CollisionPayload {
-    class Entity* target;
+    class Entity *target;
 };
 
 class Entity {
-public:
+  public:
     std::string name;
     int hp = 100;
     int xp = 0;
     int level = 1;
 
-    Entity(const std::string& n) : name(n) {}
+    Entity(const std::string &n) : name(n) {}
 
     void TakeDamage(int amount) {
         hp -= amount;
-        std::cout << name << " took " << amount << " damage. HP: " << hp << "\n";
+        std::cout << name << " took " << amount << " damage. HP: " << hp
+                  << "\n";
     }
 
     void GainXP(int amount) {
@@ -37,9 +37,11 @@ public:
         if (xp >= 100) {
             level++;
             xp -= 100;
-            std::cout << name << " leveled up! Level: " << level << ", XP: " << xp << "\n";
+            std::cout << name << " leveled up! Level: " << level
+                      << ", XP: " << xp << "\n";
         } else {
-            std::cout << name << " gained " << amount << " XP. Total XP: " << xp << "\n";
+            std::cout << name << " gained " << amount << " XP. Total XP: " << xp
+                      << "\n";
         }
     }
 
@@ -52,73 +54,79 @@ int main() {
     EventBus bus;
     Entity player{"Player1"};
 
-    EventBus::SubscriptionID damage_sub_p1 = bus.Subscribe(EventType::Damage, [&](const std::any& payload) {
-        try {
-            auto damage_data = std::any_cast<DamagePayload>(payload);
-            if (damage_data.target == &player) {
-                player.TakeDamage(damage_data.amount);
+    EventBus::SubscriptionID damage_sub_p1 =
+        bus.Subscribe(EventType::Damage, [&](const std::any &payload) {
+            try {
+                auto damage_data = std::any_cast<DamagePayload>(payload);
+                if (damage_data.target == &player) {
+                    player.TakeDamage(damage_data.amount);
+                }
+            } catch (const std::bad_any_cast &e) {
+                std::cerr << "Invalid damage payload\n";
             }
-        } catch (const std::bad_any_cast& e) {
-            std::cerr << "Invalid damage payload\n";
-        }
-    });
+        });
 
-    EventBus::SubscriptionID level_sub_p1 = bus.Subscribe(EventType::LevelUp, [&](const std::any& payload) {
-        try {
-            auto xp_data = std::any_cast<XPPayload>(payload);
-            if (xp_data.target == &player) {
-                player.GainXP(xp_data.amount);
+    EventBus::SubscriptionID level_sub_p1 =
+        bus.Subscribe(EventType::LevelUp, [&](const std::any &payload) {
+            try {
+                auto xp_data = std::any_cast<XPPayload>(payload);
+                if (xp_data.target == &player) {
+                    player.GainXP(xp_data.amount);
+                }
+            } catch (const std::bad_any_cast &e) {
+                std::cerr << "Invalid XP payload\n";
             }
-        } catch (const std::bad_any_cast& e) {
-            std::cerr << "Invalid XP payload\n";
-        }
-    });
+        });
 
-    EventBus::SubscriptionID collision_sub_p1 = bus.Subscribe(EventType::Collision, [&](const std::any& payload) {
-        try {
-            auto collision_data = std::any_cast<CollisionPayload>(payload);
-            if (collision_data.target == &player) {
-                player.OnCollision();
+    EventBus::SubscriptionID collision_sub_p1 =
+        bus.Subscribe(EventType::Collision, [&](const std::any &payload) {
+            try {
+                auto collision_data = std::any_cast<CollisionPayload>(payload);
+                if (collision_data.target == &player) {
+                    player.OnCollision();
+                }
+            } catch (const std::bad_any_cast &e) {
+                std::cerr << "Invalid collision payload\n";
             }
-        } catch (const std::bad_any_cast& e) {
-            std::cerr << "Invalid collision payload\n";
-        }
-    });
+        });
 
     Entity player2{"Player2"};
 
-    EventBus::SubscriptionID damage_sub_p2 = bus.Subscribe(EventType::Damage, [&](const std::any& payload) {
-        try {
-            auto damage_data = std::any_cast<DamagePayload>(payload);
-            if (damage_data.target == &player) {
-                player.TakeDamage(damage_data.amount);
+    EventBus::SubscriptionID damage_sub_p2 =
+        bus.Subscribe(EventType::Damage, [&](const std::any &payload) {
+            try {
+                auto damage_data = std::any_cast<DamagePayload>(payload);
+                if (damage_data.target == &player) {
+                    player.TakeDamage(damage_data.amount);
+                }
+            } catch (const std::bad_any_cast &e) {
+                std::cerr << "Invalid damage payload\n";
             }
-        } catch (const std::bad_any_cast& e) {
-            std::cerr << "Invalid damage payload\n";
-        }
-    });
+        });
 
-    EventBus::SubscriptionID level_sub_p2 = bus.Subscribe(EventType::LevelUp, [&](const std::any& payload) {
-        try {
-            auto xp_data = std::any_cast<XPPayload>(payload);
-            if (xp_data.target == &player) {
-                player.GainXP(xp_data.amount);
+    EventBus::SubscriptionID level_sub_p2 =
+        bus.Subscribe(EventType::LevelUp, [&](const std::any &payload) {
+            try {
+                auto xp_data = std::any_cast<XPPayload>(payload);
+                if (xp_data.target == &player) {
+                    player.GainXP(xp_data.amount);
+                }
+            } catch (const std::bad_any_cast &e) {
+                std::cerr << "Invalid XP payload\n";
             }
-        } catch (const std::bad_any_cast& e) {
-            std::cerr << "Invalid XP payload\n";
-        }
-    });
+        });
 
-    EventBus::SubscriptionID collision_sub_p2 = bus.Subscribe(EventType::Collision, [&](const std::any& payload) {
-        try {
-            auto collision_data = std::any_cast<CollisionPayload>(payload);
-            if (collision_data.target == &player) {
-                player.OnCollision();
+    EventBus::SubscriptionID collision_sub_p2 =
+        bus.Subscribe(EventType::Collision, [&](const std::any &payload) {
+            try {
+                auto collision_data = std::any_cast<CollisionPayload>(payload);
+                if (collision_data.target == &player) {
+                    player.OnCollision();
+                }
+            } catch (const std::bad_any_cast &e) {
+                std::cerr << "Invalid collision payload\n";
             }
-        } catch (const std::bad_any_cast& e) {
-            std::cerr << "Invalid collision payload\n";
-        }
-    });
+        });
 
     std::cout << "=== Event System Demo ===\n\n";
 
@@ -142,14 +150,20 @@ int main() {
     // This should still work
     bus.Notify(EventType::Collision, CollisionPayload{&player});
     std::cout << "\n=== Event Statistics ===\n";
-    std::cout << "Damage subscribers: " << bus.GetSubscriberCount(EventType::Damage) << "\n";
-    std::cout << "LevelUp subscribers: " << bus.GetSubscriberCount(EventType::LevelUp) << "\n";
-    std::cout << "Collision subscribers: " << bus.GetSubscriberCount(EventType::Collision) << "\n";
+    std::cout << "Damage subscribers: "
+              << bus.GetSubscriberCount(EventType::Damage) << "\n";
+    std::cout << "LevelUp subscribers: "
+              << bus.GetSubscriberCount(EventType::LevelUp) << "\n";
+    std::cout << "Collision subscribers: "
+              << bus.GetSubscriberCount(EventType::Collision) << "\n";
 
-
-    std::cout << "Collision has subscribers: " << (bus.HasSubscribers(EventType::Collision) ? "TRUE" : "FALSE") << std::endl;
+    std::cout << "Collision has subscribers: "
+              << (bus.HasSubscribers(EventType::Collision) ? "TRUE" : "FALSE")
+              << std::endl;
     bus.ClearAll();
-    std::cout << "Collision has subscribers: " << (bus.HasSubscribers(EventType::Collision) ? "TRUE" : "FALSE") << std::endl;
+    std::cout << "Collision has subscribers: "
+              << (bus.HasSubscribers(EventType::Collision) ? "TRUE" : "FALSE")
+              << std::endl;
 
     return 0;
 }

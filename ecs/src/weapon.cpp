@@ -4,7 +4,7 @@
 
 namespace component {
 
-void weapon::fire(registry& r, const position& shooter_pos, bool is_friendly) {
+void weapon::fire(registry &r, const position &shooter_pos, bool is_friendly) {
     // If custom fire function is set, use it instead
     if (fire_function) {
         fire_function(r, shooter_pos, is_friendly);
@@ -30,50 +30,41 @@ void weapon::fire(registry& r, const position& shooter_pos, bool is_friendly) {
         if (!is_friendly) {
             vx = -std::abs(vx); // Enemy projectiles go left
         } else {
-            vx = std::abs(vx);  // Player projectiles go right
+            vx = std::abs(vx); // Player projectiles go right
         }
 
         // Create projectile entity
         entity projectile_entity = r.spawn_entity();
 
         // Add position
-        r.add_component(projectile_entity, position(
-            shooter_pos.x + (is_friendly ? 50.0f : -20.0f),
-            shooter_pos.y + 25.0f
-        ));
+        r.add_component(projectile_entity,
+                        position(shooter_pos.x + (is_friendly ? 50.0f : -20.0f),
+                                 shooter_pos.y + 25.0f));
 
         // Add velocity
         r.add_component(projectile_entity, velocity(vx, vy));
 
         // Add projectile component
-        r.add_component(projectile_entity, projectile(
-            projectile_damage,
-            projectile_speed,
-            is_friendly,
-            "bullet",
-            projectile_lifetime,
-            projectile_piercing,
-            projectile_max_hits
-        ));
+        r.add_component(projectile_entity,
+                        projectile(projectile_damage, projectile_speed,
+                                   is_friendly, "bullet", projectile_lifetime,
+                                   projectile_piercing, projectile_max_hits));
 
         // Add projectile pattern behavior
-        r.add_component(projectile_entity, projectile_behavior(movement_pattern));
+        r.add_component(projectile_entity,
+                        projectile_behavior(movement_pattern));
 
         // Add drawable
-        r.add_component(projectile_entity, drawable(
-            "assets/sprites/r-typesheet1.gif",
-            projectile_sprite_rect,
-            1.0f,
-            "projectile"
-        ));
+        r.add_component(projectile_entity,
+                        drawable("assets/sprites/r-typesheet1.gif",
+                                 projectile_sprite_rect, 1.0f, "projectile"));
 
         // Add hitbox
-        r.add_component(projectile_entity, hitbox(
-            static_cast<float>(projectile_sprite_rect.width) * 2.0f,
-            static_cast<float>(projectile_sprite_rect.height) * 2.0f,
-            0.0f,
-            0.0f
-        ));
+        r.add_component(
+            projectile_entity,
+            hitbox(static_cast<float>(projectile_sprite_rect.width) * 2.0f,
+                   static_cast<float>(projectile_sprite_rect.height) * 2.0f,
+                   0.0f, 0.0f));
     }
 }
 

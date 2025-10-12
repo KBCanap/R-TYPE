@@ -43,7 +43,10 @@ class NetworkManager : public ANetworkManager {
     /**
      * @brief Get network entities (for rendering)
      */
-    const std::unordered_map<uint32_t, NetworkEntity>& getNetworkEntities() const { return network_entities_; }
+    const std::unordered_map<uint32_t, NetworkEntity> &
+    getNetworkEntities() const {
+        return network_entities_;
+    }
 
     /**
      * @brief Get assigned NET_ID

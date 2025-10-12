@@ -8,21 +8,21 @@
 #ifndef GAMESERVER_HPP_
 #define GAMESERVER_HPP_
 
-#include <cstdint>
-#include <vector>
-#include <unordered_map>
-#include <memory>
-#include <asio.hpp>
-#include <thread>
-#include <mutex>
 #include "GameSession.hpp"
+#include <asio.hpp>
+#include <cstdint>
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <unordered_map>
+#include <vector>
 
 // Entity types matching the network protocol
 enum class EntityType : uint8_t {
     PLAYER = 0x01,
-    ENEMY = 0x02,           // Enemy with wave movement (single OR burst shot - random)
-    ENEMY_SPREAD = 0x05,    // Spread shooting enemy (spread shot, zigzag movement)
-    BOSS = 0x06,            // Boss enemy
+    ENEMY = 0x02, // Enemy with wave movement (single OR burst shot - random)
+    ENEMY_SPREAD = 0x05, // Spread shooting enemy (spread shot, zigzag movement)
+    BOSS = 0x06,         // Boss enemy
     PROJECTILE = 0x03,
     ALLIED_PROJECTILE = 0x04
 };
@@ -40,9 +40,9 @@ enum class UDPMessageType : uint8_t {
 
 // Movement pattern types for enemies
 enum class MovementPattern {
-    STRAIGHT,  // Move straight left
-    WAVE,      // Sinusoidal wave movement
-    ZIGZAG     // Zigzag movement
+    STRAIGHT, // Move straight left
+    WAVE,     // Sinusoidal wave movement
+    ZIGZAG    // Zigzag movement
 };
 
 // Entity structure on server
@@ -51,25 +51,26 @@ struct ServerEntity {
     EntityType type;
     float pos_x;
     float pos_y;
-    float vel_x;  // Velocity for movement
+    float vel_x; // Velocity for movement
     float vel_y;
     uint32_t health;
     uint8_t owner_player_id; // For players and their projectiles
-    float width;  // Hitbox for collision
+    float width;             // Hitbox for collision
     float height;
     float last_fire_time; // For firing cooldown
 
     // Movement pattern data
     MovementPattern movement_pattern = MovementPattern::STRAIGHT;
-    float pattern_amplitude = 0.0f;      // Amplitude for wave/zigzag
-    float pattern_frequency = 0.0f;      // Frequency for wave/zigzag
-    float pattern_base_speed = 0.0f;     // Base horizontal speed
-    float pattern_time = 0.0f;           // Time accumulator for pattern
+    float pattern_amplitude = 0.0f;  // Amplitude for wave/zigzag
+    float pattern_frequency = 0.0f;  // Frequency for wave/zigzag
+    float pattern_base_speed = 0.0f; // Base horizontal speed
+    float pattern_time = 0.0f;       // Time accumulator for pattern
 
     // Weapon data
-    int projectile_count = 1;            // Number of projectiles per shot
-    float projectile_angle_spread = 0.0f; // Angle spread for multi-projectile shots
-    float fire_cooldown = 2.0f;          // Time between shots
+    int projectile_count = 1; // Number of projectiles per shot
+    float projectile_angle_spread =
+        0.0f;                   // Angle spread for multi-projectile shots
+    float fire_cooldown = 2.0f; // Time between shots
 };
 
 // UDP Packet received from client
@@ -83,12 +84,12 @@ struct UDPPacketReceived {
  * @brief Manages UDP game server and entity synchronization
  */
 class GameServer {
-public:
+  public:
     GameServer(uint16_t udp_port);
     ~GameServer();
 
     // Start game and spawn all players
-    void startGame(const GameSession& session);
+    void startGame(const GameSession &session);
 
     // Update game state
     void update(float dt);
@@ -110,7 +111,7 @@ public:
     // Get UDP port
     uint16_t getPort() const { return _udp_port; }
 
-private:
+  private:
     // Entity management
     uint32_t generateNetId();
     void spawnPlayer(uint8_t player_id, ClientId client_id);
@@ -118,31 +119,36 @@ private:
     void spawnEnemySpread(float pos_x, float pos_y);
     void spawnBoss();
     void spawnProjectile(uint32_t owner_net_id, bool is_enemy);
-    void spawnMultipleProjectiles(uint32_t owner_net_id, bool is_enemy, int count, float angle_spread);
-    void sendEntityCreate(const ServerEntity& entity, const std::string& endpoint);
+    void spawnMultipleProjectiles(uint32_t owner_net_id, bool is_enemy,
+                                  int count, float angle_spread);
+    void sendEntityCreate(const ServerEntity &entity,
+                          const std::string &endpoint);
     void sendEntityDestroy(uint32_t net_id);
-    void sendPlayerAssignment(uint32_t net_id, const std::string& endpoint);
+    void sendPlayerAssignment(uint32_t net_id, const std::string &endpoint);
 
     // Collision detection
-    bool checkCollision(const ServerEntity& a, const ServerEntity& b);
+    bool checkCollision(const ServerEntity &a, const ServerEntity &b);
     void damageEntity(uint32_t net_id, uint32_t damage);
 
     // UDP communication
     void startReceive();
-    void sendUDPMessage(const std::vector<uint8_t>& data, const std::string& endpoint);
-    void broadcastUDPMessage(const std::vector<uint8_t>& data);
+    void sendUDPMessage(const std::vector<uint8_t> &data,
+                        const std::string &endpoint);
+    void broadcastUDPMessage(const std::vector<uint8_t> &data);
 
     // Serialization helpers
-    std::vector<uint8_t> serializeEntityCreate(const ServerEntity& entity);
+    std::vector<uint8_t> serializeEntityCreate(const ServerEntity &entity);
     std::vector<uint8_t> serializeEntityDestroy(uint32_t net_id);
     std::vector<uint8_t> serializePlayerAssignment(uint32_t net_id);
-    std::vector<uint8_t> serializeEntityUpdate(const std::vector<ServerEntity>& entities);
+    std::vector<uint8_t>
+    serializeEntityUpdate(const std::vector<ServerEntity> &entities);
     std::vector<uint8_t> serializeGameState();
 
     uint16_t _udp_port;
     std::unordered_map<uint32_t, ServerEntity> _entities;
     std::unordered_map<ClientId, std::string> _client_endpoints;
-    std::unordered_map<uint8_t, uint32_t> _player_id_to_net_id;  // player_id (1-4) -> NET_ID
+    std::unordered_map<uint8_t, uint32_t>
+        _player_id_to_net_id; // player_id (1-4) -> NET_ID
     std::vector<uint32_t> _entities_to_destroy;
     uint32_t _next_net_id;
     uint32_t _game_score;

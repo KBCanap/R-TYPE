@@ -1,17 +1,19 @@
 #include "../include/accessibility_menu.hpp"
 #include "../include/settings.hpp"
-#include <iostream>
 #include <chrono>
+#include <iostream>
 
 // Helper function to check if a FloatRect contains a point
-static bool containsPoint(const render::FloatRect& rect, const render::Vector2f& point) {
+static bool containsPoint(const render::FloatRect &rect,
+                          const render::Vector2f &point) {
     return point.x >= rect.left && point.x <= rect.left + rect.width &&
            point.y >= rect.top && point.y <= rect.top + rect.height;
 }
 
-AccessibilityMenu::AccessibilityMenu(render::IRenderWindow& win, AudioManager& audioMgr)
-    : _window(win), _audioManager(audioMgr), _currentMode(Settings::getInstance().getColorblindMode())
-{
+AccessibilityMenu::AccessibilityMenu(render::IRenderWindow &win,
+                                     AudioManager &audioMgr)
+    : _window(win), _audioManager(audioMgr),
+      _currentMode(Settings::getInstance().getColorblindMode()) {
     _windowSize = _window.getSize();
 
     // Load background
@@ -57,12 +59,15 @@ void AccessibilityMenu::createButtons() {
     _titleText = _window.createText();
     _titleText->setFont(*_font);
     _titleText->setString("GRAPHISMS");
-    _titleText->setCharacterSize(static_cast<unsigned int>(_windowSize.y * 0.08f));
+    _titleText->setCharacterSize(
+        static_cast<unsigned int>(_windowSize.y * 0.08f));
     _titleText->setFillColor(render::Color::White());
     render::FloatRect titleBounds = _titleText->getLocalBounds();
     // Center text by adjusting position (IText doesn't have setOrigin)
-    float titleX = static_cast<float>(_windowSize.x) / 2.f - titleBounds.width / 2.f;
-    float titleY = static_cast<float>(_windowSize.y) * 0.15f - titleBounds.height / 2.f;
+    float titleX =
+        static_cast<float>(_windowSize.x) / 2.f - titleBounds.width / 2.f;
+    float titleY =
+        static_cast<float>(_windowSize.y) * 0.15f - titleBounds.height / 2.f;
     _titleText->setPosition(titleX, titleY);
 
     float labelSize = static_cast<unsigned int>(_windowSize.y * 0.04f);
@@ -75,17 +80,21 @@ void AccessibilityMenu::createButtons() {
     float spacing = squareSize * 1.5f;
     float startX = (_windowSize.x - (3 * squareSize + 2 * spacing)) / 2.f;
 
-    _referenceSquare1 = _window.createRectangleShape(render::Vector2f(squareSize, squareSize));
+    _referenceSquare1 =
+        _window.createRectangleShape(render::Vector2f(squareSize, squareSize));
     _referenceSquare1->setFillColor(render::Color(220, 50, 50)); // Red
     _referenceSquare1->setPosition(startX, squareY);
 
-    _referenceSquare2 = _window.createRectangleShape(render::Vector2f(squareSize, squareSize));
+    _referenceSquare2 =
+        _window.createRectangleShape(render::Vector2f(squareSize, squareSize));
     _referenceSquare2->setFillColor(render::Color(50, 220, 50)); // Green
     _referenceSquare2->setPosition(startX + squareSize + spacing, squareY);
 
-    _referenceSquare3 = _window.createRectangleShape(render::Vector2f(squareSize, squareSize));
+    _referenceSquare3 =
+        _window.createRectangleShape(render::Vector2f(squareSize, squareSize));
     _referenceSquare3->setFillColor(render::Color(50, 50, 220)); // Blue
-    _referenceSquare3->setPosition(startX + 2 * (squareSize + spacing), squareY);
+    _referenceSquare3->setPosition(startX + 2 * (squareSize + spacing),
+                                   squareY);
 
     _referenceLabel = _window.createText();
     _referenceLabel->setFont(*_font);
@@ -93,7 +102,8 @@ void AccessibilityMenu::createButtons() {
     _referenceLabel->setCharacterSize(labelSize * 0.8f);
     _referenceLabel->setFillColor(render::Color::White());
     render::FloatRect labelBounds = _referenceLabel->getLocalBounds();
-    _referenceLabel->setPosition((_windowSize.x - labelBounds.width) / 2.f, squareY - labelSize * 1.2f);
+    _referenceLabel->setPosition((_windowSize.x - labelBounds.width) / 2.f,
+                                 squareY - labelSize * 1.2f);
 
     // Colorblind mode settings
     _colorblindLabel = _window.createText();
@@ -105,15 +115,18 @@ void AccessibilityMenu::createButtons() {
 
     _colorblindValue = _window.createText();
     _colorblindValue->setFont(*_font);
-    _colorblindValue->setString(Settings::getInstance().getColorblindModeName());
+    _colorblindValue->setString(
+        Settings::getInstance().getColorblindModeName());
     _colorblindValue->setCharacterSize(labelSize);
     _colorblindValue->setFillColor(render::Color::Yellow());
     _colorblindValue->setPosition(_windowSize.x * 0.5f, _windowSize.y * 0.45f);
 
     // Left arrow button
-    _colorblindLeftButton = _window.createRectangleShape(render::Vector2f(buttonWidth, buttonHeight));
+    _colorblindLeftButton = _window.createRectangleShape(
+        render::Vector2f(buttonWidth, buttonHeight));
     _colorblindLeftButton->setFillColor(render::Color(100, 100, 200));
-    _colorblindLeftButton->setPosition(_windowSize.x * 0.35f, _windowSize.y * 0.55f);
+    _colorblindLeftButton->setPosition(_windowSize.x * 0.35f,
+                                       _windowSize.y * 0.55f);
 
     _colorblindLeftText = _window.createText();
     _colorblindLeftText->setFont(*_font);
@@ -121,14 +134,18 @@ void AccessibilityMenu::createButtons() {
     _colorblindLeftText->setCharacterSize(labelSize);
     _colorblindLeftText->setFillColor(render::Color::White());
     render::FloatRect leftBounds = _colorblindLeftText->getLocalBounds();
-    float leftTextX = _windowSize.x * 0.35f + buttonWidth / 2.f - leftBounds.width / 2.f;
-    float leftTextY = _windowSize.y * 0.55f + buttonHeight / 2.f - leftBounds.height / 2.f;
+    float leftTextX =
+        _windowSize.x * 0.35f + buttonWidth / 2.f - leftBounds.width / 2.f;
+    float leftTextY =
+        _windowSize.y * 0.55f + buttonHeight / 2.f - leftBounds.height / 2.f;
     _colorblindLeftText->setPosition(leftTextX, leftTextY);
 
     // Right arrow button
-    _colorblindRightButton = _window.createRectangleShape(render::Vector2f(buttonWidth, buttonHeight));
+    _colorblindRightButton = _window.createRectangleShape(
+        render::Vector2f(buttonWidth, buttonHeight));
     _colorblindRightButton->setFillColor(render::Color(100, 100, 200));
-    _colorblindRightButton->setPosition(_windowSize.x * 0.65f, _windowSize.y * 0.55f);
+    _colorblindRightButton->setPosition(_windowSize.x * 0.65f,
+                                        _windowSize.y * 0.55f);
 
     _colorblindRightText = _window.createText();
     _colorblindRightText->setFont(*_font);
@@ -136,26 +153,33 @@ void AccessibilityMenu::createButtons() {
     _colorblindRightText->setCharacterSize(labelSize);
     _colorblindRightText->setFillColor(render::Color::White());
     render::FloatRect rightBounds = _colorblindRightText->getLocalBounds();
-    float rightTextX = _windowSize.x * 0.65f + buttonWidth / 2.f - rightBounds.width / 2.f;
-    float rightTextY = _windowSize.y * 0.55f + buttonHeight / 2.f - rightBounds.height / 2.f;
+    float rightTextX =
+        _windowSize.x * 0.65f + buttonWidth / 2.f - rightBounds.width / 2.f;
+    float rightTextY =
+        _windowSize.y * 0.55f + buttonHeight / 2.f - rightBounds.height / 2.f;
     _colorblindRightText->setPosition(rightTextX, rightTextY);
 
     // Back button
     float btnWidth = _windowSize.x * 0.2f;
     float btnHeight = _windowSize.y * 0.08f;
-    _backButton = _window.createRectangleShape(render::Vector2f(btnWidth, btnHeight));
+    _backButton =
+        _window.createRectangleShape(render::Vector2f(btnWidth, btnHeight));
     _backButton->setFillColor(render::Color(150, 50, 50));
-    _backButton->setPosition((_windowSize.x - btnWidth) / 2.f, _windowSize.y * 0.75f);
+    _backButton->setPosition((_windowSize.x - btnWidth) / 2.f,
+                             _windowSize.y * 0.75f);
 
     _backButtonText = _window.createText();
     _backButtonText->setFont(*_font);
     _backButtonText->setString("Back");
-    _backButtonText->setCharacterSize(static_cast<unsigned int>(_windowSize.y * 0.05f));
+    _backButtonText->setCharacterSize(
+        static_cast<unsigned int>(_windowSize.y * 0.05f));
     _backButtonText->setFillColor(render::Color::White());
     render::FloatRect backBounds = _backButtonText->getLocalBounds();
     // Center text in button
-    float backTextX = (_windowSize.x - btnWidth) / 2.f + btnWidth / 2.f - backBounds.width / 2.f;
-    float backTextY = _windowSize.y * 0.75f + btnHeight / 2.f - backBounds.height / 2.f;
+    float backTextX = (_windowSize.x - btnWidth) / 2.f + btnWidth / 2.f -
+                      backBounds.width / 2.f;
+    float backTextY =
+        _windowSize.y * 0.75f + btnHeight / 2.f - backBounds.height / 2.f;
     _backButtonText->setPosition(backTextX, backTextY);
 }
 
@@ -179,9 +203,11 @@ void AccessibilityMenu::cycleColorblindMode(int direction) {
     Settings::getInstance().setColorblindMode(_currentMode);
 
     // Update the display value
-    _colorblindValue->setString(Settings::getInstance().getColorblindModeName());
+    _colorblindValue->setString(
+        Settings::getInstance().getColorblindModeName());
 
-    std::cout << "Colorblind mode set to: " << Settings::getInstance().getColorblindModeName() << std::endl;
+    std::cout << "Colorblind mode set to: "
+              << Settings::getInstance().getColorblindModeName() << std::endl;
 }
 
 AccessibilityResult AccessibilityMenu::run() {
@@ -201,15 +227,17 @@ AccessibilityResult AccessibilityMenu::run() {
             }
 
             if (event.type == render::EventType::KeyPressed) {
-                if (event.key.code == render::Key::Escape || event.key.code == render::Key::P) {
+                if (event.key.code == render::Key::Escape ||
+                    event.key.code == render::Key::P) {
                     return AccessibilityResult::Resumed;
                 }
             }
 
             if (event.type == render::EventType::Resized) {
                 _windowSize = {event.size.width, event.size.height};
-                // Note: IRenderWindow doesn't have setView, so we skip view management
-                // The SFML implementation should handle this internally
+                // Note: IRenderWindow doesn't have setView, so we skip view
+                // management The SFML implementation should handle this
+                // internally
                 updateButtonScale();
             }
 
@@ -223,12 +251,14 @@ AccessibilityResult AccessibilityMenu::run() {
                 mousePos.y = static_cast<float>(event.mouseButton.y);
 
                 // Check colorblind mode left button
-                if (containsPoint(_colorblindLeftButton->getGlobalBounds(), mousePos)) {
+                if (containsPoint(_colorblindLeftButton->getGlobalBounds(),
+                                  mousePos)) {
                     cycleColorblindMode(-1);
                 }
 
                 // Check colorblind mode right button
-                if (containsPoint(_colorblindRightButton->getGlobalBounds(), mousePos)) {
+                if (containsPoint(_colorblindRightButton->getGlobalBounds(),
+                                  mousePos)) {
                     cycleColorblindMode(1);
                 }
 
