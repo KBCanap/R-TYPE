@@ -48,7 +48,7 @@ add_compile_definitions(ASIO_STANDALONE ASIO_NO_DEPRECATED)
 
 # ==== Utility function for target configuration ====
 function(setup_target_warnings target)
-  target_compile_options(${target} PRIVATE
+  target_compile_options(${target} PRIVATE 
     -Wall -Wextra -Wpedantic
     # Suppression of strict warnings that cause problems with ASIO
     -Wold-style-cast      # C-style cast
@@ -77,12 +77,6 @@ set(SERVER_SOURCES
     Server/src/ClientState.cpp
     Server/src/Protocole.cpp
     Server/src/Tcpserver.cpp
-    Server/src/UdpServer.cpp
-    Server/src/MessageQueue.cpp
-    Server/src/GameServerLoop.cpp
-    Server/src/UdpProtocole.cpp
-    Server/src/GameLogic.cpp
-    ecs/src/registery.cpp
 )
 
 add_executable(r-type_server ${SERVER_SOURCES})
@@ -95,7 +89,7 @@ target_link_libraries(r-type_server PRIVATE
 
 # Warning and debug configuration
 setup_target_warnings(r-type_server)
-target_compile_definitions(r-type_server PRIVATE
+target_compile_definitions(r-type_server PRIVATE 
   $<$<CONFIG:Debug>:DEBUG>
   $<$<CONFIG:Debug>:RTYPE_DEBUG>
 )
@@ -105,7 +99,7 @@ target_compile_definitions(r-type_server PRIVATE
 # ==== Unit tests (optional) ====
 if(RTYPE_BUILD_TESTS)
   enable_testing()
-
+  
   # Catch2 via CPM (v3)
   CPMAddPackage(
     NAME Catch2
@@ -121,7 +115,7 @@ if(RTYPE_BUILD_TESTS)
 
   # Add your tests here
   add_subdirectory(tests)
-
+  
   message(STATUS "Unit tests enabled")
 endif()
 

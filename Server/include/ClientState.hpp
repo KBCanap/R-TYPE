@@ -8,7 +8,8 @@
 #ifndef CLIENTSTATE_HPP_
 #define CLIENTSTATE_HPP_
 
-#include <cstdint>
+#include "MessageType.hpp"
+#include <chrono>
 
 enum class ClientStateType {
     DISCONNECTED,
