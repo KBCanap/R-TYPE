@@ -181,10 +181,6 @@ void NetworkCommandHandler::onPlayerAssignment(
     std::cout << "Player assigned NET_ID: " << cmd.player_net_id << std::endl;
 }
 
-uint32_t NetworkCommandHandler::getAssignedPlayerNetId() const {
-    return assigned_player_net_id_.load();
-}
-
 std::optional<entity>
 NetworkCommandHandler::findEntityByNetId(uint32_t net_id) const {
     std::lock_guard<std::mutex> lock(net_id_mutex_);

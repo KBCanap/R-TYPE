@@ -54,7 +54,9 @@ class NetworkCommandHandler : public network::INetworkCommandHandler {
      * @brief Get assigned player NET_ID
      * @return Player NET_ID or 0 if not assigned
      */
-    uint32_t getAssignedPlayerNetId() const { return assigned_player_net_id_; }
+    uint32_t getAssignedPlayerNetId() const { 
+        return assigned_player_net_id_.load();
+    }
 
   private:
     /**
