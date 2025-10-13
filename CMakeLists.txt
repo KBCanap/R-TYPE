@@ -73,7 +73,6 @@ set(SERVER_SOURCES
     Server/src/main.cpp
     Server/src/StartServer.cpp
     Server/src/GameSession.cpp
-    Server/src/GameServer.cpp
     Server/src/ClientState.cpp
     Server/src/Protocole.cpp
     Server/src/Tcpserver.cpp

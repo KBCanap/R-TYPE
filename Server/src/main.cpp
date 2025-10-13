@@ -18,7 +18,8 @@ struct ServerConfig {
     bool valid;
 };
 
-static void show_helper() {
+static void show_helper()
+{
     std::cout << "USAGE:" << std::endl;
     std::cout << "./r-type_server [-p <tcp_port>] [-u <udp_port>]" << std::endl;
     std::cout << "OPTIONS:" << std::endl;
