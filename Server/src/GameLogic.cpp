@@ -19,6 +19,10 @@ GameLogic::~GameLogic() {
 void GameLogic::start() {
     _running = true;
     _last_update = std::chrono::steady_clock::now();
+
+    spawnEnemy();
+    spawnEnemy();
+
     std::cout << "[GameLogic] Started" << std::endl;
 }
 
