@@ -30,11 +30,23 @@ ConnectionResult ANetworkManager::connectTCP(const std::string &host,
     connection_start_ = std::chrono::steady_clock::now();
     last_activity_ = connection_start_;
 
-    io_thread_ = std::thread([this]() { io_context_->run(); });
-
     startReadTCPHeader();
 
-    // Send TCP_CONNECT message
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    std::cout << "Starting I/O thread..." << std::endl;
+    io_thread_ = std::thread([this]() {
+        try {
+            io_context_->run();
+        } catch (const std::exception &e) {
+            std::cerr << "I/O thread exception: " << e.what() << std::endl;
+            updateState(ConnectionState::ERROR);
+        }
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    std::cout << "Sending TCP_CONNECT..." << std::endl;
     std::vector<uint8_t> connect_msg = {0x01, 0x00, 0x00, 0x00};
     if (!sendRawTCP(connect_msg)) {
         result.error_message = "Failed to send TCP_CONNECT";
@@ -42,6 +54,7 @@ ConnectionResult ANetworkManager::connectTCP(const std::string &host,
         return result;
     }
 
+    std::cout << "TCP_CONNECT sent, waiting for response..." << std::endl;
     result.success = true;
     return result;
 }
@@ -53,16 +66,13 @@ void ANetworkManager::startReadTCPHeader() {
 
     tcp_socket_->asyncReadExactly(
         tcp_header_buffer_, 4, [this](bool success, size_t bytes_transferred) {
-            // Check if we're in a state where we should still read TCP
             auto current_state = getConnectionState();
             if (current_state == ConnectionState::IN_GAME ||
                 current_state == ConnectionState::DISCONNECTED) {
-                // Stop reading TCP in game mode or when disconnected
                 return;
             }
 
             if (!success || bytes_transferred != 4) {
-                // Only log error if we're still in a connected state
                 if (current_state != ConnectionState::DISCONNECTED &&
                     current_state != ConnectionState::ERROR) {
                     std::cerr << "Failed to read TCP header" << std::endl;
@@ -73,7 +83,6 @@ void ANetworkManager::startReadTCPHeader() {
 
             uint8_t msg_type = tcp_header_buffer_[0];
 
-            // DATA_LENGTH is 3 bytes in network byte order
             uint32_t data_length = 0;
             data_length |= static_cast<uint32_t>(tcp_header_buffer_[1]) << 16;
             data_length |= static_cast<uint32_t>(tcp_header_buffer_[2]) << 8;
@@ -92,8 +101,7 @@ void ANetworkManager::startReadTCPHeader() {
 }
 
 void ANetworkManager::readTCPPayload(uint8_t msg_type, uint32_t data_length) {
-    // Protection contre les buffer overflow
-    const uint32_t MAX_PAYLOAD_SIZE = 65536; // 64KB max
+    const uint32_t MAX_PAYLOAD_SIZE = 65536;
 
     if (data_length > MAX_PAYLOAD_SIZE) {
         std::cerr << "TCP payload too large: " << data_length << " bytes"
@@ -192,7 +200,6 @@ void ANetworkManager::processCompleteTCPMessage(
         break;
     }
 
-    // Queue raw message for higher-level processing
     RawTCPMessage raw_msg;
     raw_msg.data = complete_msg;
     raw_msg.timestamp = std::chrono::steady_clock::now();
@@ -204,7 +211,6 @@ void ANetworkManager::processCompleteTCPMessage(
 void ANetworkManager::disconnect() {
     updateState(ConnectionState::DISCONNECTED);
 
-    // Close sockets first to stop async operations
     if (tcp_socket_ && tcp_socket_->isOpen()) {
         tcp_socket_->disconnect();
     }
@@ -213,17 +219,14 @@ void ANetworkManager::disconnect() {
         udp_socket_->close();
     }
 
-    // Stop io_context after closing sockets
     if (io_context_) {
         io_context_->stop();
     }
 
-    // Wait for io_thread to finish
     if (io_thread_.joinable()) {
         io_thread_.join();
     }
 
-    // Reset sockets after thread has joined
     tcp_socket_.reset();
     udp_socket_.reset();
 
@@ -386,7 +389,6 @@ void ANetworkManager::startAsyncUDPReceive() {
 
     udp_socket_->asyncReceive(
         udp_read_buffer_, [this](bool success, size_t bytes_transferred) {
-            // Check if we're still connected before processing
             auto current_state = getConnectionState();
             if (current_state == ConnectionState::DISCONNECTED ||
                 current_state == ConnectionState::ERROR) {
@@ -408,7 +410,6 @@ void ANetworkManager::startAsyncUDPReceive() {
                 }
             }
 
-            // Only continue receiving if we're still connected
             if (current_state != ConnectionState::DISCONNECTED &&
                 current_state != ConnectionState::ERROR) {
                 startAsyncUDPReceive();
