@@ -143,23 +143,14 @@ void ASIOUDPSocket::asyncReceive(std::vector<uint8_t> &buffer,
 }
 
 ASIOContext::ASIOContext() {}
-
 ASIOContext::~ASIOContext() { stop(); }
-
 void ASIOContext::run() { io_context_.run(); }
-
 void ASIOContext::stop() { io_context_.stop(); }
-
 ITCPSocket *ASIOContext::createTCPSocket() {
     return new ASIOTCPSocket(io_context_);
 }
-
 IUDPSocket *ASIOContext::createUDPSocket() {
     return new ASIOUDPSocket(io_context_);
-}
-
-void ASIOContext::post(std::function<void()> task) {
-    asio::post(io_context_, std::move(task));
 }
 
 } // namespace network

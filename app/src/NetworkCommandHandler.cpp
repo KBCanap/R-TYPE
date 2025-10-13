@@ -1,5 +1,6 @@
 ﻿#include "../include/network/NetworkCommandHandler.hpp"
 #include <iostream>
+#include <set>
 
 NetworkCommandHandler::NetworkCommandHandler(registry &registry,
                                              render::IRenderWindow &window,
@@ -515,5 +516,13 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
         onFullStateSync(cmd);
         break;
     }
+
+    case network::UDPMessageType::PLAYER_INPUT:
+        break;
+
+    default:
+        std::cerr << "[NetworkCommandHandler] Unknown UDP message type: " 
+                  << static_cast<int>(packet.msg_type) << std::endl;
+        break;
     }
 }
