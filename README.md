@@ -7,6 +7,8 @@ We implemented a multi-threaded server using [Asio](https://think-async.com/Asio
 ## 📦 Dependencies
 
 - [CMake](https://cmake.org/) **≥ 3.20**
+> To check your CMake version: `cmake --version`
+> If it's below 3.20, consider upgrading via your package manager or [CMake downloads](https://cmake.org/download/).
 - **Windows**: [Visual Studio 2022 Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (workload *Desktop development with C++*)
 - **Linux**: `g++` or `clang++`, `make` (package `build-essential` on Debian/Ubuntu)
 
@@ -54,7 +56,19 @@ cmake --preset linux-make
 
 # Build Release
 cmake --build --preset linux-release
+
+# Build Debug
+cmake --build --preset linux-debug
+
 ```
+> [!TIP]
+> To speed up the compilation of the build on linux if you have a multicore cpu, you can add `-- -j$(nproc)`
+> Like this: `cmake --build --preset linux-release -- -j$(nproc)`
+
+> [!NOTE]
+> You can still use the default `cmake` command
+> For Linux: To configure the Makefile, run: `cmake -B build -S .`
+> Then to compile `cd build && make -j$(nproc)` like for cmake **-j** is an option for multicore compilation
 
 ✅ **Binaries will be generated in:**
 - `build/linux/bin/Release/`
@@ -86,6 +100,9 @@ cmake --build --preset linux-release
 ```bash
 ./build/linux/bin/Release/r-type_client
 ```
+
+> [!WARNING]
+> For the client to work you need to have the [assets](./assets/) folder within the same folder as the r-type_client binary
 
 ## 📂 Binary Locations Summary
 
