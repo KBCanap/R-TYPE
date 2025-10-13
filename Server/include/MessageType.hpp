@@ -39,6 +39,7 @@ static constexpr std::size_t MAX_PLAYERS = 4;
 static constexpr std::size_t MIN_PORT = 1024;
 static constexpr std::size_t MAX_PORT = 65535;
 
+
 struct TCPHeader {
     uint8_t msg_type;
     uint8_t data_length[3];

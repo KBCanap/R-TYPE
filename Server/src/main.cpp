@@ -9,7 +9,8 @@
 #include <cstring>
 #include <iostream>
 
-static void show_helper() {
+static void show_helper()
+{
     std::cout << "USAGE:" << std::endl;
     std::cout << "./r-type_server [-p] <port_number>" << std::endl;
     std::cout << "Example: ./r-type_server -p 8080" << std::endl;
