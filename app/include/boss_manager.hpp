@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** boss_manager
+*/
+
 #pragma once
 #include "../../ecs/include/render/IRenderWindow.hpp"
 #include "components.hpp"

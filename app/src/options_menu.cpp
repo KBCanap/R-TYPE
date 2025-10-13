@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** options_menu
+*/
+
 #include "../include/options_menu.hpp"
 #include "../include/settings.hpp"
 #include <chrono>

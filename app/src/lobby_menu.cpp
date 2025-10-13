@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** lobby_menu
+*/
+
 #include "../include/lobby_menu.hpp"
 #include "../include/settings.hpp"
 #include <iostream>

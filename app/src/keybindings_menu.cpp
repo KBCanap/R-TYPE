@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** keybindings_menu
+*/
+
 #include "../include/keybindings_menu.hpp"
 #include <chrono>
 #include <iostream>

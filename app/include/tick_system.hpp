@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** tick_system
+*/
+
 #pragma once
 #include <chrono>
 #include <functional>

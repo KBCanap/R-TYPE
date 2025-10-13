@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** pause_menu
+*/
+
 #include "../include/pause_menu.hpp"
 #include <iostream>
 
@@ -5,7 +12,6 @@ PauseMenu::PauseMenu(render::IRenderWindow &win, AudioManager &audioMgr)
     : _window(win), _audioManager(audioMgr), _visible(false) {
     _windowSize = _window.getSize();
 
-    // Load font
     _font = _window.createFont();
     if (!_font->loadFromFile("assets/r-type.otf")) {
         // Use default font if custom font fails

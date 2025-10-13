@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** enemy_manager
+*/
+
 #include "../include/enemy_manager.hpp"
 #include <cmath>
 #include <cstdlib>

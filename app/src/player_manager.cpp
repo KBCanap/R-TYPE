@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** player_manager
+*/
+
 #include "../include/player_manager.hpp"
 
 PlayerManager::PlayerManager(registry &reg, render::IRenderWindow &win)

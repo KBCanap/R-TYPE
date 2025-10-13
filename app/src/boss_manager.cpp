@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** boss_manager
+*/
+
 #include "../include/boss_manager.hpp"
 
 BossManager::BossManager(registry &reg, render::IRenderWindow &win)

@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** lobby_menu
+*/
+
 #pragma once
 #include "../../ecs/include/network/INetwork.hpp"
 #include "../../ecs/include/render/IRenderWindow.hpp"

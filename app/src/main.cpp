@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** main
+*/
+
 #include "../include/audio_manager.hpp"
 #include "../include/connection_menu.hpp"
 #include "../include/game.hpp"

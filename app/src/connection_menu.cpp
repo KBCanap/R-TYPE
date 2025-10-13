@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** connection_menu
+*/
+
 #include "../include/connection_menu.hpp"
 #include "../include/settings.hpp"
 #include <iostream>

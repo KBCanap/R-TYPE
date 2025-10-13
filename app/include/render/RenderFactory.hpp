@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** RenderFactory
+*/
+
 #pragma once
 #include "../../../ecs/include/render/IRenderAudio.hpp"
 #include "../../../ecs/include/render/IRenderWindow.hpp"

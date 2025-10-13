@@ -1,6 +1,14 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** PacketProcessor
+*/
+
 #include "../include/network/PacketProcessor.hpp"
 #include <arpa/inet.h>
 #include <cstring>
+#include <iostream>
 
 namespace network {
 

@@ -1,3 +1,9 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** menu
+*/
 
 #include "../include/menu.hpp"
 #include "../include/accessibility_menu.hpp"
