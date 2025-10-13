@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../../../ecs/include/components.hpp"
 #include "../../../ecs/include/network/NetworkCommands.hpp"
 #include "../../../ecs/include/network/NetworkComponents.hpp"
@@ -8,6 +8,7 @@
 #include "../enemy_manager.hpp"
 #include "../player_manager.hpp"
 #include "PacketProcessor.hpp"
+#include <atomic>
 #include <optional>
 #include <unordered_map>
 
@@ -89,7 +90,9 @@ class NetworkCommandHandler : public network::INetworkCommandHandler {
     EnemyManager &enemy_manager_;
     BossManager &boss_manager_;
 
+    std::atomic<uint32_t> assigned_player_net_id_{0};
+
+    mutable std::mutex net_id_mutex_;
     std::unordered_map<uint32_t, entity> net_id_to_entity_;
     network::PacketProcessor packet_processor_;
-    uint32_t assigned_player_net_id_ = 0;
 };
