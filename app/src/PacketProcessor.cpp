@@ -1,6 +1,7 @@
 #include "../include/network/PacketProcessor.hpp"
 #include <arpa/inet.h>
 #include <cstring>
+#include <iostream> // Pour std::cerr et std::cout
 
 namespace network {
 
@@ -121,26 +122,31 @@ PacketProcessor::parseEntityCreate(const std::vector<uint8_t> &data) {
     EntityData entity;
 
     if (data.size() < 17) {
+        std::cerr << "[PacketProcessor] ENTITY_CREATE data too small: " << data.size() << " (expected 17)" << std::endl;
         return entity;
     }
 
     size_t offset = 0;
 
+    // NET_ID (4 bytes)
     entity.net_id = (static_cast<uint32_t>(data[offset]) << 24) |
                     (static_cast<uint32_t>(data[offset + 1]) << 16) |
                     (static_cast<uint32_t>(data[offset + 2]) << 8) |
                     static_cast<uint32_t>(data[offset + 3]);
     offset += 4;
 
+    // ENTITY_TYPE (1 byte)
     entity.entity_type = static_cast<EntityType>(data[offset]);
     offset += 1;
 
+    // HEALTH (4 bytes) - CHANGEMENT ICI pour compatibilité serveur
     entity.health = (static_cast<uint32_t>(data[offset]) << 24) |
                     (static_cast<uint32_t>(data[offset + 1]) << 16) |
                     (static_cast<uint32_t>(data[offset + 2]) << 8) |
                     static_cast<uint32_t>(data[offset + 3]);
     offset += 4;
 
+    // POSITION_X (4 bytes)
     uint32_t pos_x_raw = (static_cast<uint32_t>(data[offset]) << 24) |
                          (static_cast<uint32_t>(data[offset + 1]) << 16) |
                          (static_cast<uint32_t>(data[offset + 2]) << 8) |
@@ -148,11 +154,17 @@ PacketProcessor::parseEntityCreate(const std::vector<uint8_t> &data) {
     entity.position_x = networkToFloat(pos_x_raw);
     offset += 4;
 
+    // POSITION_Y (4 bytes)  
     uint32_t pos_y_raw = (static_cast<uint32_t>(data[offset]) << 24) |
                          (static_cast<uint32_t>(data[offset + 1]) << 16) |
                          (static_cast<uint32_t>(data[offset + 2]) << 8) |
                          static_cast<uint32_t>(data[offset + 3]);
     entity.position_y = networkToFloat(pos_y_raw);
+
+    std::cout << "[PacketProcessor] Parsed entity - NET_ID: " << entity.net_id 
+              << " Type: " << static_cast<int>(entity.entity_type) 
+              << " Health: " << entity.health 
+              << " Pos: (" << entity.position_x << ", " << entity.position_y << ")" << std::endl;
 
     return entity;
 }

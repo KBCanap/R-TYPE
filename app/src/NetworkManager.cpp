@@ -21,20 +21,32 @@ std::vector<TCPMessage> NetworkManager::pollTCP() {
 
 std::vector<UDPPacket> NetworkManager::pollUDP() {
     auto raw_packets = pollRawUDP();
+    
+    std::cout << "[NetworkManager] Received " << raw_packets.size() << " raw UDP packets" << std::endl;
 
     for (const auto &raw_packet : raw_packets) {
+        std::cout << "[NetworkManager] Raw packet size: " << raw_packet.data.size() << " bytes" << std::endl;
+        
         UDPPacket packet = PacketProcessor::parseUDPPacket(raw_packet.data);
+        
+        std::cout << "[NetworkManager] Parsed packet type: " << static_cast<int>(packet.msg_type) 
+                  << " payload size: " << packet.payload.size() << std::endl;
 
         // PLAYER_ASSIGNMENT est traité séparément et n'est pas retourné
         if (packet.msg_type == UDPMessageType::PLAYER_ASSIGNMENT) {
+            std::cout << "[NetworkManager] Handling PLAYER_ASSIGNMENT packet" << std::endl;
             handlePlayerAssignment(packet);
             continue; // Ne pas ajouter à la queue
         }
 
+        std::cout << "[NetworkManager] Adding packet to processor queue" << std::endl;
         packet_processor_.addPacket(packet);
     }
 
-    return packet_processor_.getProcessedPackets();
+    auto processed_packets = packet_processor_.getProcessedPackets();
+    std::cout << "[NetworkManager] Returning " << processed_packets.size() << " processed packets" << std::endl;
+    
+    return processed_packets;
 }
 
 bool NetworkManager::sendTCP(MessageType msg_type,

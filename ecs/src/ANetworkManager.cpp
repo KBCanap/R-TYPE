@@ -384,18 +384,27 @@ void ANetworkManager::initializeUDPSocket() {
 
 void ANetworkManager::startAsyncUDPReceive() {
     if (!udp_socket_ || !udp_socket_->isOpen()) {
+        std::cerr << "[ANetworkManager] UDP socket not available for receive" << std::endl;
         return;
     }
 
     udp_socket_->asyncReceive(
         udp_read_buffer_, [this](bool success, size_t bytes_transferred) {
+            std::cout << "[ANetworkManager] UDP callback - success: " << success 
+                      << ", bytes: " << bytes_transferred << std::endl;
+                  
             auto current_state = getConnectionState();
+            std::cout << "[ANetworkManager] Current state: " << static_cast<int>(current_state) << std::endl;
+            
             if (current_state == ConnectionState::DISCONNECTED ||
                 current_state == ConnectionState::ERROR) {
+                std::cout << "[ANetworkManager] Stopping UDP receive due to state" << std::endl;
                 return;
             }
 
             if (success && bytes_transferred > 0) {
+                std::cout << "[ANetworkManager] Processing " << bytes_transferred << " UDP bytes" << std::endl;
+                
                 std::vector<uint8_t> data(udp_read_buffer_.begin(),
                                           udp_read_buffer_.begin() +
                                               bytes_transferred);
@@ -407,14 +416,23 @@ void ANetworkManager::startAsyncUDPReceive() {
                 {
                     std::lock_guard<std::mutex> lock(udp_queue_mutex_);
                     raw_udp_queue_.push(raw_packet);
+                    std::cout << "[ANetworkManager] Added packet to queue, size now: " 
+                              << raw_udp_queue_.size() << std::endl;
                 }
+            } else {
+                std::cerr << "[ANetworkManager] UDP receive failed or no data" << std::endl;
             }
 
             if (current_state != ConnectionState::DISCONNECTED &&
                 current_state != ConnectionState::ERROR) {
+                std::cout << "[ANetworkManager] Re-launching UDP receive" << std::endl;
                 startAsyncUDPReceive();
+            } else {
+                std::cout << "[ANetworkManager] Not re-launching UDP receive" << std::endl;
             }
         });
+        
+    std::cout << "[ANetworkManager] UDP asyncReceive started" << std::endl;
 }
 
 } // namespace network

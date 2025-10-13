@@ -333,12 +333,17 @@ void NetworkCommandHandler::onRawTCPMessage(const network::TCPMessage &msg) {
 }
 
 void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
+    std::cout << "[NetworkCommandHandler] Processing UDP packet type: " 
+              << static_cast<int>(packet.msg_type) << " payload size: " 
+              << packet.payload.size() << std::endl;
+              
     switch (packet.msg_type) {
     case network::UDPMessageType::CLIENT_PING:
         std::cerr << "Received CLIENT_PING (unexpected on client)" << std::endl;
         break;
 
     case network::UDPMessageType::PLAYER_ASSIGNMENT: {
+        std::cout << "[NetworkCommandHandler] Processing PLAYER_ASSIGNMENT" << std::endl;
         if (packet.payload.size() != 4) {
             std::cerr << "Invalid PLAYER_ASSIGNMENT size: "
                       << packet.payload.size() << " (expected 4)" << std::endl;
@@ -354,6 +359,7 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
     }
 
     case network::UDPMessageType::ENTITY_CREATE: {
+        std::cout << "[NetworkCommandHandler] Processing ENTITY_CREATE" << std::endl;
         if (packet.payload.size() != 17) {
             std::cerr << "Invalid ENTITY_CREATE size: " << packet.payload.size()
                       << " (expected 17)" << std::endl;
@@ -362,6 +368,9 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
 
         auto entity_data =
             network::PacketProcessor::parseEntityCreate(packet.payload);
+
+        std::cout << "[NetworkCommandHandler] Entity data - NET_ID: " << entity_data.net_id 
+                  << " Type: " << static_cast<int>(entity_data.entity_type) << std::endl;
 
         network::CreateEntityCommand cmd;
         cmd.net_id = entity_data.net_id;
@@ -375,6 +384,7 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
     }
 
     case network::UDPMessageType::ENTITY_UPDATE: {
+        std::cout << "[NetworkCommandHandler] Processing ENTITY_UPDATE" << std::endl;
         if (packet.payload.size() == 0 || packet.payload.size() % 16 != 0) {
             std::cerr << "Invalid ENTITY_UPDATE size: " << packet.payload.size()
                       << " (must be multiple of 16)" << std::endl;
@@ -397,6 +407,7 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
     }
 
     case network::UDPMessageType::ENTITY_DESTROY: {
+        std::cout << "[NetworkCommandHandler] Processing ENTITY_DESTROY" << std::endl;
         if (packet.payload.size() == 0 || packet.payload.size() % 4 != 0) {
             std::cerr << "Invalid ENTITY_DESTROY size: "
                       << packet.payload.size() << " (must be multiple of 4)"
@@ -417,6 +428,7 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
     }
 
     case network::UDPMessageType::GAME_STATE: {
+        std::cout << "[NetworkCommandHandler] Processing GAME_STATE" << std::endl;
         if (packet.payload.size() < 4) {
             std::cerr << "Invalid GAME_STATE size: " << packet.payload.size()
                       << " (minimum 4)" << std::endl;
