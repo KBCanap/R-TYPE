@@ -34,6 +34,7 @@ class UDPServer : public AUdpServer {
         asio::ip::udp::endpoint remote_endpoint_;
         std::thread thread_;
         uint32_t max_clients_;
+
 };
 
 #endif /* !UDPSERVER_HPP_ */
