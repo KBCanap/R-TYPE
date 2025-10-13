@@ -137,6 +137,12 @@ class IIOContext {
      * @return Unique pointer to UDP socket
      */
     virtual IUDPSocket *createUDPSocket() = 0;
+
+    /**
+     * @brief Post a task to the I/O context
+     * @param task The task to be executed
+     */
+    virtual void post(std::function<void()> task) = 0;
 };
 
 } // namespace network

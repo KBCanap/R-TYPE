@@ -79,6 +79,10 @@ class ASIOContext : public IIOContext {
      * @return Reference to asio::io_context
      */
     asio::io_context &getIOContext() { return io_context_; }
+    auto get_executor() { return io_context_.get_executor(); }
+    void post(std::function<void()> task) {
+        asio::post(io_context_, std::move(task));
+    }
 
   private:
     asio::io_context io_context_;

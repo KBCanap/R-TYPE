@@ -68,21 +68,18 @@ void ANetworkManager::startReadTCPHeader() {
         tcp_header_buffer_, 4, [this](bool success, size_t bytes_transferred) {
             auto current_state = getConnectionState();
             if (current_state == ConnectionState::IN_GAME ||
-                current_state == ConnectionState::DISCONNECTED) {
+                current_state == ConnectionState::DISCONNECTED ||
+                current_state == ConnectionState::ERROR) {
                 return;
             }
 
             if (!success || bytes_transferred != 4) {
-                if (current_state != ConnectionState::DISCONNECTED &&
-                    current_state != ConnectionState::ERROR) {
-                    std::cerr << "Failed to read TCP header" << std::endl;
-                    updateState(ConnectionState::ERROR);
-                }
+                std::cerr << "Failed to read TCP header" << std::endl;
+                updateState(ConnectionState::ERROR);
                 return;
             }
 
             uint8_t msg_type = tcp_header_buffer_[0];
-
             uint32_t data_length = 0;
             data_length |= static_cast<uint32_t>(tcp_header_buffer_[1]) << 16;
             data_length |= static_cast<uint32_t>(tcp_header_buffer_[2]) << 8;
@@ -93,7 +90,9 @@ void ANetworkManager::startReadTCPHeader() {
             if (data_length == 0) {
                 std::vector<uint8_t> complete_msg = tcp_header_buffer_;
                 processCompleteTCPMessage(complete_msg);
-                startReadTCPHeader();
+
+                // ✅ CORRECTION : Utiliser l'interface abstraite
+                io_context_->post([this]() { startReadTCPHeader(); });
             } else {
                 readTCPPayload(msg_type, data_length);
             }
@@ -135,7 +134,8 @@ void ANetworkManager::readTCPPayload(uint8_t msg_type, uint32_t data_length) {
                                 tcp_payload_buffer_.begin() + data_length);
 
             processCompleteTCPMessage(complete_msg);
-            startReadTCPHeader();
+
+            io_context_->post([this]() { startReadTCPHeader(); });
         });
 }
 
@@ -384,27 +384,19 @@ void ANetworkManager::initializeUDPSocket() {
 
 void ANetworkManager::startAsyncUDPReceive() {
     if (!udp_socket_ || !udp_socket_->isOpen()) {
-        std::cerr << "[ANetworkManager] UDP socket not available for receive" << std::endl;
         return;
     }
 
     udp_socket_->asyncReceive(
         udp_read_buffer_, [this](bool success, size_t bytes_transferred) {
-            std::cout << "[ANetworkManager] UDP callback - success: " << success 
-                      << ", bytes: " << bytes_transferred << std::endl;
-                  
             auto current_state = getConnectionState();
-            std::cout << "[ANetworkManager] Current state: " << static_cast<int>(current_state) << std::endl;
-            
+
             if (current_state == ConnectionState::DISCONNECTED ||
                 current_state == ConnectionState::ERROR) {
-                std::cout << "[ANetworkManager] Stopping UDP receive due to state" << std::endl;
                 return;
             }
 
             if (success && bytes_transferred > 0) {
-                std::cout << "[ANetworkManager] Processing " << bytes_transferred << " UDP bytes" << std::endl;
-                
                 std::vector<uint8_t> data(udp_read_buffer_.begin(),
                                           udp_read_buffer_.begin() +
                                               bytes_transferred);
@@ -416,23 +408,14 @@ void ANetworkManager::startAsyncUDPReceive() {
                 {
                     std::lock_guard<std::mutex> lock(udp_queue_mutex_);
                     raw_udp_queue_.push(raw_packet);
-                    std::cout << "[ANetworkManager] Added packet to queue, size now: " 
-                              << raw_udp_queue_.size() << std::endl;
                 }
-            } else {
-                std::cerr << "[ANetworkManager] UDP receive failed or no data" << std::endl;
             }
 
             if (current_state != ConnectionState::DISCONNECTED &&
                 current_state != ConnectionState::ERROR) {
-                std::cout << "[ANetworkManager] Re-launching UDP receive" << std::endl;
-                startAsyncUDPReceive();
-            } else {
-                std::cout << "[ANetworkManager] Not re-launching UDP receive" << std::endl;
+                io_context_->post([this]() { startAsyncUDPReceive(); });
             }
         });
-        
-    std::cout << "[ANetworkManager] UDP asyncReceive started" << std::endl;
 }
 
 } // namespace network
