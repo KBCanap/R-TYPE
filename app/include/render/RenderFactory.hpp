@@ -14,7 +14,6 @@ namespace render {
 
 enum class RenderBackend {
     SFML,
-    // Can add SDL, Raylib, etc. in the future
 };
 
 class RenderFactory {

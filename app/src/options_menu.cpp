@@ -37,15 +37,11 @@ OptionsMenu::OptionsMenu(render::IRenderWindow &win, AudioManager &audioMgr,
         }
     }
 
-    // Load background
     _bgTexture = _window.createTexture();
     if (!_bgTexture->loadFromFile("assets/background.jpg")) {
-        // Note: Cannot create fallback image with render interface
-        // Will use a simple color-filled background instead
         std::cerr << "Warning: Could not load background.jpg" << std::endl;
     }
 
-    // Initialize scrolling background sprites
     _bgSprite1 = _window.createSprite();
     _bgSprite2 = _window.createSprite();
     if (_bgTexture->loadFromFile("assets/background.jpg")) {
@@ -54,10 +50,8 @@ OptionsMenu::OptionsMenu(render::IRenderWindow &win, AudioManager &audioMgr,
     }
     _bgScrollSpeed = 100.0f;
 
-    // Load font
     _font = _window.createFont();
     if (!_font->loadFromFile("assets/r-type.otf")) {
-        // Use default font if custom font fails
         std::cerr << "Warning: Could not load r-type.otf font" << std::endl;
     }
 
@@ -65,7 +59,6 @@ OptionsMenu::OptionsMenu(render::IRenderWindow &win, AudioManager &audioMgr,
 }
 
 void OptionsMenu::createButtons() {
-    // Scale background for scrolling
     float scaleX = static_cast<float>(_windowSize.x) / _bgTexture->getSize().x;
     float scaleY = static_cast<float>(_windowSize.y) / _bgTexture->getSize().y;
     _bgSprite1->setScale(scaleX, scaleY);
@@ -73,10 +66,8 @@ void OptionsMenu::createButtons() {
     _bgSprite1->setPosition(0.f, 0.f);
     _bgSprite2->setPosition(static_cast<float>(_windowSize.x), 0.f);
 
-    // Adjust scroll speed proportionally to window size
     _bgScrollSpeed = _windowSize.x * 0.125f;
 
-    // Title
     _titleText = _window.createText();
     _titleText->setFont(*_font);
     _titleText->setString("OPTIONS");
@@ -84,7 +75,6 @@ void OptionsMenu::createButtons() {
         static_cast<unsigned int>(_windowSize.y * 0.08f));
     _titleText->setFillColor(render::Color::White());
     render::FloatRect titleBounds = _titleText->getLocalBounds();
-    // Center text by adjusting position (IText doesn't have setOrigin)
     float titleX =
         static_cast<float>(_windowSize.x) / 2.f - titleBounds.width / 2.f;
     float titleY =
@@ -95,7 +85,6 @@ void OptionsMenu::createButtons() {
     float buttonWidth = _windowSize.x * 0.08f;
     float buttonHeight = _windowSize.y * 0.06f;
 
-    // Resolution settings
     _resolutionLabel = _window.createText();
     _resolutionLabel->setFont(*_font);
     _resolutionLabel->setString("Resolution ");
@@ -110,7 +99,6 @@ void OptionsMenu::createButtons() {
     _resolutionValue->setFillColor(render::Color::Yellow());
     _resolutionValue->setPosition(_windowSize.x * 0.5f, _windowSize.y * 0.28f);
 
-    // Left arrow button - positioned below the text
     _resolutionLeftButton = _window.createRectangleShape(
         render::Vector2f(buttonWidth, buttonHeight));
     _resolutionLeftButton->setFillColor(render::Color(100, 100, 200));
@@ -123,14 +111,12 @@ void OptionsMenu::createButtons() {
     _resolutionLeftText->setCharacterSize(labelSize);
     _resolutionLeftText->setFillColor(render::Color::White());
     render::FloatRect leftBounds = _resolutionLeftText->getLocalBounds();
-    // Center text in button
     float leftTextX =
         _windowSize.x * 0.35f + buttonWidth / 2.f - leftBounds.width / 2.f;
     float leftTextY =
         _windowSize.y * 0.40f + buttonHeight / 2.f - leftBounds.height / 2.f;
     _resolutionLeftText->setPosition(leftTextX, leftTextY);
 
-    // Right arrow button - positioned below the text
     _resolutionRightButton = _window.createRectangleShape(
         render::Vector2f(buttonWidth, buttonHeight));
     _resolutionRightButton->setFillColor(render::Color(100, 100, 200));
@@ -143,14 +129,12 @@ void OptionsMenu::createButtons() {
     _resolutionRightText->setCharacterSize(labelSize);
     _resolutionRightText->setFillColor(render::Color::White());
     render::FloatRect rightBounds = _resolutionRightText->getLocalBounds();
-    // Center text in button
     float rightTextX =
         _windowSize.x * 0.65f + buttonWidth / 2.f - rightBounds.width / 2.f;
     float rightTextY =
         _windowSize.y * 0.40f + buttonHeight / 2.f - rightBounds.height / 2.f;
     _resolutionRightText->setPosition(rightTextX, rightTextY);
 
-    // Sound settings
     _soundLabel = _window.createText();
     _soundLabel->setFont(*_font);
     _soundLabel->setString("Sound ");
@@ -177,14 +161,12 @@ void OptionsMenu::createButtons() {
     _soundButtonText->setCharacterSize(labelSize * 0.8f);
     _soundButtonText->setFillColor(render::Color::White());
     render::FloatRect soundBounds = _soundButtonText->getLocalBounds();
-    // Center text in button
     float soundTextX =
         _windowSize.x * 0.6f + buttonWidth - soundBounds.width / 2.f;
     float soundTextY =
         _windowSize.y * 0.48f + buttonHeight / 2.f - soundBounds.height / 2.f;
     _soundButtonText->setPosition(soundTextX, soundTextY);
 
-    // Accessibility button
     _accessibilityButton = _window.createRectangleShape(
         render::Vector2f(_windowSize.x * 0.4f, _windowSize.y * 0.08f));
     _accessibilityButton->setFillColor(render::Color(150, 100, 200));
@@ -199,7 +181,6 @@ void OptionsMenu::createButtons() {
     _accessibilityButtonText->setFillColor(render::Color::White());
     render::FloatRect accessibilityBounds =
         _accessibilityButtonText->getLocalBounds();
-    // Center text in button
     float accessibilityTextX = (_windowSize.x - _windowSize.x * 0.4f) / 2.f +
                                _windowSize.x * 0.4f / 2.f -
                                accessibilityBounds.width / 2.f;
@@ -209,7 +190,6 @@ void OptionsMenu::createButtons() {
     _accessibilityButtonText->setPosition(accessibilityTextX,
                                           accessibilityTextY);
 
-    // Key Bindings button
     _keyBindingsButton = _window.createRectangleShape(
         render::Vector2f(_windowSize.x * 0.4f, _windowSize.y * 0.08f));
     _keyBindingsButton->setFillColor(render::Color(100, 150, 200));
@@ -224,7 +204,6 @@ void OptionsMenu::createButtons() {
     _keyBindingsButtonText->setFillColor(render::Color::White());
     render::FloatRect keyBindingsBounds =
         _keyBindingsButtonText->getLocalBounds();
-    // Center text in button
     float keyBindingsTextX = (_windowSize.x - _windowSize.x * 0.4f) / 2.f +
                              _windowSize.x * 0.4f / 2.f -
                              keyBindingsBounds.width / 2.f;
@@ -233,7 +212,6 @@ void OptionsMenu::createButtons() {
                              keyBindingsBounds.height / 2.f;
     _keyBindingsButtonText->setPosition(keyBindingsTextX, keyBindingsTextY);
 
-    // Back button
     _backButton = _window.createRectangleShape(
         render::Vector2f(_windowSize.x * 0.2f, _windowSize.y * 0.08f));
     _backButton->setFillColor(render::Color(150, 50, 50));
@@ -247,7 +225,6 @@ void OptionsMenu::createButtons() {
         static_cast<unsigned int>(_windowSize.y * 0.05f));
     _backButtonText->setFillColor(render::Color::White());
     render::FloatRect backBounds = _backButtonText->getLocalBounds();
-    // Center text in button
     float backTextX = (_windowSize.x - _windowSize.x * 0.2f) / 2.f +
                       _windowSize.x * 0.2f / 2.f - backBounds.width / 2.f;
     float backTextY = _windowSize.y * 0.82f + _windowSize.y * 0.08f / 2.f -
@@ -263,12 +240,10 @@ void OptionsMenu::updateButtonScale() {
 void OptionsMenu::handleResolutionChange() {
     Resolution newRes = _resolutions[_currentResolution];
 
-    // Set the new window size
     _window.setSize(render::Vector2u(newRes.width, newRes.height));
     _windowSize.x = newRes.width;
     _windowSize.y = newRes.height;
 
-    // Update button scale and recreate UI elements
     updateButtonScale();
 
     std::cout << "Resolution changed to: " << newRes.name << std::endl;
@@ -280,7 +255,6 @@ void OptionsMenu::toggleSound() {
     _soundValue->setFillColor(_soundEnabled ? render::Color::Green()
                                             : render::Color::Red());
 
-    // Apply sound setting to AudioManager
     if (_soundEnabled) {
         _audioManager.setMasterVolume(100.0f);
     } else {
@@ -309,9 +283,6 @@ OptionsResult OptionsMenu::run() {
 
             if (event.type == render::EventType::Resized) {
                 _windowSize = {event.size.width, event.size.height};
-                // Note: IRenderWindow doesn't have setView, so we skip view
-                // management The SFML implementation should handle this
-                // internally
                 updateButtonScale();
             }
 
@@ -324,7 +295,6 @@ OptionsResult OptionsMenu::run() {
                 mousePos.x = static_cast<float>(event.mouseButton.x);
                 mousePos.y = static_cast<float>(event.mouseButton.y);
 
-                // Check resolution left button
                 if (containsPoint(_resolutionLeftButton->getGlobalBounds(),
                                   mousePos)) {
                     if (_currentResolution > 0) {
@@ -335,7 +305,6 @@ OptionsResult OptionsMenu::run() {
                     }
                 }
 
-                // Check resolution right button
                 if (containsPoint(_resolutionRightButton->getGlobalBounds(),
                                   mousePos)) {
                     if (_currentResolution < _resolutions.size() - 1) {
@@ -346,31 +315,26 @@ OptionsResult OptionsMenu::run() {
                     }
                 }
 
-                // Check sound toggle button
                 if (containsPoint(_soundButton->getGlobalBounds(), mousePos)) {
                     toggleSound();
                 }
 
-                // Check accessibility button
                 if (containsPoint(_accessibilityButton->getGlobalBounds(),
                                   mousePos)) {
                     return OptionsResult::Accessibility;
                 }
 
-                // Check key bindings button
                 if (containsPoint(_keyBindingsButton->getGlobalBounds(),
                                   mousePos)) {
                     return OptionsResult::KeyBindings;
                 }
 
-                // Check back button
                 if (containsPoint(_backButton->getGlobalBounds(), mousePos)) {
                     return OptionsResult::Back;
                 }
             }
         }
 
-        // Background scrolling
         auto bg1Pos = _bgSprite1->getPosition();
         auto bg2Pos = _bgSprite2->getPosition();
         _bgSprite1->setPosition(bg1Pos.x - _bgScrollSpeed * dt, bg1Pos.y);
@@ -392,14 +356,11 @@ OptionsResult OptionsMenu::run() {
 void OptionsMenu::render() {
     _window.clear();
 
-    // Draw scrolling background
     _window.draw(*_bgSprite1);
     _window.draw(*_bgSprite2);
 
-    // Draw title
     _window.draw(*_titleText);
 
-    // Draw resolution settings
     _window.draw(*_resolutionLabel);
     _window.draw(*_resolutionValue);
     _window.draw(*_resolutionLeftButton);
@@ -407,21 +368,17 @@ void OptionsMenu::render() {
     _window.draw(*_resolutionRightButton);
     _window.draw(*_resolutionRightText);
 
-    // Draw sound settings
     _window.draw(*_soundLabel);
     _window.draw(*_soundValue);
     _window.draw(*_soundButton);
     _window.draw(*_soundButtonText);
 
-    // Draw accessibility button
     _window.draw(*_accessibilityButton);
     _window.draw(*_accessibilityButtonText);
 
-    // Draw key bindings button
     _window.draw(*_keyBindingsButton);
     _window.draw(*_keyBindingsButtonText);
 
-    // Draw back button
     _window.draw(*_backButton);
     _window.draw(*_backButtonText);
 

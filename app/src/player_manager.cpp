@@ -26,7 +26,6 @@ PlayerManager::createPlayer(float relativeX, float relativeY, float speed) {
     _registry.add_component<component::controllable>(
         player, component::controllable(speed));
 
-    // Arme RAPID par défaut : cadence élevée, dégâts faibles, projectile unique
     _registry.add_component<component::weapon>(
         player, component::weapon(8.0f, true, 1, 0.0f,
                                   component::projectile_pattern::straight(),
@@ -39,21 +38,15 @@ PlayerManager::createPlayer(float relativeX, float relativeY, float speed) {
     _registry.add_component<component::score>(player, component::score(0));
     _registry.add_component<component::health>(player, component::health(100));
 
-    // Add player animation with 5 phases
     auto &player_anim = _registry.add_component<component::animation>(
         player, component::animation(0.2f, true));
-    player_anim->frames.push_back(
-        render::IntRect(0, 0, 33, 17)); // Phase 1: neutral up
-    player_anim->frames.push_back(
-        render::IntRect(33, 0, 33, 17)); // Phase 2: slight up
-    player_anim->frames.push_back(
-        render::IntRect(66, 0, 33, 17)); // Phase 3: middle/neutral
-    player_anim->frames.push_back(
-        render::IntRect(99, 0, 33, 17)); // Phase 4: slight down
-    player_anim->frames.push_back(
-        render::IntRect(132, 0, 33, 17)); // Phase 5: full down
-    player_anim->current_frame = 2;       // Start at middle frame
-    player_anim->playing = false;         // Start with animation stopped
+    player_anim->frames.push_back(render::IntRect(0, 0, 33, 17));
+    player_anim->frames.push_back(render::IntRect(33, 0, 33, 17));
+    player_anim->frames.push_back(render::IntRect(66, 0, 33, 17));
+    player_anim->frames.push_back(render::IntRect(99, 0, 33, 17));
+    player_anim->frames.push_back(render::IntRect(132, 0, 33, 17));
+    player_anim->current_frame = 2;
+    player_anim->playing = false;
 
     return player;
 }

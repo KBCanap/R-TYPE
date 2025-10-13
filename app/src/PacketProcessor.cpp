@@ -290,14 +290,14 @@ UDPPacket PacketProcessor::createClientPing(uint32_t timestamp,
                                             uint8_t player_id) {
     UDPPacket packet;
     packet.msg_type = UDPMessageType::CLIENT_PING;
-    packet.data_length = 5; // 4 bytes timestamp + 1 byte player_id
+    packet.data_length = 5;
     packet.sequence_num = 0;
 
     packet.payload.push_back((timestamp >> 24) & 0xFF);
     packet.payload.push_back((timestamp >> 16) & 0xFF);
     packet.payload.push_back((timestamp >> 8) & 0xFF);
     packet.payload.push_back(timestamp & 0xFF);
-    packet.payload.push_back(player_id); // Add player_id
+    packet.payload.push_back(player_id);
 
     return packet;
 }

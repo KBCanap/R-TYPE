@@ -24,7 +24,7 @@ class AccessibilityMenu {
     void createButtons();
     void updateButtonScale();
     void cycleColorblindMode(
-        int direction); // direction: -1 for previous, +1 for next
+        int direction);
 
   private:
     render::IRenderWindow &_window;
@@ -48,7 +48,6 @@ class AccessibilityMenu {
     std::unique_ptr<render::IShape> _referenceSquare3; // Blue
     std::unique_ptr<render::IText> _referenceLabel;
 
-    // Back button
     std::unique_ptr<render::IShape> _backButton;
     std::unique_ptr<render::IText> _backButtonText;
 

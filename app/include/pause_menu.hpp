@@ -22,8 +22,6 @@ class PauseMenu {
     void render();
     void setVisible(bool visible) { _visible = visible; }
     bool isVisible() const { return _visible; }
-
-    // Getters for button access
     const render::IShape &getContinueButton() const { return *_continueButton; }
     const render::IShape &getOptionsButton() const { return *_optionsButton; }
     const render::IShape &getAccessibilityButton() const {
@@ -42,7 +40,6 @@ class PauseMenu {
     std::unique_ptr<render::IFont> _font;
     std::unique_ptr<render::IText> _titleText;
 
-    // Buttons
     std::unique_ptr<render::IShape> _continueButton;
     std::unique_ptr<render::IShape> _optionsButton;
     std::unique_ptr<render::IShape> _accessibilityButton;
@@ -52,8 +49,6 @@ class PauseMenu {
     std::unique_ptr<render::IText> _optionsButtonText;
     std::unique_ptr<render::IText> _accessibilityButtonText;
     std::unique_ptr<render::IText> _quitButtonText;
-
-    // Semi-transparent overlay
     std::unique_ptr<render::IShape> _overlay;
 
     render::Vector2u _windowSize;

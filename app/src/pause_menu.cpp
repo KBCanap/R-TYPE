@@ -14,7 +14,6 @@ PauseMenu::PauseMenu(render::IRenderWindow &win, AudioManager &audioMgr)
 
     _font = _window.createFont();
     if (!_font->loadFromFile("assets/r-type.otf")) {
-        // Use default font if custom font fails
         std::cerr << "Warning: Could not load r-type.otf font" << std::endl;
     }
 
@@ -22,13 +21,11 @@ PauseMenu::PauseMenu(render::IRenderWindow &win, AudioManager &audioMgr)
 }
 
 void PauseMenu::createButtons() {
-    // Create semi-transparent overlay
     _overlay = _window.createRectangleShape(render::Vector2f(
         static_cast<float>(_windowSize.x), static_cast<float>(_windowSize.y)));
     _overlay->setFillColor(
-        render::Color(0, 0, 0, 128)); // Semi-transparent black
+        render::Color(0, 0, 0, 128));
 
-    // Title
     _titleText = _window.createText();
     _titleText->setFont(*_font);
     _titleText->setString("PAUSE");
@@ -36,7 +33,6 @@ void PauseMenu::createButtons() {
         static_cast<unsigned int>(_windowSize.y * 0.08f));
     _titleText->setFillColor(render::Color::White());
     render::FloatRect titleBounds = _titleText->getLocalBounds();
-    // Center text by adjusting position (IText doesn't have setOrigin)
     float titleX =
         static_cast<float>(_windowSize.x) / 2.f - titleBounds.width / 2.f;
     float titleY =
@@ -48,7 +44,6 @@ void PauseMenu::createButtons() {
     float startY = _windowSize.y * 0.4f;
     float spacing = buttonHeight * 1.3f;
 
-    // Continue button
     _continueButton = _window.createRectangleShape(
         render::Vector2f(buttonWidth, buttonHeight));
     _continueButton->setFillColor(render::Color(100, 200, 100));
@@ -61,14 +56,12 @@ void PauseMenu::createButtons() {
         static_cast<unsigned int>(_windowSize.y * 0.04f));
     _continueButtonText->setFillColor(render::Color::White());
     render::FloatRect continueBounds = _continueButtonText->getLocalBounds();
-    // Center text in button
     float continueTextX = (_windowSize.x - buttonWidth) / 2.f +
                           buttonWidth / 2.f - continueBounds.width / 2.f;
     float continueTextY =
         startY + buttonHeight / 2.f - continueBounds.height / 2.f;
     _continueButtonText->setPosition(continueTextX, continueTextY);
 
-    // Options button
     _optionsButton = _window.createRectangleShape(
         render::Vector2f(buttonWidth, buttonHeight));
     _optionsButton->setFillColor(render::Color(100, 150, 200));
@@ -82,14 +75,12 @@ void PauseMenu::createButtons() {
         static_cast<unsigned int>(_windowSize.y * 0.04f));
     _optionsButtonText->setFillColor(render::Color::White());
     render::FloatRect optionsBounds = _optionsButtonText->getLocalBounds();
-    // Center text in button
     float optionsTextX = (_windowSize.x - buttonWidth) / 2.f +
                          buttonWidth / 2.f - optionsBounds.width / 2.f;
     float optionsTextY =
         startY + spacing + buttonHeight / 2.f - optionsBounds.height / 2.f;
     _optionsButtonText->setPosition(optionsTextX, optionsTextY);
 
-    // Accessibility button
     _accessibilityButton = _window.createRectangleShape(
         render::Vector2f(buttonWidth, buttonHeight));
     _accessibilityButton->setFillColor(render::Color(150, 100, 200));
@@ -104,7 +95,6 @@ void PauseMenu::createButtons() {
     _accessibilityButtonText->setFillColor(render::Color::White());
     render::FloatRect accessibilityBounds =
         _accessibilityButtonText->getLocalBounds();
-    // Center text in button
     float accessibilityTextX = (_windowSize.x - buttonWidth) / 2.f +
                                buttonWidth / 2.f -
                                accessibilityBounds.width / 2.f;
@@ -113,7 +103,6 @@ void PauseMenu::createButtons() {
     _accessibilityButtonText->setPosition(accessibilityTextX,
                                           accessibilityTextY);
 
-    // Quit button
     _quitButton = _window.createRectangleShape(
         render::Vector2f(buttonWidth, buttonHeight));
     _quitButton->setFillColor(render::Color(200, 100, 100));
@@ -127,7 +116,6 @@ void PauseMenu::createButtons() {
         static_cast<unsigned int>(_windowSize.y * 0.04f));
     _quitButtonText->setFillColor(render::Color::White());
     render::FloatRect quitBounds = _quitButtonText->getLocalBounds();
-    // Center text in button
     float quitTextX = (_windowSize.x - buttonWidth) / 2.f + buttonWidth / 2.f -
                       quitBounds.width / 2.f;
     float quitTextY =
@@ -141,8 +129,6 @@ void PauseMenu::updateButtonScale() {
 }
 
 PauseResult PauseMenu::run() {
-    // This method is now simplified since events are handled in Game class
-    // Just render and return None to keep the pause state
     render();
     return PauseResult::None;
 }
@@ -156,13 +142,10 @@ void PauseMenu::render() {
 
     std::cout << "PauseMenu::render() - drawing pause menu" << std::endl;
 
-    // Draw overlay
     _window.draw(*_overlay);
 
-    // Draw title
     _window.draw(*_titleText);
 
-    // Draw buttons
     _window.draw(*_continueButton);
     _window.draw(*_continueButtonText);
     _window.draw(*_optionsButton);

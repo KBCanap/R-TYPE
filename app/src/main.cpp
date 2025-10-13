@@ -30,7 +30,6 @@ int main() {
     AudioManager audioManager(*audioSystem);
     KeyBindings keyBindings;
 
-    // Enregistre les composants
     reg.register_component<component::position>();
     reg.register_component<component::velocity>();
     reg.register_component<component::drawable>();

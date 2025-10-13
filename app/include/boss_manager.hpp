@@ -14,7 +14,6 @@ class BossManager {
   public:
     BossManager(registry &reg, render::IRenderWindow &win);
 
-    // Boss management
     std::optional<entity> spawnBoss();
     bool shouldSpawnBoss(const std::optional<entity> &player,
                          const std::optional<entity> &boss) const;

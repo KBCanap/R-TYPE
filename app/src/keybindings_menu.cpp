@@ -41,13 +41,11 @@ KeyBindingsMenu::KeyBindingsMenu(render::IRenderWindow &win,
       _waitingForKey(false) {
     _windowSize = _window.getSize();
 
-    // Load background
     _bgTexture = _window.createTexture();
     if (!_bgTexture->loadFromFile("assets/background.jpg")) {
         std::cerr << "Warning: Could not load background.jpg" << std::endl;
     }
 
-    // Initialize scrolling background sprites
     _bgSprite1 = _window.createSprite();
     _bgSprite2 = _window.createSprite();
     if (_bgTexture->loadFromFile("assets/background.jpg")) {
@@ -56,7 +54,6 @@ KeyBindingsMenu::KeyBindingsMenu(render::IRenderWindow &win,
     }
     _bgScrollSpeed = 100.0f;
 
-    // Load font
     _font = _window.createFont();
     if (!_font->loadFromFile("assets/r-type.otf")) {
         std::cerr << "Warning: Could not load r-type.otf font" << std::endl;
@@ -66,7 +63,6 @@ KeyBindingsMenu::KeyBindingsMenu(render::IRenderWindow &win,
 }
 
 void KeyBindingsMenu::createButtons() {
-    // Scale background for scrolling
     float scaleX = static_cast<float>(_windowSize.x) / _bgTexture->getSize().x;
     float scaleY = static_cast<float>(_windowSize.y) / _bgTexture->getSize().y;
     _bgSprite1->setScale(scaleX, scaleY);
@@ -74,10 +70,8 @@ void KeyBindingsMenu::createButtons() {
     _bgSprite1->setPosition(0.f, 0.f);
     _bgSprite2->setPosition(static_cast<float>(_windowSize.x), 0.f);
 
-    // Adjust scroll speed proportionally to window size
     _bgScrollSpeed = _windowSize.x * 0.125f;
 
-    // Title
     _titleText = _window.createText();
     _titleText->setFont(*_font);
     _titleText->setString("KEY BINDINGS");
@@ -97,7 +91,6 @@ void KeyBindingsMenu::createButtons() {
     float startY = _windowSize.y * 0.22f;
     float spacing = _windowSize.y * 0.09f;
 
-    // Create binding entries for each action
     _bindings.clear();
     std::vector<GameAction> actions = {GameAction::MoveUp, GameAction::MoveDown,
                                        GameAction::MoveLeft,
@@ -108,7 +101,6 @@ void KeyBindingsMenu::createButtons() {
         entry.action = actions[i];
         entry.actionName = getActionName(actions[i]);
 
-        // Label (action name)
         entry.label = _window.createText();
         entry.label->setFont(*_font);
         entry.label->setString(entry.actionName);
@@ -116,7 +108,6 @@ void KeyBindingsMenu::createButtons() {
         entry.label->setFillColor(render::Color::White());
         entry.label->setPosition(_windowSize.x * 0.15f, startY + i * spacing);
 
-        // Key text (current binding)
         entry.keyText = _window.createText();
         entry.keyText->setFont(*_font);
         render::Key currentKey = _keyBindings.getBinding(actions[i]);
@@ -125,7 +116,6 @@ void KeyBindingsMenu::createButtons() {
         entry.keyText->setFillColor(render::Color::Yellow());
         entry.keyText->setPosition(_windowSize.x * 0.45f, startY + i * spacing);
 
-        // Change button
         entry.button = _window.createRectangleShape(
             render::Vector2f(buttonWidth, buttonHeight));
         entry.button->setFillColor(render::Color(100, 100, 200));
@@ -147,7 +137,6 @@ void KeyBindingsMenu::createButtons() {
         _bindings.push_back(std::move(entry));
     }
 
-    // Reset button
     _resetButton = _window.createRectangleShape(
         render::Vector2f(_windowSize.x * 0.45f, _windowSize.y * 0.07f));
     _resetButton->setFillColor(render::Color(200, 100, 50));
@@ -167,7 +156,6 @@ void KeyBindingsMenu::createButtons() {
                        resetBounds.height / 2.f;
     _resetButtonText->setPosition(resetTextX, resetTextY);
 
-    // Back button
     _backButton = _window.createRectangleShape(
         render::Vector2f(_windowSize.x * 0.2f, _windowSize.y * 0.08f));
     _backButton->setFillColor(render::Color(150, 50, 50));
@@ -187,7 +175,6 @@ void KeyBindingsMenu::createButtons() {
                       backBounds.height / 2.f;
     _backButtonText->setPosition(backTextX, backTextY);
 
-    // Waiting for key text (initially not visible)
     _waitingText = _window.createText();
     _waitingText->setFont(*_font);
     _waitingText->setString("Press a key... ESC to cancel");
@@ -218,18 +205,15 @@ void KeyBindingsMenu::handleKeyPress(render::Key key) {
         return;
     }
 
-    // Cancel with Escape
     if (key == render::Key::Escape) {
         _waitingForKey = false;
         std::cout << "Rebinding cancelled" << std::endl;
         return;
     }
 
-    // Set the new binding
     _keyBindings.setBinding(_currentAction, key);
     _waitingForKey = false;
 
-    // Update the display
     for (auto &binding : _bindings) {
         if (binding.action == _currentAction) {
             binding.keyText->setString(KeyBindings::getKeyName(key));
@@ -244,7 +228,6 @@ void KeyBindingsMenu::handleKeyPress(render::Key key) {
 void KeyBindingsMenu::resetToDefaults() {
     _keyBindings.resetToDefaults();
 
-    // Update all displays
     for (auto &binding : _bindings) {
         render::Key currentKey = _keyBindings.getBinding(binding.action);
         binding.keyText->setString(KeyBindings::getKeyName(currentKey));
@@ -279,7 +262,6 @@ KeyBindingsResult KeyBindingsMenu::run() {
                 mousePos.y = static_cast<float>(event.mouseMove.y);
             }
 
-            // Handle key press for rebinding
             if (event.type == render::EventType::KeyPressed) {
                 if (_waitingForKey) {
                     handleKeyPress(event.key.code);
@@ -287,7 +269,6 @@ KeyBindingsResult KeyBindingsMenu::run() {
             }
 
             if (event.type == render::EventType::MouseButtonPressed) {
-                // Don't handle clicks if waiting for key
                 if (_waitingForKey) {
                     continue;
                 }
@@ -295,7 +276,6 @@ KeyBindingsResult KeyBindingsMenu::run() {
                 mousePos.x = static_cast<float>(event.mouseButton.x);
                 mousePos.y = static_cast<float>(event.mouseButton.y);
 
-                // Check binding buttons
                 for (auto &binding : _bindings) {
                     if (containsPoint(binding.button->getGlobalBounds(),
                                       mousePos)) {
@@ -304,19 +284,16 @@ KeyBindingsResult KeyBindingsMenu::run() {
                     }
                 }
 
-                // Check reset button
                 if (containsPoint(_resetButton->getGlobalBounds(), mousePos)) {
                     resetToDefaults();
                 }
 
-                // Check back button
                 if (containsPoint(_backButton->getGlobalBounds(), mousePos)) {
                     return KeyBindingsResult::Back;
                 }
             }
         }
 
-        // Background scrolling
         auto bg1Pos = _bgSprite1->getPosition();
         auto bg2Pos = _bgSprite2->getPosition();
         _bgSprite1->setPosition(bg1Pos.x - _bgScrollSpeed * dt, bg1Pos.y);
@@ -338,14 +315,11 @@ KeyBindingsResult KeyBindingsMenu::run() {
 void KeyBindingsMenu::render() {
     _window.clear();
 
-    // Draw scrolling background
     _window.draw(*_bgSprite1);
     _window.draw(*_bgSprite2);
 
-    // Draw title
     _window.draw(*_titleText);
 
-    // Draw all binding entries
     for (auto &binding : _bindings) {
         _window.draw(*binding.label);
         _window.draw(*binding.keyText);
@@ -353,15 +327,12 @@ void KeyBindingsMenu::render() {
         _window.draw(*binding.buttonText);
     }
 
-    // Draw reset button
     _window.draw(*_resetButton);
     _window.draw(*_resetButtonText);
 
-    // Draw back button
     _window.draw(*_backButton);
     _window.draw(*_backButtonText);
 
-    // Draw waiting text if waiting for key
     if (_waitingForKey) {
         _window.draw(*_waitingText);
     }
