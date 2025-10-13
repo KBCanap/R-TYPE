@@ -272,7 +272,6 @@ PacketProcessor::serializePlayerInput(const PlayerInputData &input) {
     data.reserve(2);
 
     data.push_back(static_cast<uint8_t>(input.event_type));
-
     data.push_back(static_cast<uint8_t>(input.direction));
 
     return data;
@@ -280,16 +279,19 @@ PacketProcessor::serializePlayerInput(const PlayerInputData &input) {
 
 UDPPacket PacketProcessor::createClientPing(uint32_t timestamp,
                                             uint8_t player_id) {
+    (void)player_id;
+
     UDPPacket packet;
     packet.msg_type = UDPMessageType::CLIENT_PING;
-    packet.data_length = 5; // 4 bytes timestamp + 1 byte player_id
+    packet.data_length = 4;
     packet.sequence_num = 0;
 
+    packet.payload.clear();
+    packet.payload.reserve(4);
     packet.payload.push_back((timestamp >> 24) & 0xFF);
     packet.payload.push_back((timestamp >> 16) & 0xFF);
     packet.payload.push_back((timestamp >> 8) & 0xFF);
     packet.payload.push_back(timestamp & 0xFF);
-    packet.payload.push_back(player_id); // Add player_id
 
     return packet;
 }

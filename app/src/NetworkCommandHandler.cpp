@@ -28,11 +28,6 @@ void NetworkCommandHandler::onCreateEntity(
         new_entity = createEnemyEntity(cmd);
         break;
 
-    case network::EntityType::ENEMY_SPREAD:
-        std::cout << "[CLIENT] -> Creating ENEMY_SPREAD (zigzag)" << std::endl;
-        new_entity = createEnemySpreadEntity(cmd);
-        break;
-
     case network::EntityType::BOSS:
         std::cout << "[CLIENT] -> Creating BOSS" << std::endl;
         new_entity = createBossEntity(cmd);
@@ -207,55 +202,6 @@ entity NetworkCommandHandler::createEnemyEntity(
     anim->frames.push_back(render::IntRect(0, 0, 50, 58));   // Frame 1
     anim->frames.push_back(render::IntRect(51, 0, 57, 58));  // Frame 2
     anim->frames.push_back(render::IntRect(116, 0, 49, 58)); // Frame 3
-
-    return enemy;
-}
-
-entity NetworkCommandHandler::createEnemySpreadEntity(
-    const network::CreateEntityCommand &cmd) {
-    auto enemy = registry_.spawn_entity();
-
-    registry_.add_component<component::position>(
-        enemy, component::position(cmd.position_x, cmd.position_y));
-
-    registry_.add_component<component::velocity>(
-        enemy, component::velocity(0.0f, 0.0f));
-
-    // Spread enemy - use r-typesheet3.gif
-    registry_.add_component<component::drawable>(
-        enemy, component::drawable("assets/sprites/r-typesheet3.gif",
-                                   render::IntRect(), 3.0f, "enemy_spread"));
-
-    registry_.add_component<component::hitbox>(
-        enemy, component::hitbox(51.0f, 54.0f, 0.0f, 0.0f));
-
-    registry_.add_component<component::health>(enemy,
-                                               component::health(cmd.health));
-
-    // No weapon component needed - server handles all shooting in multiplayer
-
-    // Add AI input with zigzag movement pattern (movement only, no shooting)
-    float fire_interval = 1.25f;
-    component::ai_movement_pattern movement_pattern =
-        component::ai_movement_pattern::zigzag(60.0f, 0.015f, 130.0f);
-    registry_.add_component<component::ai_input>(
-        enemy, component::ai_input(true, fire_interval, movement_pattern));
-
-    // Add animation frames for spread enemy (12 frames)
-    auto &anim = registry_.add_component<component::animation>(
-        enemy, component::animation(0.5f, true));
-    anim->frames.push_back(render::IntRect(0, 0, 17, 18));   // Frame 1
-    anim->frames.push_back(render::IntRect(17, 0, 17, 18));  // Frame 2
-    anim->frames.push_back(render::IntRect(34, 0, 17, 18));  // Frame 3
-    anim->frames.push_back(render::IntRect(51, 0, 17, 18));  // Frame 4
-    anim->frames.push_back(render::IntRect(68, 0, 17, 18));  // Frame 5
-    anim->frames.push_back(render::IntRect(85, 0, 17, 18));  // Frame 6
-    anim->frames.push_back(render::IntRect(102, 0, 17, 18)); // Frame 7
-    anim->frames.push_back(render::IntRect(119, 0, 17, 18)); // Frame 8
-    anim->frames.push_back(render::IntRect(136, 0, 17, 18)); // Frame 9
-    anim->frames.push_back(render::IntRect(153, 0, 17, 18)); // Frame 10
-    anim->frames.push_back(render::IntRect(170, 0, 17, 18)); // Frame 11
-    anim->frames.push_back(render::IntRect(187, 0, 17, 18)); // Frame 12
 
     return enemy;
 }
@@ -483,9 +429,8 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
             break;
         }
 
-        auto entities =
-            network::PacketProcessor::parseGameState(packet.payload);
-
+        auto entities = network::PacketProcessor::parseGameState(packet.payload);
+        
         network::FullStateSyncCommand cmd;
         for (const auto &entity_data : entities) {
             network::CreateEntityCommand entity_cmd;
@@ -501,15 +446,5 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
         onFullStateSync(cmd);
         break;
     }
-
-    case network::UDPMessageType::PLAYER_INPUT:
-        std::cerr << "Received PLAYER_INPUT (unexpected on client)"
-                  << std::endl;
-        break;
-
-    default:
-        std::cout << "Unhandled UDP packet: "
-                  << static_cast<int>(packet.msg_type) << std::endl;
-        break;
     }
 }
