@@ -71,8 +71,12 @@ void NetworkCommandHandler::onUpdateEntity(
     auto &network_states = registry_.get_components<component::network_state>();
 
     if (ent < positions.size() && positions[ent]) {
-        positions[ent]->x = cmd.position_x;
-        positions[ent]->y = cmd.position_y;
+        render::Vector2u window_size = window_.getSize();
+        float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+        float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
+        positions[ent]->x = pixel_x;
+        positions[ent]->y = pixel_y;
     }
 
     if (ent < healths.size() && healths[ent]) {
@@ -179,8 +183,12 @@ NetworkCommandHandler::findEntityByNetId(uint32_t net_id) const {
 
 entity NetworkCommandHandler::createPlayerEntity(
     const network::CreateEntityCommand &cmd) {
-    auto player_opt =
-        player_manager_.createPlayer(cmd.position_x, cmd.position_y);
+    // ✅ CORRECTION : Convertir pourcentage en pixels
+    render::Vector2u window_size = window_.getSize();
+    float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+    float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
+    auto player_opt = player_manager_.createPlayer(pixel_x, pixel_y);
 
     if (!player_opt) {
         return entity(0);
@@ -201,8 +209,12 @@ entity NetworkCommandHandler::createEnemyEntity(
     const network::CreateEntityCommand &cmd) {
     auto enemy = registry_.spawn_entity();
 
+    render::Vector2u window_size = window_.getSize();
+    float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+    float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
     registry_.add_component<component::position>(
-        enemy, component::position(cmd.position_x, cmd.position_y));
+        enemy, component::position(pixel_x, pixel_y));
 
     registry_.add_component<component::velocity>(
         enemy, component::velocity(0.0f, 0.0f));
@@ -239,8 +251,12 @@ entity NetworkCommandHandler::createBossEntity(
     const network::CreateEntityCommand &cmd) {
     auto boss = registry_.spawn_entity();
 
+    render::Vector2u window_size = window_.getSize();
+    float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+    float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
     registry_.add_component<component::position>(
-        boss, component::position(cmd.position_x, cmd.position_y));
+        boss, component::position(pixel_x, pixel_y));
 
     registry_.add_component<component::velocity>(
         boss, component::velocity(0.0f, 100.0f));
@@ -280,8 +296,12 @@ entity NetworkCommandHandler::createProjectileEntity(
     const network::CreateEntityCommand &cmd) {
     auto projectile = registry_.spawn_entity();
 
+    render::Vector2u window_size = window_.getSize();
+    float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+    float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
     registry_.add_component<component::position>(
-        projectile, component::position(cmd.position_x, cmd.position_y));
+        projectile, component::position(pixel_x, pixel_y));
 
     registry_.add_component<component::velocity>(
         projectile, component::velocity(0.0f, 0.0f));
