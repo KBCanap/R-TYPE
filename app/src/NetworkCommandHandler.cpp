@@ -1,6 +1,8 @@
 ﻿#include "../include/network/NetworkCommandHandler.hpp"
 #include <iostream>
 #include <set>
+#include <mutex>
+#include <atomic>
 
 NetworkCommandHandler::NetworkCommandHandler(registry &registry,
                                              render::IRenderWindow &window,
@@ -55,7 +57,10 @@ void NetworkCommandHandler::onCreateEntity(
     registry_.add_component<component::network_state>(
         new_entity, component::network_state());
 
-    net_id_to_entity_.emplace(cmd.net_id, new_entity);
+    {
+        std::lock_guard<std::mutex> lock(net_id_mutex_);
+        net_id_to_entity_.emplace(cmd.net_id, new_entity);
+    }
 }
 
 void NetworkCommandHandler::onUpdateEntity(
@@ -99,9 +104,12 @@ void NetworkCommandHandler::onDestroyEntity(
     }
 
     entity ent = *opt_entity;
-
     registry_.kill_entity(ent);
-    net_id_to_entity_.erase(cmd.net_id);
+    
+    {
+        std::lock_guard<std::mutex> lock(net_id_mutex_);
+        net_id_to_entity_.erase(cmd.net_id);
+    }
 }
 
 void NetworkCommandHandler::onFullStateSync(
@@ -179,6 +187,7 @@ uint32_t NetworkCommandHandler::getAssignedPlayerNetId() const {
 
 std::optional<entity>
 NetworkCommandHandler::findEntityByNetId(uint32_t net_id) const {
+    std::lock_guard<std::mutex> lock(net_id_mutex_);
     auto it = net_id_to_entity_.find(net_id);
     if (it != net_id_to_entity_.end()) {
         return it->second;

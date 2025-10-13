@@ -9,6 +9,7 @@
 #include "../player_manager.hpp"
 #include "PacketProcessor.hpp"
 #include <atomic>
+#include <mutex>
 #include <optional>
 #include <unordered_map>
 
