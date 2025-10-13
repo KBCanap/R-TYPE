@@ -28,14 +28,14 @@ Game::Game(registry &reg, render::IRenderWindow &win, AudioManager &audioMgr,
     if (_isMultiplayer) {
         _registry.register_component<component::network_entity>();
         _registry.register_component<component::network_state>();
-        
+
         // Initialiser le système réseau
         systems::initialize_network_system(_networkManager);
-        
+
         // Créer et configurer le NetworkCommandHandler
         _networkCommandHandler = std::make_unique<NetworkCommandHandler>(
             _registry, _window, _playerManager, _enemyManager, _bossManager);
-        
+
         systems::set_network_command_handler(_networkCommandHandler.get());
     }
 
@@ -303,19 +303,19 @@ void Game::render(float dt) {
     if (_isMultiplayer && _networkCommandHandler) {
         uint32_t my_net_id = _networkCommandHandler->getAssignedPlayerNetId();
         auto my_entity = _networkCommandHandler->findEntityByNetId(my_net_id);
-        
+
         if (my_entity) {
             renderPlayerInfo(*my_entity);
         }
-        
+
         // ❌ SUPPRIMER - Le score n'est pas dans le protocole
         // uint32_t game_score = _networkCommandHandler->getGameScore();
         // renderScore(game_score);
-        
+
     } else if (_player) {
         // Solo mode - affichage normal
         renderPlayerInfo(*_player);
-        
+
         auto &scores = _registry.get_components<component::score>();
         if (*_player < scores.size() && scores[*_player]) {
             renderScore(scores[*_player]->current_score);
@@ -366,13 +366,13 @@ void Game::render(float dt) {
 // Nouvelles méthodes d'aide pour le rendu
 void Game::renderPlayerInfo(entity player_entity) {
     auto &healths = _registry.get_components<component::health>();
-    
+
     if (player_entity < healths.size() && healths[player_entity]) {
         auto &player_health = healths[player_entity];
 
         auto hp_text = _window.createText();
         hp_text->setFont(*_scoreFont);
-        hp_text->setString("HP " + std::to_string(player_health->current_hp) + 
+        hp_text->setString("HP " + std::to_string(player_health->current_hp) +
                           "/" + std::to_string(player_health->max_hp));
         hp_text->setCharacterSize(24);
         hp_text->setFillColor(render::Color::White());
@@ -480,7 +480,7 @@ void Game::updateMultiplayer(float dt) {
     if (_networkManager) {
         // Le NetworkSystem s'occupe de tout : messages TCP/UDP, NetworkCommandHandler
         systems::network_system(dt);
-        
+
         // Vérifier l'état de connexion
         auto connectionState = _networkManager->getConnectionState();
         if (connectionState == network::ConnectionState::ERROR ||
@@ -518,10 +518,10 @@ void Game::updateMultiplayer(float dt) {
 void Game::checkGameEndConditions() {
     if (_networkCommandHandler) {
         uint32_t my_net_id = _networkCommandHandler->getAssignedPlayerNetId();
-        
+
         if (my_net_id != 0) {
             auto my_entity = _networkCommandHandler->findEntityByNetId(my_net_id);
-            
+
             if (!my_entity) {
                 // Le joueur n'existe plus = Game Over
                 if (!_gameOver) {
@@ -533,7 +533,7 @@ void Game::checkGameEndConditions() {
             } else {
                 // Trouver notre entité joueur pour l'affichage
                 _player = my_entity;
-                
+
                 auto &inputs = _registry.get_components<component::input>();
                 if (*my_entity >= inputs.size() || !inputs[*my_entity]) {
                     _registry.add_component<component::input>(*my_entity, component::input());
@@ -553,25 +553,28 @@ void Game::sendPlayerInput(float dt) {
 
         uint32_t my_net_id = _networkCommandHandler->getAssignedPlayerNetId();
         auto my_entity = _networkCommandHandler->findEntityByNetId(my_net_id);
-        
+
+        std::cout << "BITEEEEEEEEE\n";
         if (!my_entity) return;
+        std::cout << "CULLLLLLLLLLL\n";
 
         auto &inputs = _registry.get_components<component::input>();
         if (*my_entity >= inputs.size() || !inputs[*my_entity]) return;
+        std::cout << "MAIS PKKKKKKKKKKK\n";
 
         auto &playerInput = inputs[*my_entity];
-        
+
         uint8_t direction = 0;
         if (playerInput->up) direction |= 0x01;
         if (playerInput->down) direction |= 0x02;
         if (playerInput->left) direction |= 0x04;
         if (playerInput->right) direction |= 0x08;
-        
+        std::cout << "SALOPEEEEEEEEEEE\n";
         // Envoyer mouvement si nécessaire
         if (direction != 0) {
             _networkManager->sendPlayerInput(direction);
         }
-        
+
         if (playerInput->fire) {
             _networkManager->sendPlayerFire();
         }

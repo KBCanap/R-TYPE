@@ -105,7 +105,7 @@ void NetworkCommandHandler::onDestroyEntity(
 
     entity ent = *opt_entity;
     registry_.kill_entity(ent);
-    
+
     {
         std::lock_guard<std::mutex> lock(net_id_mutex_);
         net_id_to_entity_.erase(cmd.net_id);
@@ -181,16 +181,26 @@ void NetworkCommandHandler::onPlayerAssignment(
     std::cout << "Player assigned NET_ID: " << cmd.player_net_id << std::endl;
 }
 
-std::optional<entity>
-NetworkCommandHandler::findEntityByNetId(uint32_t net_id) const {
-    std::lock_guard<std::mutex> lock(net_id_mutex_);
+std::optional<entity> NetworkCommandHandler::findEntityByNetId(uint32_t net_id) const {
+    std::cout << "🔍 Looking for entity with NET_ID: " << net_id << std::endl;
+    std::cout << "🔍 net_id_to_entity_ size: " << net_id_to_entity_.size() << std::endl;
+
     auto it = net_id_to_entity_.find(net_id);
     if (it != net_id_to_entity_.end()) {
+        std::cout << "✅ Found entity: " << it->second << std::endl;
         return it->second;
     }
+
+    std::cout << "❌ Entity NOT FOUND for NET_ID: " << net_id << std::endl;
+
+    // ✅ AJOUT : Afficher toutes les entités disponibles
+    std::cout << "Available entities in registry:" << std::endl;
+    for (const auto& pair : net_id_to_entity_) {
+        std::cout << "  NET_ID: " << pair.first << " -> Entity: " << pair.second << std::endl;
+    }
+
     return std::nullopt;
 }
-
 entity NetworkCommandHandler::createPlayerEntity(
     const network::CreateEntityCommand &cmd) {
     // ✅ CORRECTION : Convertir pourcentage en pixels
@@ -530,7 +540,7 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
         break;
 
     default:
-        std::cerr << "[NetworkCommandHandler] Unknown UDP message type: " 
+        std::cerr << "[NetworkCommandHandler] Unknown UDP message type: "
                   << static_cast<int>(packet.msg_type) << std::endl;
         break;
     }

@@ -138,6 +138,7 @@ public:
     void start();
     void stop();
     void update(float deltaTime);
+    void printEntityPositions();
 
     // Event handling from network thread
     void pushClientEvent(const ClientEvent &evt);

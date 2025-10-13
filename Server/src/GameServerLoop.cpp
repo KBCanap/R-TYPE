@@ -7,6 +7,8 @@
 
 #include "GameServerLoop.hpp"
 #include "GameLogic.hpp"
+#include "UdpMessageType.hpp"
+#include <iomanip>
 #include <iostream>
 #include <chrono>
 #include <memory>
@@ -191,6 +193,7 @@ void GameServerLoop::processMessages()
             }
         }
         else if (parsed.type == PLAYER_INPUT && parsed.data.size() >= 2) {
+            std::cout << "PLAYER INPUT [ " << PLAYER_INPUT << " ]\n";
             uint8_t event_type = parsed.data[0];
             uint8_t direction = parsed.data[1];
 
@@ -285,6 +288,22 @@ void GameServerLoop::broadcastEntityUpdates()
 
     if (deltas.empty()) {
         return;
+    }
+
+    static int update_counter = 0;
+    update_counter++;
+
+    if (update_counter % 60 == 0) {  // Print every 60 updates (~1 second at 60Hz)
+        std::cout << "\n[BROADCAST] Sending " << deltas.size() << " entity updates:" << std::endl;
+
+        for (const auto& snap : deltas) {
+            std::cout << "  NET_ID=" << snap.net_id
+                      << " Type=" << snap.entity_type
+                      << " Pos=(" << std::fixed << std::setprecision(3)
+                      << snap.pos.x << ", " << snap.pos.y << ")"
+                      << " Health=" << snap.health
+                      << std::endl;
+        }
     }
 
     std::vector<Entity> entities;

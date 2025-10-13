@@ -21,15 +21,15 @@ std::vector<TCPMessage> NetworkManager::pollTCP() {
 
 std::vector<UDPPacket> NetworkManager::pollUDP() {
     auto raw_packets = pollRawUDP();
-    
+
     std::cout << "[NetworkManager] Received " << raw_packets.size() << " raw UDP packets" << std::endl;
 
     for (const auto &raw_packet : raw_packets) {
         std::cout << "[NetworkManager] Raw packet size: " << raw_packet.data.size() << " bytes" << std::endl;
-        
+
         UDPPacket packet = PacketProcessor::parseUDPPacket(raw_packet.data);
-        
-        std::cout << "[NetworkManager] Parsed packet type: " << static_cast<int>(packet.msg_type) 
+
+        std::cout << "[NetworkManager] Parsed packet type: " << static_cast<int>(packet.msg_type)
                   << " payload size: " << packet.payload.size() << std::endl;
 
         // PLAYER_ASSIGNMENT est traité séparément et n'est pas retourné
@@ -45,7 +45,7 @@ std::vector<UDPPacket> NetworkManager::pollUDP() {
 
     auto processed_packets = packet_processor_.getProcessedPackets();
     std::cout << "[NetworkManager] Returning " << processed_packets.size() << " processed packets" << std::endl;
-    
+
     return processed_packets;
 }
 
@@ -214,14 +214,21 @@ void NetworkManager::sendPlayerFire() {
 
 // ✅ Votre méthode existante est correcte pour MOVE
 void NetworkManager::sendPlayerInput(uint8_t direction) {
+    std::cout << "[NetworkManager] sendPlayerInput called with direction: 0x"
+              << std::hex << static_cast<int>(direction) << std::dec << std::endl;
+
     UDPPacket packet;
     packet.msg_type = UDPMessageType::PLAYER_INPUT;
     packet.sequence_num = packet_processor_.getNextSendSequence();
-
     packet.payload = {0x01, direction};
     packet.data_length = 2;
 
-    sendUDP(packet);
+    std::cout << "[NetworkManager] Created packet - Type: " << static_cast<int>(packet.msg_type)
+              << ", Sequence: " << packet.sequence_num
+              << ", Payload size: " << packet.payload.size() << std::endl;
+
+    bool result = sendUDP(packet);
+    std::cout << "[NetworkManager] sendUDP result: " << (result ? "SUCCESS" : "FAILED") << std::endl;
 }
 
 } // namespace network
