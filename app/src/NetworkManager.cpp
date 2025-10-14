@@ -32,11 +32,9 @@ std::vector<UDPPacket> NetworkManager::pollUDP() {
         std::cout << "[NetworkManager] Parsed packet type: " << static_cast<int>(packet.msg_type)
                   << " payload size: " << packet.payload.size() << std::endl;
 
-        // PLAYER_ASSIGNMENT est traité séparément et n'est pas retourné
         if (packet.msg_type == UDPMessageType::PLAYER_ASSIGNMENT) {
             std::cout << "[NetworkManager] Handling PLAYER_ASSIGNMENT packet" << std::endl;
             handlePlayerAssignment(packet);
-            continue; // Ne pas ajouter à la queue
         }
 
         std::cout << "[NetworkManager] Adding packet to processor queue" << std::endl;
@@ -93,10 +91,13 @@ void NetworkManager::handlePlayerAssignment(const UDPPacket &packet) {
 
     uint32_t net_id = PacketProcessor::parsePlayerAssignment(packet.payload);
 
+    std::cout << "[NetworkManager] PLAYER_ASSIGNMENT received - NET_ID: " << net_id << std::endl;
+
     {
         std::lock_guard<std::mutex> lock(player_mutex_);
         assigned_player_net_id_ = net_id;
         player_assigned_ = true;
+        std::cout << "[NetworkManager] Player assignment stored successfully" << std::endl;
     }
 
     updateState(ConnectionState::IN_GAME);

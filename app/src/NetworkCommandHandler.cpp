@@ -178,7 +178,6 @@ void NetworkCommandHandler::onConnectionStatusChanged(
 void NetworkCommandHandler::onPlayerAssignment(
     const network::PlayerAssignmentCommand &cmd) {
     assigned_player_net_id_.store(cmd.player_net_id);
-    std::cout << "Player assigned NET_ID: " << cmd.player_net_id << std::endl;
 }
 
 std::optional<entity> NetworkCommandHandler::findEntityByNetId(uint32_t net_id) const {
