@@ -1,8 +1,8 @@
 ﻿#include "../include/network/NetworkCommandHandler.hpp"
-#include <iostream>
-#include <set>
-#include <mutex>
 #include <atomic>
+#include <iostream>
+#include <mutex>
+#include <set>
 
 NetworkCommandHandler::NetworkCommandHandler(registry &registry,
                                              render::IRenderWindow &window,
@@ -181,9 +181,11 @@ void NetworkCommandHandler::onPlayerAssignment(
     std::cout << "Player assigned NET_ID: " << cmd.player_net_id << std::endl;
 }
 
-std::optional<entity> NetworkCommandHandler::findEntityByNetId(uint32_t net_id) const {
+std::optional<entity>
+NetworkCommandHandler::findEntityByNetId(uint32_t net_id) const {
     std::cout << "🔍 Looking for entity with NET_ID: " << net_id << std::endl;
-    std::cout << "🔍 net_id_to_entity_ size: " << net_id_to_entity_.size() << std::endl;
+    std::cout << "🔍 net_id_to_entity_ size: " << net_id_to_entity_.size()
+              << std::endl;
 
     auto it = net_id_to_entity_.find(net_id);
     if (it != net_id_to_entity_.end()) {
@@ -195,8 +197,9 @@ std::optional<entity> NetworkCommandHandler::findEntityByNetId(uint32_t net_id) 
 
     // ✅ AJOUT : Afficher toutes les entités disponibles
     std::cout << "Available entities in registry:" << std::endl;
-    for (const auto& pair : net_id_to_entity_) {
-        std::cout << "  NET_ID: " << pair.first << " -> Entity: " << pair.second << std::endl;
+    for (const auto &pair : net_id_to_entity_) {
+        std::cout << "  NET_ID: " << pair.first << " -> Entity: " << pair.second
+                  << std::endl;
     }
 
     return std::nullopt;

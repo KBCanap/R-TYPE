@@ -129,7 +129,8 @@ PacketProcessor::parseEntityCreate(const std::vector<uint8_t> &data) {
     EntityData entity;
 
     if (data.size() < 17) {
-        std::cerr << "[PacketProcessor] ENTITY_CREATE data too small: " << data.size() << " (expected 17)" << std::endl;
+        std::cerr << "[PacketProcessor] ENTITY_CREATE data too small: "
+                  << data.size() << " (expected 17)" << std::endl;
         return entity;
     }
 
@@ -161,17 +162,17 @@ PacketProcessor::parseEntityCreate(const std::vector<uint8_t> &data) {
     entity.position_x = networkToFloat(pos_x_raw);
     offset += 4;
 
-    // POSITION_Y (4 bytes)  
+    // POSITION_Y (4 bytes)
     uint32_t pos_y_raw = (static_cast<uint32_t>(data[offset]) << 24) |
                          (static_cast<uint32_t>(data[offset + 1]) << 16) |
                          (static_cast<uint32_t>(data[offset + 2]) << 8) |
                          static_cast<uint32_t>(data[offset + 3]);
     entity.position_y = networkToFloat(pos_y_raw);
 
-    std::cout << "[PacketProcessor] Parsed entity - NET_ID: " << entity.net_id 
-              << " Type: " << static_cast<int>(entity.entity_type) 
-              << " Health: " << entity.health 
-              << " Pos: (" << entity.position_x << ", " << entity.position_y << ")" << std::endl;
+    std::cout << "[PacketProcessor] Parsed entity - NET_ID: " << entity.net_id
+              << " Type: " << static_cast<int>(entity.entity_type)
+              << " Health: " << entity.health << " Pos: (" << entity.position_x
+              << ", " << entity.position_y << ")" << std::endl;
 
     return entity;
 }

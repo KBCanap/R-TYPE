@@ -26,7 +26,7 @@ entity EnemyManager::spawnEnemy() {
     _registry.add_component<component::position>(
         enemy, component::position(spawn_x, spawn_y));
     _registry.add_component<component::velocity>(enemy,
-                                                  component::velocity(0.f, 0.f));
+                                                 component::velocity(0.f, 0.f));
 
     int weapon_type = rand() % NUM_ENEMY_WEAPON_TYPES;
 

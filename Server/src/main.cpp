@@ -5,12 +5,12 @@
 ** created by dylan adg
 */
 
+#include "GameServerLoop.hpp"
 #include "StartServer.hpp"
 #include <cstring>
 #include <iostream>
 #include <map>
 #include <string>
-#include "GameServerLoop.hpp"
 
 struct ServerConfig {
     int tcp_port;
@@ -18,8 +18,7 @@ struct ServerConfig {
     bool valid;
 };
 
-static void show_helper()
-{
+static void show_helper() {
     std::cout << "USAGE:" << std::endl;
     std::cout << "./r-type_server [-p <tcp_port>] [-u <udp_port>]" << std::endl;
     std::cout << "OPTIONS:" << std::endl;
@@ -29,8 +28,7 @@ static void show_helper()
     std::cout << "\nExample: ./r-type_server -p 8080 -u 8081" << std::endl;
 }
 
-static bool is_a_valid_port(const char *str)
-{
+static bool is_a_valid_port(const char *str) {
     if (str == nullptr || *str == '\0')
         return false;
 
@@ -43,41 +41,39 @@ static bool is_a_valid_port(const char *str)
     return port >= 1024 && port <= 65535;
 }
 
-static ServerConfig parse_arguments(int ac, char **av)
-{
+static ServerConfig parse_arguments(int ac, char **av) {
     ServerConfig config = {0, 0, false};
-    
+
     if (ac == 1 || (ac == 2 && std::strcmp("-h", av[1]) == 0)) {
         show_helper();
         return config;
     }
 
     std::map<std::string, int> ports;
-    
+
     for (int i = 1; i < ac; i++) {
         if (std::strcmp(av[i], "-p") == 0) {
             if (i + 1 >= ac || !is_a_valid_port(av[i + 1])) {
-                std::cerr << "Error: Invalid or missing TCP port after -p flag" << std::endl;
+                std::cerr << "Error: Invalid or missing TCP port after -p flag"
+                          << std::endl;
                 show_helper();
                 return config;
             }
             ports["-p"] = std::atoi(av[i + 1]);
             i++;
-        }
-        else if (std::strcmp(av[i], "-u") == 0) {
+        } else if (std::strcmp(av[i], "-u") == 0) {
             if (i + 1 >= ac || !is_a_valid_port(av[i + 1])) {
-                std::cerr << "Error: Invalid or missing UDP port after -u flag" << std::endl;
+                std::cerr << "Error: Invalid or missing UDP port after -u flag"
+                          << std::endl;
                 show_helper();
                 return config;
             }
             ports["-u"] = std::atoi(av[i + 1]);
             i++;
-        }
-        else if (std::strcmp(av[i], "-h") == 0) {
+        } else if (std::strcmp(av[i], "-h") == 0) {
             show_helper();
             return config;
-        }
-        else {
+        } else {
             std::cerr << "Error: Unknown flag '" << av[i] << "'" << std::endl;
             show_helper();
             return config;
@@ -93,14 +89,13 @@ static ServerConfig parse_arguments(int ac, char **av)
     config.tcp_port = ports["-p"];
     config.udp_port = ports["-u"];
     config.valid = true;
-    
+
     return config;
 }
 
-int main(int ac, char **av)
-{
+int main(int ac, char **av) {
     ServerConfig config = parse_arguments(ac, av);
-    
+
     if (!config.valid) {
         return (ac == 1 || (ac == 2 && std::strcmp("-h", av[1]) == 0)) ? 0 : 84;
     }
@@ -120,10 +115,10 @@ int main(int ac, char **av)
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         game_loop.stop();
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 84;
     }
-    
+
     return 0;
 }

@@ -77,8 +77,7 @@ ai_movement_pattern ai_movement_pattern::zigzag(float amplitude,
 }
 
 ai_movement_pattern ai_movement_pattern::circle(float radius, float speed) {
-    ai_movement_pattern pattern("circle", radius,
-                                0.02f);
+    ai_movement_pattern pattern("circle", radius, 0.02f);
     pattern.base_speed = speed;
     return pattern;
 }

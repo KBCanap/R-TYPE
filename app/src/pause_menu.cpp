@@ -23,8 +23,7 @@ PauseMenu::PauseMenu(render::IRenderWindow &win, AudioManager &audioMgr)
 void PauseMenu::createButtons() {
     _overlay = _window.createRectangleShape(render::Vector2f(
         static_cast<float>(_windowSize.x), static_cast<float>(_windowSize.y)));
-    _overlay->setFillColor(
-        render::Color(0, 0, 0, 128));
+    _overlay->setFillColor(render::Color(0, 0, 0, 128));
 
     _titleText = _window.createText();
     _titleText->setFont(*_font);

@@ -335,7 +335,7 @@ void Game::renderPlayerInfo(entity player_entity) {
         auto hp_text = _window.createText();
         hp_text->setFont(*_scoreFont);
         hp_text->setString("HP " + std::to_string(player_health->current_hp) +
-                          "/" + std::to_string(player_health->max_hp));
+                           "/" + std::to_string(player_health->max_hp));
         hp_text->setCharacterSize(24);
         hp_text->setFillColor(render::Color::White());
         hp_text->setPosition(20, 20);
@@ -436,7 +436,8 @@ void Game::updateMultiplayer(float dt) {
 
     // Utiliser le système réseau ECS au lieu de la logique personnalisée
     if (_networkManager) {
-        // Le NetworkSystem s'occupe de tout : messages TCP/UDP, NetworkCommandHandler
+        // Le NetworkSystem s'occupe de tout : messages TCP/UDP,
+        // NetworkCommandHandler
         systems::network_system(dt);
 
         // Vérifier l'état de connexion
@@ -460,7 +461,8 @@ void Game::updateMultiplayer(float dt) {
     for (size_t i = 0; i < backgrounds.size() && i < positions.size(); ++i) {
         if (backgrounds[i] && positions[i]) {
             backgrounds[i]->offset_x -= backgrounds[i]->scroll_speed * dt;
-            if (backgrounds[i]->offset_x <= -backgrounds[i]->texture->getSize().x) {
+            if (backgrounds[i]->offset_x <=
+                -backgrounds[i]->texture->getSize().x) {
                 backgrounds[i]->offset_x = 0;
             }
         }
@@ -476,14 +478,16 @@ void Game::checkGameEndConditions() {
         uint32_t my_net_id = _networkCommandHandler->getAssignedPlayerNetId();
 
         if (my_net_id != 0) {
-            auto my_entity = _networkCommandHandler->findEntityByNetId(my_net_id);
+            auto my_entity =
+                _networkCommandHandler->findEntityByNetId(my_net_id);
 
             if (!my_entity) {
                 // Le joueur n'existe plus = Game Over
                 if (!_gameOver) {
                     _gameOver = true;
                     _gameOverMenu.setVisible(true);
-                    _audioManager.loadMusic(MusicType::GAME_OVER, "assets/audio/game_over.ogg");
+                    _audioManager.loadMusic(MusicType::GAME_OVER,
+                                            "assets/audio/game_over.ogg");
                     _audioManager.playMusic(MusicType::GAME_OVER, false);
                 }
             } else {
@@ -492,7 +496,8 @@ void Game::checkGameEndConditions() {
 
                 auto &inputs = _registry.get_components<component::input>();
                 if (*my_entity >= inputs.size() || !inputs[*my_entity]) {
-                    _registry.add_component<component::input>(*my_entity, component::input());
+                    _registry.add_component<component::input>(
+                        *my_entity, component::input());
                 }
             }
         }
@@ -505,26 +510,33 @@ void Game::sendPlayerInput(float dt) {
     if (_inputSendTimer >= _inputSendInterval) {
         _inputSendTimer = 0.0f;
 
-        if (!_networkManager || !_networkCommandHandler) return;
+        if (!_networkManager || !_networkCommandHandler)
+            return;
 
         uint32_t my_net_id = _networkCommandHandler->getAssignedPlayerNetId();
         auto my_entity = _networkCommandHandler->findEntityByNetId(my_net_id);
 
         std::cout << "BITEEEEEEEEE\n";
-        if (!my_entity) return;
+        if (!my_entity)
+            return;
         std::cout << "CULLLLLLLLLLL\n";
 
         auto &inputs = _registry.get_components<component::input>();
-        if (*my_entity >= inputs.size() || !inputs[*my_entity]) return;
+        if (*my_entity >= inputs.size() || !inputs[*my_entity])
+            return;
         std::cout << "MAIS PKKKKKKKKKKK\n";
 
         auto &playerInput = inputs[*my_entity];
 
         uint8_t direction = 0;
-        if (playerInput->up) direction |= 0x01;
-        if (playerInput->down) direction |= 0x02;
-        if (playerInput->left) direction |= 0x04;
-        if (playerInput->right) direction |= 0x08;
+        if (playerInput->up)
+            direction |= 0x01;
+        if (playerInput->down)
+            direction |= 0x02;
+        if (playerInput->left)
+            direction |= 0x04;
+        if (playerInput->right)
+            direction |= 0x08;
         std::cout << "SALOPEEEEEEEEEEE\n";
         // Envoyer mouvement si nécessaire
         if (direction != 0) {

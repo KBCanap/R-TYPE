@@ -257,21 +257,15 @@ bool ANetworkManager::sendTCP(MessageType msg_type,
     return false;
 }
 
-bool ANetworkManager::sendUDP(const UDPPacket &packet) {
-    return false;
-}
+bool ANetworkManager::sendUDP(const UDPPacket &packet) { return false; }
 
 bool ANetworkManager::sendPlayerInput(const PlayerInputData &input) {
     return false;
 }
 
-std::vector<TCPMessage> ANetworkManager::pollTCP() {
-    return {};
-}
+std::vector<TCPMessage> ANetworkManager::pollTCP() { return {}; }
 
-std::vector<UDPPacket> ANetworkManager::pollUDP() {
-    return {};
-}
+std::vector<UDPPacket> ANetworkManager::pollUDP() { return {}; }
 
 bool ANetworkManager::hasMessages() const {
     std::lock_guard<std::mutex> lock(tcp_queue_mutex_);

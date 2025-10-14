@@ -17,11 +17,11 @@ UDPServer::UDPServer(uint16_t port, uint32_t max_clients)
 
 UDPServer::~UDPServer() {
     ctx_.stop();
-    if (thread_.joinable()) thread_.join();
+    if (thread_.joinable())
+        thread_.join();
 }
 
-void UDPServer::start_receive()
-{
+void UDPServer::start_receive() {
     auto buf = std::make_shared<std::array<char, 1024>>();
 
     socket_.async_receive_from(
@@ -37,8 +37,8 @@ void UDPServer::start_receive()
                     msg.message = std::string(buf->data(), len);
                     std::cout << "Received message from client "
                               << existing_client->id << " ("
-                              << existing_client->endpoint_str << "): "
-                              << len << " bytes" << std::endl;
+                              << existing_client->endpoint_str << "): " << len
+                              << " bytes" << std::endl;
                     enqueueMessage(msg);
                 } else if (canAcceptNewClient()) {
                     uint32_t client_id = generateClientId();
@@ -57,7 +57,8 @@ void UDPServer::start_receive()
                     // Max clients reached - ignore new client
                     std::cerr << "Max clients reached (" << max_clients_
                               << "). Ignoring new client from "
-                              << endpointToString(remote_endpoint_) << std::endl;
+                              << endpointToString(remote_endpoint_)
+                              << std::endl;
                 }
             }
 
@@ -65,34 +66,31 @@ void UDPServer::start_receive()
         });
 }
 
-bool UDPServer::canAcceptNewClient() const
-{
+bool UDPServer::canAcceptNewClient() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return clients_.size() < max_clients_;
 }
 
-uint32_t UDPServer::getCurrentClientCount() const
-{
+uint32_t UDPServer::getCurrentClientCount() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return static_cast<uint32_t>(clients_.size());
 }
 
-bool UDPServer::sendToClient(uint32_t client_id, const std::string& message)
-{
+bool UDPServer::sendToClient(uint32_t client_id, const std::string &message) {
     auto client = getClient(client_id);
     if (client && client->is_active) {
         try {
             socket_.send_to(asio::buffer(message), client->endpoint);
             return true;
-        } catch (const std::exception& e) {
-            std::cerr << "Error sending to client " << client_id << ": " << e.what() << std::endl;
+        } catch (const std::exception &e) {
+            std::cerr << "Error sending to client " << client_id << ": "
+                      << e.what() << std::endl;
             return false;
         }
     }
     return false;
 }
 
-void UDPServer::disconnectClient(uint32_t client_id)
-{
+void UDPServer::disconnectClient(uint32_t client_id) {
     unregisterClient(client_id);
 }
