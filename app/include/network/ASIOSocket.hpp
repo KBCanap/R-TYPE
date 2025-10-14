@@ -54,8 +54,16 @@ class ASIOContext : public IIOContext {
     ITCPSocket *createTCPSocket() override;
     IUDPSocket *createUDPSocket() override;
 
+    /**
+     * @brief Get reference to underlying io_context
+     * @return Reference to asio::io_context
+     */
+    asio::io_context &getIOContext() { return io_context_; }
+
   private:
     asio::io_context io_context_;
+    std::unique_ptr<asio::executor_work_guard<asio::io_context::executor_type>>
+        work_guard_;
 };
 
 } // namespace network

@@ -37,10 +37,23 @@ ConnectionResult ANetworkManager::connectTCP(const std::string &host,
     connection_start_ = std::chrono::steady_clock::now();
     last_activity_ = connection_start_;
 
-    io_thread_ = std::thread([this]() { io_context_->run(); });
-
     startReadTCPHeader();
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    std::cout << "Starting I/O thread..." << std::endl;
+    io_thread_ = std::thread([this]() {
+        try {
+            io_context_->run();
+        } catch (const std::exception &e) {
+            std::cerr << "I/O thread exception: " << e.what() << std::endl;
+            updateState(ConnectionState::ERROR);
+        }
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    std::cout << "Sending TCP_CONNECT..." << std::endl;
     std::vector<uint8_t> connect_msg = {0x01, 0x00, 0x00, 0x00};
     if (!sendRawTCP(connect_msg)) {
         result.error_message = "Failed to send TCP_CONNECT";
@@ -48,6 +61,7 @@ ConnectionResult ANetworkManager::connectTCP(const std::string &host,
         return result;
     }
 
+    std::cout << "TCP_CONNECT sent, waiting for response..." << std::endl;
     result.success = true;
     return result;
 }
@@ -402,6 +416,7 @@ void ANetworkManager::startAsyncUDPReceive() {
                     raw_udp_queue_.push(raw_packet);
                 }
             }
+
             if (current_state != ConnectionState::DISCONNECTED &&
                 current_state != ConnectionState::ERROR) {
                 startAsyncUDPReceive();
