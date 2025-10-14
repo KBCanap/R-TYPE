@@ -23,19 +23,31 @@ std::vector<TCPMessage> NetworkManager::pollTCP() {
 std::vector<UDPPacket> NetworkManager::pollUDP() {
     auto raw_packets = pollRawUDP();
 
+    std::cout << "[NetworkManager] Received " << raw_packets.size() << " raw UDP packets" << std::endl;
+
     for (const auto &raw_packet : raw_packets) {
+        std::cout << "[NetworkManager] Raw packet size: " << raw_packet.data.size() << " bytes" << std::endl;
+
         UDPPacket packet = PacketProcessor::parseUDPPacket(raw_packet.data);
 
-        // PLAYER_ASSIGNMENT is handled separately
+        std::cout << "[NetworkManager] Parsed packet type: " << static_cast<int>(packet.msg_type)
+                  << " payload size: " << packet.payload.size() << std::endl;
+
+        // PLAYER_ASSIGNMENT est traité séparément et n'est pas retourné
         if (packet.msg_type == UDPMessageType::PLAYER_ASSIGNMENT) {
+            std::cout << "[NetworkManager] Handling PLAYER_ASSIGNMENT packet" << std::endl;
             handlePlayerAssignment(packet);
             continue;
         }
 
+        std::cout << "[NetworkManager] Adding packet to processor queue" << std::endl;
         packet_processor_.addPacket(packet);
     }
 
-    return packet_processor_.getProcessedPackets();
+    auto processed_packets = packet_processor_.getProcessedPackets();
+    std::cout << "[NetworkManager] Returning " << processed_packets.size() << " processed packets" << std::endl;
+
+    return processed_packets;
 }
 
 bool NetworkManager::sendTCP(MessageType msg_type,
@@ -181,129 +193,33 @@ void NetworkManager::resetConnectionState() {
     ping_retry_count_ = 0;
 }
 
-void NetworkManager::sendPlayerInput(uint8_t direction) {
+void NetworkManager::sendPlayerFire() {
     UDPPacket packet;
     packet.msg_type = UDPMessageType::PLAYER_INPUT;
     packet.sequence_num = packet_processor_.getNextSendSequence();
-    packet.payload = {0x00, direction};
+
+    packet.payload = {0x02, 0x00};
     packet.data_length = 2;
 
     sendUDP(packet);
 }
 
-void NetworkManager::processMessages() {
-    auto tcp_messages = pollTCP();
-    (void)tcp_messages;
+void NetworkManager::sendPlayerInput(uint8_t direction) {
+    std::cout << "[NetworkManager] sendPlayerInput called with direction: 0x"
+              << std::hex << static_cast<int>(direction) << std::dec << std::endl;
 
-    auto udp_packets = pollUDP();
-    for (const auto &packet : udp_packets) {
-        switch (packet.msg_type) {
-        case UDPMessageType::ENTITY_CREATE:
-            if (packet.payload.size() >= 17) {
-                uint32_t net_id =
-                    (static_cast<uint32_t>(packet.payload[0]) << 24) |
-                    (static_cast<uint32_t>(packet.payload[1]) << 16) |
-                    (static_cast<uint32_t>(packet.payload[2]) << 8) |
-                    static_cast<uint32_t>(packet.payload[3]);
+    UDPPacket packet;
+    packet.msg_type = UDPMessageType::PLAYER_INPUT;
+    packet.sequence_num = packet_processor_.getNextSendSequence();
+    packet.payload = {0x01, direction};
+    packet.data_length = 2;
 
-                uint8_t type = packet.payload[4];
+    std::cout << "[NetworkManager] Created packet - Type: " << static_cast<int>(packet.msg_type)
+              << ", Sequence: " << packet.sequence_num
+              << ", Payload size: " << packet.payload.size() << std::endl;
 
-                uint32_t health =
-                    (static_cast<uint32_t>(packet.payload[5]) << 24) |
-                    (static_cast<uint32_t>(packet.payload[6]) << 16) |
-                    (static_cast<uint32_t>(packet.payload[7]) << 8) |
-                    static_cast<uint32_t>(packet.payload[8]);
-
-                uint32_t pos_x_bits =
-                    (static_cast<uint32_t>(packet.payload[9]) << 24) |
-                    (static_cast<uint32_t>(packet.payload[10]) << 16) |
-                    (static_cast<uint32_t>(packet.payload[11]) << 8) |
-                    static_cast<uint32_t>(packet.payload[12]);
-                float pos_x;
-                std::memcpy(&pos_x, &pos_x_bits, sizeof(float));
-
-                uint32_t pos_y_bits =
-                    (static_cast<uint32_t>(packet.payload[13]) << 24) |
-                    (static_cast<uint32_t>(packet.payload[14]) << 16) |
-                    (static_cast<uint32_t>(packet.payload[15]) << 8) |
-                    static_cast<uint32_t>(packet.payload[16]);
-                float pos_y;
-                std::memcpy(&pos_y, &pos_y_bits, sizeof(float));
-
-                NetworkEntity entity;
-                entity.type = type;
-                entity.pos_x = pos_x;
-                entity.pos_y = pos_y;
-                entity.health = health;
-
-                network_entities_[net_id] = entity;
-            }
-            break;
-
-        case UDPMessageType::ENTITY_UPDATE:
-            for (size_t i = 0; i + 16 <= packet.payload.size(); i += 16) {
-                uint32_t net_id =
-                    (static_cast<uint32_t>(packet.payload[i]) << 24) |
-                    (static_cast<uint32_t>(packet.payload[i + 1]) << 16) |
-                    (static_cast<uint32_t>(packet.payload[i + 2]) << 8) |
-                    static_cast<uint32_t>(packet.payload[i + 3]);
-
-                uint32_t health =
-                    (static_cast<uint32_t>(packet.payload[i + 4]) << 24) |
-                    (static_cast<uint32_t>(packet.payload[i + 5]) << 16) |
-                    (static_cast<uint32_t>(packet.payload[i + 6]) << 8) |
-                    static_cast<uint32_t>(packet.payload[i + 7]);
-
-                uint32_t pos_x_bits =
-                    (static_cast<uint32_t>(packet.payload[i + 8]) << 24) |
-                    (static_cast<uint32_t>(packet.payload[i + 9]) << 16) |
-                    (static_cast<uint32_t>(packet.payload[i + 10]) << 8) |
-                    static_cast<uint32_t>(packet.payload[i + 11]);
-                float pos_x;
-                std::memcpy(&pos_x, &pos_x_bits, sizeof(float));
-
-                uint32_t pos_y_bits =
-                    (static_cast<uint32_t>(packet.payload[i + 12]) << 24) |
-                    (static_cast<uint32_t>(packet.payload[i + 13]) << 16) |
-                    (static_cast<uint32_t>(packet.payload[i + 14]) << 8) |
-                    static_cast<uint32_t>(packet.payload[i + 15]);
-                float pos_y;
-                std::memcpy(&pos_y, &pos_y_bits, sizeof(float));
-
-                auto it = network_entities_.find(net_id);
-                if (it != network_entities_.end()) {
-                    it->second.pos_x = pos_x;
-                    it->second.pos_y = pos_y;
-                    it->second.health = health;
-                }
-            }
-            break;
-
-        case UDPMessageType::ENTITY_DESTROY:
-            if (packet.payload.size() >= 4) {
-                uint32_t net_id =
-                    (static_cast<uint32_t>(packet.payload[0]) << 24) |
-                    (static_cast<uint32_t>(packet.payload[1]) << 16) |
-                    (static_cast<uint32_t>(packet.payload[2]) << 8) |
-                    static_cast<uint32_t>(packet.payload[3]);
-
-                network_entities_.erase(net_id);
-            }
-            break;
-
-        case UDPMessageType::GAME_STATE:
-            if (packet.payload.size() >= 4) {
-                game_score_ = (static_cast<uint32_t>(packet.payload[0]) << 24) |
-                              (static_cast<uint32_t>(packet.payload[1]) << 16) |
-                              (static_cast<uint32_t>(packet.payload[2]) << 8) |
-                              static_cast<uint32_t>(packet.payload[3]);
-            }
-            break;
-
-        default:
-            break;
-        }
-    }
+    bool result = sendUDP(packet);
+    std::cout << "[NetworkManager] sendUDP result: " << (result ? "SUCCESS" : "FAILED") << std::endl;
 }
 
 } // namespace network

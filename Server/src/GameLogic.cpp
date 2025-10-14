@@ -1,5 +1,6 @@
 #include "GameLogic.hpp"
 #include <algorithm>
+#include <iomanip>
 #include <iostream>
 #include <cmath>
 
@@ -19,6 +20,15 @@ GameLogic::~GameLogic() {
 void GameLogic::start() {
     _running = true;
     _last_update = std::chrono::steady_clock::now();
+
+    spawnEnemy();
+    spawnEnemy();
+    spawnEnemy();
+    spawnEnemy();
+    spawnEnemy();
+    spawnEnemy();
+    spawnEnemy();
+
     std::cout << "[GameLogic] Started" << std::endl;
 }
 
@@ -38,14 +48,68 @@ void GameLogic::registerSystems() {
     _registry->add_system<Boss, Position, Velocity, Health>(bossAISystem);
 }
 
+void GameLogic::printEntityPositions() {
+    auto &positions = _registry->get_components<Position>();
+    auto &network_comps = _registry->get_components<NetworkComponent>();
+    auto &players = _registry->get_components<PlayerComponent>();
+    auto &enemies = _registry->get_components<Enemy>();
+
+    std::cout << "\n========== ENTITY POSITIONS (Tick: " << _current_tick << ") ==========" << std::endl;
+
+    int total_entities = 0;
+
+    // Print players
+    for (size_t i = 0; i < network_comps.size(); ++i) {
+        auto net_opt = network_comps[i];
+        if (!net_opt) continue;
+
+        auto pos_opt = positions[i];
+        auto player_opt = players[i];
+
+        if (pos_opt && player_opt) {
+            std::cout << "[PLAYER] NET_ID=" << net_opt.value().net_id
+                      << " Client=" << player_opt.value().client_id
+                      << " Pos=(" << std::fixed << std::setprecision(3)
+                      << pos_opt.value().x << ", " << pos_opt.value().y << ")"
+                      << " Type=" << net_opt.value().entity_type
+                      << std::endl;
+            total_entities++;
+        }
+    }
+
+    // Print enemies
+    for (size_t i = 0; i < network_comps.size(); ++i) {
+        auto net_opt = network_comps[i];
+        if (!net_opt) continue;
+
+        auto pos_opt = positions[i];
+        auto enemy_opt = enemies[i];
+
+        if (pos_opt && enemy_opt) {
+            std::cout << "[ENEMY]  NET_ID=" << net_opt.value().net_id
+                      << " Type=" << enemy_opt.value().enemy_type
+                      << " Pos=(" << std::fixed << std::setprecision(3)
+                      << pos_opt.value().x << ", " << pos_opt.value().y << ")"
+                      << std::endl;
+            total_entities++;
+        }
+    }
+
+    std::cout << "Total entities: " << total_entities << std::endl;
+    std::cout << "======================================================\n" << std::endl;
+}
+
 void GameLogic::update(float deltaTime) {
     if (!_running)
         return;
 
     static const float FIXED_TIMESTEP = 1.0f / 60.0f;
     static float accumulator = 0.0f;
+    static float debug_timer = 0.0f;
+    static const float DEBUG_INTERVAL = 1.0f;
 
     accumulator += deltaTime;
+    debug_timer += deltaTime;
 
     while (accumulator >= FIXED_TIMESTEP) {
         _current_tick++;
@@ -68,6 +132,12 @@ void GameLogic::update(float deltaTime) {
 
         cleanupDeadEntities();
         accumulator -= FIXED_TIMESTEP;
+    }
+
+    // *** ADD DEBUG OUTPUT HERE ***
+    if (debug_timer >= DEBUG_INTERVAL) {
+        debug_timer = 0.0f;
+        printEntityPositions();
     }
 
     _last_update = std::chrono::steady_clock::now();
@@ -178,13 +248,13 @@ void GameLogic::spawnEnemy() {
     entity enemy = _registry->spawn_entity();
 
     std::uniform_int_distribution<int> type_dist(0, 1);
-    std::uniform_real_distribution<float> y_dist(50.0f, 550.0f);
+    std::uniform_real_distribution<float> y_dist(0.1f, 0.9f);
 
     int enemy_type = type_dist(_rng);
     float spawn_y = y_dist(_rng);
 
-    _registry->add_component(enemy, Position{800.0f, spawn_y});
-    _registry->add_component(enemy, Velocity{-150.0f, 0.0f});
+    _registry->add_component(enemy, Position{0.95f, spawn_y});
+    _registry->add_component(enemy, Velocity{-0.01f, 0.0f});
     _registry->add_component(enemy, Enemy{enemy_type, 0.0f, 100});
     _registry->add_component(enemy, Health{30, 30, 0.0f});
     _registry->add_component(enemy, Hitbox{40.0f, 40.0f, 0.0f, 0.0f});
@@ -410,12 +480,11 @@ void GameLogic::movementSystem(registry &reg,
             Position &pos = pos_opt.value();
             Velocity &vel = vel_opt.value();
 
-            pos.x += vel.vx * dt;
-            pos.y += vel.vy * dt;
+            pos.x += (vel.vx / 800.0f) * dt;
+            pos.y += (vel.vy / 600.0f) * dt;
 
-            // Screen boundaries (800x600)
-            pos.x = std::max(0.0f, std::min(pos.x, 768.0f));
-            pos.y = std::max(0.0f, std::min(pos.y, 568.0f));
+            pos.x = std::max(0.0f, std::min(pos.x, 1.0f));
+            pos.y = std::max(0.0f, std::min(pos.y, 1.0f));
         }
     }
 }

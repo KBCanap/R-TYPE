@@ -29,12 +29,16 @@ void UDPServer::start_receive()
         [this, buf](std::error_code ec, std::size_t len) {
             if (!ec && len > 0) {
                 auto existing_client = findClientByEndpoint(remote_endpoint_);
-                
+
                 if (existing_client) {
                     UdpClientMessage msg;
                     msg.client_id = existing_client->id;
                     msg.client_endpoint = existing_client->endpoint_str;
                     msg.message = std::string(buf->data(), len);
+                    std::cout << "Received message from client "
+                              << existing_client->id << " ("
+                              << existing_client->endpoint_str << "): "
+                              << len << " bytes" << std::endl;
                     enqueueMessage(msg);
                 } else if (canAcceptNewClient()) {
                     uint32_t client_id = generateClientId();
@@ -51,12 +55,12 @@ void UDPServer::start_receive()
                     enqueueMessage(msg);
                 } else {
                     // Max clients reached - ignore new client
-                    std::cerr << "Max clients reached (" << max_clients_ 
-                              << "). Ignoring new client from " 
+                    std::cerr << "Max clients reached (" << max_clients_
+                              << "). Ignoring new client from "
                               << endpointToString(remote_endpoint_) << std::endl;
                 }
             }
-            
+
             start_receive();
         });
 }

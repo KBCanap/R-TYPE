@@ -20,23 +20,16 @@ class NetworkManager : public ANetworkManager {
     void update(float dt) override;
 
     uint32_t getAssignedPlayerNetId() const;
+
+    /**
+     * @brief Send player fire input
+     */
+    void sendPlayerFire();
+
+    /**
+     * @brief Send player input (direction bitfield)
+     */
     void sendPlayerInput(uint8_t direction);
-
-    struct NetworkEntity {
-        uint8_t type;
-        float pos_x;
-        float pos_y;
-        uint32_t health;
-    };
-
-    const std::unordered_map<uint32_t, NetworkEntity> &
-    getNetworkEntities() const {
-        return network_entities_;
-    }
-
-    uint32_t getAssignedNetId() const { return assigned_player_net_id_; }
-    uint32_t getGameScore() const { return game_score_; }
-    void processMessages();
 
   protected:
     void initializeUDPSocket() override;
@@ -60,9 +53,6 @@ class NetworkManager : public ANetworkManager {
     int ping_retry_count_ = 0;
     std::chrono::steady_clock::time_point last_ping_time_;
     std::chrono::steady_clock::time_point ping_start_time_;
-
-    std::unordered_map<uint32_t, NetworkEntity> network_entities_;
-    uint32_t game_score_ = 0;
 };
 
 } // namespace network

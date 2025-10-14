@@ -9,6 +9,7 @@
 #include "player_manager.hpp"
 #include "registery.hpp"
 #include "tick_system.hpp"
+#include "network/NetworkCommandHandler.hpp"
 #include <memory>
 #include <optional>
 #include <vector>
@@ -33,7 +34,9 @@ class Game {
     bool isPlayerAlive() const;
 
     void sendPlayerInput(float dt);
-    void processNetworkEntities();
+    void checkGameEndConditions();
+    void renderPlayerInfo(entity player_entity);
+    void renderScore(uint32_t score);
 
   private:
     registry &_registry;
@@ -70,7 +73,7 @@ class Game {
 
     std::unique_ptr<render::IFont> _scoreFont;
 
-    std::unordered_map<uint32_t, std::optional<entity>> _networkEntities;
+    std::unique_ptr<NetworkCommandHandler> _networkCommandHandler;
     float _inputSendTimer = 0.0f;
     float _inputSendInterval = 0.016f;
 };

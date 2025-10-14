@@ -75,21 +75,18 @@ void ANetworkManager::startReadTCPHeader() {
         tcp_header_buffer_, 4, [this](bool success, size_t bytes_transferred) {
             auto current_state = getConnectionState();
             if (current_state == ConnectionState::IN_GAME ||
-                current_state == ConnectionState::DISCONNECTED) {
+                current_state == ConnectionState::DISCONNECTED ||
+                current_state == ConnectionState::ERROR) {
                 return;
             }
 
             if (!success || bytes_transferred != 4) {
-                if (current_state != ConnectionState::DISCONNECTED &&
-                    current_state != ConnectionState::ERROR) {
-                    std::cerr << "Failed to read TCP header" << std::endl;
-                    updateState(ConnectionState::ERROR);
-                }
+                std::cerr << "Failed to read TCP header" << std::endl;
+                updateState(ConnectionState::ERROR);
                 return;
             }
 
             uint8_t msg_type = tcp_header_buffer_[0];
-
             uint32_t data_length = 0;
             data_length |= static_cast<uint32_t>(tcp_header_buffer_[1]) << 16;
             data_length |= static_cast<uint32_t>(tcp_header_buffer_[2]) << 8;
@@ -100,7 +97,9 @@ void ANetworkManager::startReadTCPHeader() {
             if (data_length == 0) {
                 std::vector<uint8_t> complete_msg = tcp_header_buffer_;
                 processCompleteTCPMessage(complete_msg);
-                startReadTCPHeader();
+
+                // ✅ CORRECTION : Utiliser l'interface abstraite
+                io_context_->post([this]() { startReadTCPHeader(); });
             } else {
                 readTCPPayload(msg_type, data_length);
             }
@@ -142,7 +141,8 @@ void ANetworkManager::readTCPPayload(uint8_t msg_type, uint32_t data_length) {
                                 tcp_payload_buffer_.begin() + data_length);
 
             processCompleteTCPMessage(complete_msg);
-            startReadTCPHeader();
+
+            io_context_->post([this]() { startReadTCPHeader(); });
         });
 }
 
@@ -397,6 +397,7 @@ void ANetworkManager::startAsyncUDPReceive() {
     udp_socket_->asyncReceive(
         udp_read_buffer_, [this](bool success, size_t bytes_transferred) {
             auto current_state = getConnectionState();
+
             if (current_state == ConnectionState::DISCONNECTED ||
                 current_state == ConnectionState::ERROR) {
                 return;
@@ -419,7 +420,7 @@ void ANetworkManager::startAsyncUDPReceive() {
 
             if (current_state != ConnectionState::DISCONNECTED &&
                 current_state != ConnectionState::ERROR) {
-                startAsyncUDPReceive();
+                io_context_->post([this]() { startAsyncUDPReceive(); });
             }
         });
 }

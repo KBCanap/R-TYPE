@@ -7,6 +7,8 @@
 
 #include "GameServerLoop.hpp"
 #include "GameLogic.hpp"
+#include "UdpMessageType.hpp"
+#include <iomanip>
 #include <iostream>
 #include <chrono>
 #include <memory>
@@ -147,19 +149,51 @@ void GameServerLoop::processMessages()
             if (_game_logic->getPlayerEntity(msg.client_id) == entity(static_cast<size_t>(-1))) {
                 uint net_id = _game_logic->generateNetId();
 
-                float spawn_x = 0.1f + (0.1f * (msg.client_id % 4));
-                float spawn_y = 0.3f + (0.15f * (msg.client_id % 4));
+                // Use normalized coordinates (0.0-1.0)
+                float spawn_x = 0.1f + (0.15f * (msg.client_id % 4));
+                float spawn_y = 0.4f + (0.1f * (msg.client_id % 4));
 
                 _game_logic->createPlayer(msg.client_id, net_id, spawn_x, spawn_y);
 
-                std::string assign_msg = _protocol.createPlayerAssignment(net_id, parsed.sequence_num);
+                // Send PLAYER_ASSIGNMENT
+                std::string assign_msg = _protocol.createPlayerAssignment(net_id, _sequence_num++);
                 _udp_server->sendToClient(msg.client_id, assign_msg);
 
                 std::cout << "[GameServerLoop] Player " << msg.client_id
-                          << " assigned NET_ID " << net_id << std::endl;
+                        << " assigned NET_ID " << net_id << std::endl;
+
+                auto snapshot = _game_logic->generateSnapshot();
+                std::vector<Entity> entities;
+
+                for (const auto& snap : snapshot.entities) {
+                    EntityType type = EntityType::PLAYER;
+
+                    if (snap.entity_type == "player") {
+                        type = EntityType::PLAYER;
+                    } else if (snap.entity_type == "enemy") {
+                        type = EntityType::ENEMY;
+                    } else if (snap.entity_type == "projectile") {
+                        type = EntityType::PROJECTILE;
+                    }
+
+                    entities.push_back({
+                        snap.net_id,
+                        type,
+                        static_cast<uint32_t>(snap.health),
+                        snap.pos.x,
+                        snap.pos.y
+                    });
+                }
+
+                std::string game_state_msg = _protocol.createGameState(entities, _sequence_num++);
+                _udp_server->sendToClient(msg.client_id, game_state_msg);
+
+                std::cout << "[GameServerLoop] Sent GAME_STATE with " << entities.size()
+                        << " entities to client " << msg.client_id << std::endl;
             }
         }
         else if (parsed.type == PLAYER_INPUT && parsed.data.size() >= 2) {
+            std::cout << "PLAYER INPUT [ " << PLAYER_INPUT << " ]\n";
             uint8_t event_type = parsed.data[0];
             uint8_t direction = parsed.data[1];
 
@@ -254,6 +288,22 @@ void GameServerLoop::broadcastEntityUpdates()
 
     if (deltas.empty()) {
         return;
+    }
+
+    static int update_counter = 0;
+    update_counter++;
+
+    if (update_counter % 60 == 0) {  // Print every 60 updates (~1 second at 60Hz)
+        std::cout << "\n[BROADCAST] Sending " << deltas.size() << " entity updates:" << std::endl;
+
+        for (const auto& snap : deltas) {
+            std::cout << "  NET_ID=" << snap.net_id
+                      << " Type=" << snap.entity_type
+                      << " Pos=(" << std::fixed << std::setprecision(3)
+                      << snap.pos.x << ", " << snap.pos.y << ")"
+                      << " Health=" << snap.health
+                      << std::endl;
+        }
     }
 
     std::vector<Entity> entities;

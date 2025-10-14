@@ -1,5 +1,8 @@
 ﻿#include "../include/network/NetworkCommandHandler.hpp"
 #include <iostream>
+#include <set>
+#include <mutex>
+#include <atomic>
 
 NetworkCommandHandler::NetworkCommandHandler(registry &registry,
                                              render::IRenderWindow &window,
@@ -28,11 +31,6 @@ void NetworkCommandHandler::onCreateEntity(
         new_entity = createEnemyEntity(cmd);
         break;
 
-    case network::EntityType::ENEMY_SPREAD:
-        std::cout << "[CLIENT] -> Creating ENEMY_SPREAD (zigzag)" << std::endl;
-        new_entity = createEnemySpreadEntity(cmd);
-        break;
-
     case network::EntityType::BOSS:
         std::cout << "[CLIENT] -> Creating BOSS" << std::endl;
         new_entity = createBossEntity(cmd);
@@ -59,7 +57,10 @@ void NetworkCommandHandler::onCreateEntity(
     registry_.add_component<component::network_state>(
         new_entity, component::network_state());
 
-    net_id_to_entity_.emplace(cmd.net_id, new_entity);
+    {
+        std::lock_guard<std::mutex> lock(net_id_mutex_);
+        net_id_to_entity_.emplace(cmd.net_id, new_entity);
+    }
 }
 
 void NetworkCommandHandler::onUpdateEntity(
@@ -76,8 +77,12 @@ void NetworkCommandHandler::onUpdateEntity(
     auto &network_states = registry_.get_components<component::network_state>();
 
     if (ent < positions.size() && positions[ent]) {
-        positions[ent]->x = cmd.position_x;
-        positions[ent]->y = cmd.position_y;
+        render::Vector2u window_size = window_.getSize();
+        float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+        float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
+        positions[ent]->x = pixel_x;
+        positions[ent]->y = pixel_y;
     }
 
     if (ent < healths.size() && healths[ent]) {
@@ -99,26 +104,60 @@ void NetworkCommandHandler::onDestroyEntity(
     }
 
     entity ent = *opt_entity;
-
     registry_.kill_entity(ent);
-    net_id_to_entity_.erase(cmd.net_id);
+
+    {
+        std::lock_guard<std::mutex> lock(net_id_mutex_);
+        net_id_to_entity_.erase(cmd.net_id);
+    }
 }
 
 void NetworkCommandHandler::onFullStateSync(
     const network::FullStateSyncCommand &cmd) {
-    net_id_to_entity_.clear();
+    std::cout << "[NetworkCommandHandler] Processing GAME_STATE with "
+              << cmd.entities.size() << " entities" << std::endl;
 
-    auto &network_entities =
-        registry_.get_components<component::network_entity>();
-    for (size_t i = 0; i < network_entities.size(); ++i) {
-        if (network_entities[i]) {
-            registry_.kill_entity(entity(i));
+    std::set<uint32_t> received_net_ids;
+
+    for (const auto &entity_cmd : cmd.entities) {
+        received_net_ids.insert(entity_cmd.net_id);
+
+        auto existing_entity = findEntityByNetId(entity_cmd.net_id);
+
+        if (existing_entity) {
+            std::cout
+                << "[NetworkCommandHandler] Updating existing entity NET_ID: "
+                << entity_cmd.net_id << std::endl;
+
+            network::UpdateEntityCommand update_cmd;
+            update_cmd.net_id = entity_cmd.net_id;
+            update_cmd.health = entity_cmd.health;
+            update_cmd.position_x = entity_cmd.position_x;
+            update_cmd.position_y = entity_cmd.position_y;
+            onUpdateEntity(update_cmd);
+        } else {
+            std::cout << "[NetworkCommandHandler] Creating new entity NET_ID: "
+                      << entity_cmd.net_id << std::endl;
+            onCreateEntity(entity_cmd);
+        }
+    }
+    /*
+    // Supprimer les entités qui ne sont plus dans le GAME_STATE
+    std::vector<uint32_t> entities_to_remove;
+    for (const auto &pair : net_id_to_entity_) {
+        if (received_net_ids.find(pair.first) == received_net_ids.end()) {
+            entities_to_remove.push_back(pair.first);
         }
     }
 
-    for (const auto &entity_cmd : cmd.entities) {
-        onCreateEntity(entity_cmd);
-    }
+    for (uint32_t net_id : entities_to_remove) {
+        std::cout << "[NetworkCommandHandler] Removing disappeared entity
+    NET_ID: "
+                  << net_id << std::endl;
+        network::DestroyEntityCommand destroy_cmd;
+        destroy_cmd.net_id = net_id;
+        onDestroyEntity(destroy_cmd);
+    }*/
 }
 
 void NetworkCommandHandler::onConnectionStatusChanged(
@@ -138,23 +177,38 @@ void NetworkCommandHandler::onConnectionStatusChanged(
 
 void NetworkCommandHandler::onPlayerAssignment(
     const network::PlayerAssignmentCommand &cmd) {
-    assigned_player_net_id_ = cmd.player_net_id;
+    assigned_player_net_id_.store(cmd.player_net_id);
     std::cout << "Player assigned NET_ID: " << cmd.player_net_id << std::endl;
 }
 
-std::optional<entity>
-NetworkCommandHandler::findEntityByNetId(uint32_t net_id) const {
+std::optional<entity> NetworkCommandHandler::findEntityByNetId(uint32_t net_id) const {
+    std::cout << "🔍 Looking for entity with NET_ID: " << net_id << std::endl;
+    std::cout << "🔍 net_id_to_entity_ size: " << net_id_to_entity_.size() << std::endl;
+
     auto it = net_id_to_entity_.find(net_id);
     if (it != net_id_to_entity_.end()) {
+        std::cout << "✅ Found entity: " << it->second << std::endl;
         return it->second;
     }
+
+    std::cout << "❌ Entity NOT FOUND for NET_ID: " << net_id << std::endl;
+
+    // ✅ AJOUT : Afficher toutes les entités disponibles
+    std::cout << "Available entities in registry:" << std::endl;
+    for (const auto& pair : net_id_to_entity_) {
+        std::cout << "  NET_ID: " << pair.first << " -> Entity: " << pair.second << std::endl;
+    }
+
     return std::nullopt;
 }
-
 entity NetworkCommandHandler::createPlayerEntity(
     const network::CreateEntityCommand &cmd) {
-    auto player_opt =
-        player_manager_.createPlayer(cmd.position_x, cmd.position_y);
+    // ✅ CORRECTION : Convertir pourcentage en pixels
+    render::Vector2u window_size = window_.getSize();
+    float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+    float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
+    auto player_opt = player_manager_.createPlayer(pixel_x, pixel_y);
 
     if (!player_opt) {
         return entity(0);
@@ -175,8 +229,12 @@ entity NetworkCommandHandler::createEnemyEntity(
     const network::CreateEntityCommand &cmd) {
     auto enemy = registry_.spawn_entity();
 
+    render::Vector2u window_size = window_.getSize();
+    float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+    float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
     registry_.add_component<component::position>(
-        enemy, component::position(cmd.position_x, cmd.position_y));
+        enemy, component::position(pixel_x, pixel_y));
 
     registry_.add_component<component::velocity>(
         enemy, component::velocity(0.0f, 0.0f));
@@ -191,6 +249,7 @@ entity NetworkCommandHandler::createEnemyEntity(
     registry_.add_component<component::health>(enemy,
                                                component::health(cmd.health));
 
+    // Add AI input with wave movement pattern (movement only, no shooting)
     float fire_interval = 1.5f;
     component::ai_movement_pattern movement_pattern =
         component::ai_movement_pattern::wave(50.0f, 0.01f, 120.0f);
@@ -206,56 +265,16 @@ entity NetworkCommandHandler::createEnemyEntity(
     return enemy;
 }
 
-entity NetworkCommandHandler::createEnemySpreadEntity(
-    const network::CreateEntityCommand &cmd) {
-    auto enemy = registry_.spawn_entity();
-
-    registry_.add_component<component::position>(
-        enemy, component::position(cmd.position_x, cmd.position_y));
-
-    registry_.add_component<component::velocity>(
-        enemy, component::velocity(0.0f, 0.0f));
-
-    registry_.add_component<component::drawable>(
-        enemy, component::drawable("assets/sprites/r-typesheet3.gif",
-                                   render::IntRect(), 3.0f, "enemy_spread"));
-
-    registry_.add_component<component::hitbox>(
-        enemy, component::hitbox(51.0f, 54.0f, 0.0f, 0.0f));
-
-    registry_.add_component<component::health>(enemy,
-                                               component::health(cmd.health));
-
-    float fire_interval = 1.25f;
-    component::ai_movement_pattern movement_pattern =
-        component::ai_movement_pattern::zigzag(60.0f, 0.015f, 130.0f);
-    registry_.add_component<component::ai_input>(
-        enemy, component::ai_input(true, fire_interval, movement_pattern));
-
-    auto &anim = registry_.add_component<component::animation>(
-        enemy, component::animation(0.5f, true));
-    anim->frames.push_back(render::IntRect(0, 0, 17, 18));
-    anim->frames.push_back(render::IntRect(17, 0, 17, 18));
-    anim->frames.push_back(render::IntRect(34, 0, 17, 18));
-    anim->frames.push_back(render::IntRect(51, 0, 17, 18));
-    anim->frames.push_back(render::IntRect(68, 0, 17, 18));
-    anim->frames.push_back(render::IntRect(85, 0, 17, 18));
-    anim->frames.push_back(render::IntRect(102, 0, 17, 18));
-    anim->frames.push_back(render::IntRect(119, 0, 17, 18));
-    anim->frames.push_back(render::IntRect(136, 0, 17, 18));
-    anim->frames.push_back(render::IntRect(153, 0, 17, 18));
-    anim->frames.push_back(render::IntRect(170, 0, 17, 18));
-    anim->frames.push_back(render::IntRect(187, 0, 17, 18));
-
-    return enemy;
-}
-
 entity NetworkCommandHandler::createBossEntity(
     const network::CreateEntityCommand &cmd) {
     auto boss = registry_.spawn_entity();
 
+    render::Vector2u window_size = window_.getSize();
+    float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+    float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
     registry_.add_component<component::position>(
-        boss, component::position(cmd.position_x, cmd.position_y));
+        boss, component::position(pixel_x, pixel_y));
 
     registry_.add_component<component::velocity>(
         boss, component::velocity(0.0f, 100.0f));
@@ -288,8 +307,12 @@ entity NetworkCommandHandler::createProjectileEntity(
     const network::CreateEntityCommand &cmd) {
     auto projectile = registry_.spawn_entity();
 
+    render::Vector2u window_size = window_.getSize();
+    float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+    float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
     registry_.add_component<component::position>(
-        projectile, component::position(cmd.position_x, cmd.position_y));
+        projectile, component::position(pixel_x, pixel_y));
 
     registry_.add_component<component::velocity>(
         projectile, component::velocity(0.0f, 0.0f));
@@ -370,12 +393,18 @@ void NetworkCommandHandler::onRawTCPMessage(const network::TCPMessage &msg) {
 }
 
 void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
+    std::cout << "[NetworkCommandHandler] Processing UDP packet type: "
+              << static_cast<int>(packet.msg_type)
+              << " payload size: " << packet.payload.size() << std::endl;
+
     switch (packet.msg_type) {
     case network::UDPMessageType::CLIENT_PING:
         std::cerr << "Received CLIENT_PING (unexpected on client)" << std::endl;
         break;
 
     case network::UDPMessageType::PLAYER_ASSIGNMENT: {
+        std::cout << "[NetworkCommandHandler] Processing PLAYER_ASSIGNMENT"
+                  << std::endl;
         if (packet.payload.size() != 4) {
             std::cerr << "Invalid PLAYER_ASSIGNMENT size: "
                       << packet.payload.size() << " (expected 4)" << std::endl;
@@ -391,6 +420,8 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
     }
 
     case network::UDPMessageType::ENTITY_CREATE: {
+        std::cout << "[NetworkCommandHandler] Processing ENTITY_CREATE"
+                  << std::endl;
         if (packet.payload.size() != 17) {
             std::cerr << "Invalid ENTITY_CREATE size: " << packet.payload.size()
                       << " (expected 17)" << std::endl;
@@ -399,6 +430,11 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
 
         auto entity_data =
             network::PacketProcessor::parseEntityCreate(packet.payload);
+
+        std::cout << "[NetworkCommandHandler] Entity data - NET_ID: "
+                  << entity_data.net_id
+                  << " Type: " << static_cast<int>(entity_data.entity_type)
+                  << std::endl;
 
         network::CreateEntityCommand cmd;
         cmd.net_id = entity_data.net_id;
@@ -412,6 +448,8 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
     }
 
     case network::UDPMessageType::ENTITY_UPDATE: {
+        std::cout << "[NetworkCommandHandler] Processing ENTITY_UPDATE"
+                  << std::endl;
         if (packet.payload.size() == 0 || packet.payload.size() % 16 != 0) {
             std::cerr << "Invalid ENTITY_UPDATE size: " << packet.payload.size()
                       << " (must be multiple of 16)" << std::endl;
@@ -434,6 +472,8 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
     }
 
     case network::UDPMessageType::ENTITY_DESTROY: {
+        std::cout << "[NetworkCommandHandler] Processing ENTITY_DESTROY"
+                  << std::endl;
         if (packet.payload.size() == 0 || packet.payload.size() % 4 != 0) {
             std::cerr << "Invalid ENTITY_DESTROY size: "
                       << packet.payload.size() << " (must be multiple of 4)"
@@ -454,6 +494,8 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
     }
 
     case network::UDPMessageType::GAME_STATE: {
+        std::cout << "[NetworkCommandHandler] Processing GAME_STATE"
+                  << std::endl;
         if (packet.payload.size() < 4) {
             std::cerr << "Invalid GAME_STATE size: " << packet.payload.size()
                       << " (minimum 4)" << std::endl;
@@ -486,12 +528,10 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
     }
 
     case network::UDPMessageType::PLAYER_INPUT:
-        std::cerr << "Received PLAYER_INPUT (unexpected on client)"
-                  << std::endl;
         break;
 
     default:
-        std::cout << "Unhandled UDP packet: "
+        std::cerr << "[NetworkCommandHandler] Unknown UDP message type: "
                   << static_cast<int>(packet.msg_type) << std::endl;
         break;
     }
