@@ -3,7 +3,6 @@
 namespace render {
 namespace sfml {
 
-// SFMLSound implementation
 void SFMLSound::play() { _sound.play(); }
 
 void SFMLSound::pause() { _sound.pause(); }
@@ -42,7 +41,6 @@ AudioStatus SFMLSound::fromSFMLStatus(sf::Sound::Status status) const {
     }
 }
 
-// SFMLSoundBuffer implementation
 bool SFMLSoundBuffer::loadFromFile(const std::string &filename) {
     return _buffer.loadFromFile(filename);
 }
@@ -51,7 +49,6 @@ float SFMLSoundBuffer::getDuration() const {
     return _buffer.getDuration().asSeconds();
 }
 
-// SFMLMusic implementation
 bool SFMLMusic::openFromFile(const std::string &filename) {
     return _music.openFromFile(filename);
 }
@@ -101,7 +98,6 @@ AudioStatus SFMLMusic::fromSFMLStatus(sf::Music::Status status) const {
     }
 }
 
-// SFMLRenderAudio implementation
 ISound *SFMLRenderAudio::createSound() { return new SFMLSound(); }
 
 ISoundBuffer *SFMLRenderAudio::createSoundBuffer() {

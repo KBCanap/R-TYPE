@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** sparse_array
+*/
+
 #pragma once
 #include <optional>
 #include <vector>

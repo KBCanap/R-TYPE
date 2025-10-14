@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** game
+*/
+
 #include "../include/game.hpp"
 #include "../include/accessibility_menu.hpp"
 #include "../include/keybindings_menu.hpp"
@@ -24,12 +31,9 @@ Game::Game(registry &reg, render::IRenderWindow &win, AudioManager &audioMgr,
 
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-    // Register network components if in multiplayer mode
     if (_isMultiplayer) {
         _registry.register_component<component::network_entity>();
     }
-
-    // Create background
     _background = _registry.spawn_entity();
     auto &bg_component = _registry.add_component<component::background>(
         *_background, component::background(30.f));
@@ -40,13 +44,10 @@ Game::Game(registry &reg, render::IRenderWindow &win, AudioManager &audioMgr,
         bg_component->texture->loadFromImage(*fallback_image);
     }
 
-    // Load r-type font for score display
     _scoreFont = _window.createFont();
     if (!_scoreFont->loadFromFile("assets/r-type.otf")) {
     }
 
-    // In multiplayer, don't create local player yet - wait for server
-    // assignment
     if (!_isMultiplayer) {
         _player = _playerManager.createPlayer(_playerRelativeX,
                                               _playerRelativeY, _playerSpeed);
@@ -56,17 +57,13 @@ Game::Game(registry &reg, render::IRenderWindow &win, AudioManager &audioMgr,
 void Game::handleEvents(bool &running, float /*dt*/) {
     render::Event event;
     while (_window.pollEvent(event)) {
-        // Mettre à jour l'état des touches pour input_system
         systems::update_key_state(event);
-
-        // Handle window close
         if (event.type == render::EventType::Closed) {
             running = false;
             _shouldExit = true;
             return;
         }
 
-        // Handle window resize
         if (event.type == render::EventType::Resized) {
             _playerManager.updatePlayerPosition(_player, _playerRelativeX,
                                                 _playerRelativeY);
@@ -75,12 +72,9 @@ void Game::handleEvents(bool &running, float /*dt*/) {
             _victoryMenu.onWindowResize();
         }
 
-        // Handle game over menu
         if (_gameOver) {
             MenuAction action = _gameOverMenu.handleEvents(event);
             if (action == MenuAction::REPLAY) {
-                // In multiplayer, REPLAY means return to menu (exit game)
-                // In solo, REPLAY means restart the game
                 if (_isMultiplayer) {
                     running = false;
                     _shouldExit = true;
@@ -93,12 +87,9 @@ void Game::handleEvents(bool &running, float /*dt*/) {
             }
         }
 
-        // Handle victory menu
         if (_victory) {
             MenuAction action = _victoryMenu.handleEvents(event);
             if (action == MenuAction::REPLAY) {
-                // In multiplayer, REPLAY means return to menu (exit game)
-                // In solo, REPLAY means restart the game
                 if (_isMultiplayer) {
                     running = false;
                     _shouldExit = true;
@@ -111,16 +102,13 @@ void Game::handleEvents(bool &running, float /*dt*/) {
             }
         }
 
-        // Handle key presses
         if (event.type == render::EventType::KeyPressed) {
-            // Escape to exit
             if (event.key.code == render::Key::Escape) {
                 running = false;
                 _shouldExit = true;
                 return;
             }
 
-            // Handle weapon switching (solo mode only)
             if (!_gameOver && !_victory && !_isMultiplayer) {
                 if (event.key.code == render::Key::Num1) {
                     _playerManager.changePlayerWeaponToSingle(_player);
@@ -155,7 +143,6 @@ void Game::handleEvents(bool &running, float /*dt*/) {
 }
 
 void Game::update(float dt) {
-    // Use multiplayer logic if network manager is present
     if (_isMultiplayer && _networkManager) {
         updateMultiplayer(dt);
         return;
@@ -170,40 +157,32 @@ void Game::update(float dt) {
     auto &drawables = _registry.get_components<component::drawable>();
     auto &inputs = _registry.get_components<component::input>();
 
-    // Input system - always runs to capture input state
     systems::input_system(_registry, inputs, _window, &_keyBindings);
 
-    // AI input system for enemies - always runs
     auto &ai_inputs = _registry.get_components<component::ai_input>();
     systems::ai_input_system(_registry, ai_inputs, dt);
 
-    // Only allow player control if game is not over and not victory
     if (!_gameOver && !_victory) {
         systems::control_system(_registry, controllables, velocities, inputs,
                                 dt);
     }
 
-    // Weapon system - handle weapon firing and projectile creation
     if (!_gameOver && !_victory) {
         auto &weapons = _registry.get_components<component::weapon>();
         systems::weapon_system(_registry, weapons, positions, inputs, ai_inputs,
                                _gameTime);
     }
 
-    // These systems should continue running even during game over
     systems::position_system(_registry, positions, velocities, inputs, _window,
                              _gameTime, dt);
 
-    // Update projectile lifetimes and cleanup
     systems::projectile_system(_registry, projectiles, positions, _window, dt);
 
-    // Update player relative position and constrain to screen bounds
     if (_player && !_gameOver && !_victory) {
         auto &player_pos = positions[*_player];
         if (player_pos) {
             render::Vector2u window_size = _window.getSize();
 
-            // Constrain player to screen bounds
             player_pos->x = std::max(
                 0.f, std::min(player_pos->x,
                               static_cast<float>(window_size.x) - 40.f));
@@ -211,7 +190,6 @@ void Game::update(float dt) {
                 0.f, std::min(player_pos->y,
                               static_cast<float>(window_size.y) - 40.f));
 
-            // Update relative position
             _playerRelativeX =
                 player_pos->x / static_cast<float>(window_size.x);
             _playerRelativeY =
@@ -225,11 +203,9 @@ void Game::update(float dt) {
                                   hitboxes);
     }
 
-    // Health system - process damage and handle entity death
     auto &healths = _registry.get_components<component::health>();
     systems::health_system(_registry, healths, dt);
 
-    // Check for victory (boss defeated)
     if (!_gameOver && !_victory && _boss) {
         auto &boss_pos = positions[*_boss];
         auto &boss_drawable = drawables[*_boss];
@@ -245,14 +221,12 @@ void Game::update(float dt) {
         systems::score_system(_registry, scores, dt);
     }
 
-    // Audio system
     auto &sound_effects = _registry.get_components<component::sound_effect>();
     auto &musics = _registry.get_components<component::music>();
     auto &triggers = _registry.get_components<component::audio_trigger>();
     systems::audio_system(_registry, sound_effects, musics, triggers,
                           _audioManager.getAudioSystem());
 
-    // Check if player is still alive
     if (!_gameOver && !isPlayerAlive()) {
         _gameOver = true;
         _gameOverMenu.setVisible(true);
@@ -261,14 +235,11 @@ void Game::update(float dt) {
         _audioManager.playMusic(MusicType::GAME_OVER, false);
     }
 
-    // Check score and spawn boss using BossManager
     if (!_gameOver && !_victory &&
         _bossManager.shouldSpawnBoss(_player, _boss)) {
         _boss = _bossManager.spawnBoss();
     }
 
-    // Spawn enemies - only if game is not over, not victory AND boss hasn't
-    // spawned yet
     if (!_gameOver && !_victory && !_boss) {
         _enemySpawnTimer += dt;
         if (_enemySpawnTimer >= _enemySpawnInterval) {
@@ -278,7 +249,6 @@ void Game::update(float dt) {
         }
     }
 
-    // Remove enemies that are off-screen
     _enemyManager.cleanupOffscreenEnemies(_enemies);
 }
 
@@ -289,7 +259,6 @@ void Game::render(float dt) {
     auto &drawables = _registry.get_components<component::drawable>();
     systems::render_system(_registry, positions, drawables, _window, dt);
 
-    // In multiplayer mode, find the correct player entity by NET_ID
     if (_isMultiplayer && _networkManager) {
         uint32_t my_net_id = _networkManager->getAssignedNetId();
         auto it = _networkEntities.find(my_net_id);
@@ -315,7 +284,6 @@ void Game::render(float dt) {
             }
         }
 
-        // Display score in multiplayer mode
         uint32_t game_score = _networkManager->getGameScore();
         auto score_text = _window.createText();
         score_text->setFont(*_scoreFont);
@@ -329,7 +297,6 @@ void Game::render(float dt) {
 
         _window.draw(*score_text);
     } else if (_player) {
-        // Solo mode - use _player directly
         auto &healths = _registry.get_components<component::health>();
         auto &scores = _registry.get_components<component::score>();
 
@@ -367,7 +334,6 @@ void Game::render(float dt) {
     }
 
 #ifdef DEBUG_MODE
-    // Draw debug hitboxes
     {
         auto &hitboxes = _registry.get_components<component::hitbox>();
 
@@ -378,10 +344,8 @@ void Game::render(float dt) {
                 hitbox_outline->setPosition(
                     positions[i]->x + hitboxes[i]->offset_x,
                     positions[i]->y + hitboxes[i]->offset_y);
-                hitbox_outline->setFillColor(
-                    render::Color(0, 0, 0, 0)); // Transparent
+                hitbox_outline->setFillColor(render::Color(0, 0, 0, 0));
 
-                // Different colors for different entity types
                 if (drawables[i] && drawables[i]->tag == "player") {
                     hitbox_outline->setOutlineColor(render::Color::Green());
                 } else if (drawables[i] &&
@@ -442,7 +406,6 @@ void Game::resetGame() {
     _enemySpawnTimer = 0.f;
     _audioManager.playMusic(MusicType::IN_GAME, true);
 
-    // Kill all existing entities
     if (_player) {
         _registry.kill_entity(*_player);
         _player.reset();
@@ -460,7 +423,6 @@ void Game::resetGame() {
     }
     _enemies.clear();
 
-    // Kill all projectiles and other entities by checking all components
     auto &positions = _registry.get_components<component::position>();
     for (size_t i = 0; i < positions.size(); ++i) {
         if (positions[i]) {
@@ -468,7 +430,6 @@ void Game::resetGame() {
         }
     }
 
-    // Recreate background
     _background = _registry.spawn_entity();
     auto &bg_component = _registry.add_component<component::background>(
         *_background, component::background(30.f));
@@ -479,15 +440,13 @@ void Game::resetGame() {
         bg_component->texture->loadFromImage(*fallback_image);
     }
 
-    // Recreate player using PlayerManager
     _player = _playerManager.createPlayer(_playerRelativeX, _playerRelativeY,
                                           _playerSpeed);
 }
-// Multiplayer-specific update logic
+
 void Game::updateMultiplayer(float dt) {
     _gameTime += dt;
 
-    // Process network messages and update entities
     if (_networkManager) {
         _networkManager->processMessages();
         processNetworkEntities();
@@ -496,13 +455,10 @@ void Game::updateMultiplayer(float dt) {
     auto &positions = _registry.get_components<component::position>();
     auto &inputs = _registry.get_components<component::input>();
 
-    // Input system - capture local player input
     systems::input_system(_registry, inputs, _window, &_keyBindings);
 
-    // Send player input to server
     sendPlayerInput(dt);
 
-    // Update background scrolling
     auto &backgrounds = _registry.get_components<component::background>();
     for (size_t i = 0; i < backgrounds.size() && i < positions.size(); ++i) {
         if (backgrounds[i] && positions[i]) {
@@ -513,9 +469,6 @@ void Game::updateMultiplayer(float dt) {
             }
         }
     }
-
-    // Note: In multiplayer, the server handles all game logic
-    // Clients only render what the server tells them
 }
 
 void Game::sendPlayerInput(float dt) {
@@ -536,19 +489,17 @@ void Game::sendPlayerInput(float dt) {
         auto &playerInput = inputs[*_player];
         uint8_t direction = 0;
 
-        // Encode movement
         if (playerInput->up)
-            direction |= 0x01; // UP
+            direction |= 0x01;
         if (playerInput->down)
-            direction |= 0x02; // DOWN
+            direction |= 0x02;
         if (playerInput->left)
-            direction |= 0x04; // LEFT
+            direction |= 0x04;
         if (playerInput->right)
-            direction |= 0x08; // RIGHT
+            direction |= 0x08;
         if (playerInput->fire)
-            direction |= 0x10; // FIRE (SPACE)
+            direction |= 0x10;
 
-        // Send PLAYER_INPUT message
         _networkManager->sendPlayerInput(direction);
     }
 }
@@ -563,60 +514,54 @@ void Game::processNetworkEntities() {
 
     render::Vector2u window_size = _window.getSize();
 
-    // Process all network entities
     for (const auto &[net_id, netEntity] : networkEntities) {
-        // Check if we already have this entity
         auto it = _networkEntities.find(net_id);
 
         if (it == _networkEntities.end()) {
-            // Create new entity
             entity ent = _registry.spawn_entity();
             _networkEntities[net_id] = std::optional<entity>(ent);
 
-            // Add position
             _registry.add_component<component::position>(
                 ent, component::position(netEntity.pos_x * window_size.x,
                                          netEntity.pos_y * window_size.y));
 
-            // Add drawable with appropriate texture using R-TYPE sprites
             std::string texturePath;
             std::string tag;
             render::IntRect textureRect;
             float scale;
 
             switch (netEntity.type) {
-            case 0x01: // PLAYER
+            case 0x01:
                 texturePath = "assets/sprites/r-typesheet42.gif";
                 tag = "player";
-                textureRect =
-                    render::IntRect(66, 0, 33, 17); // Middle frame of player
+                textureRect = render::IntRect(66, 0, 33, 17);
                 scale = 2.0f;
                 break;
-            case 0x02: // ENEMY
+            case 0x02:
                 texturePath = "assets/sprites/r-typesheet9.gif";
                 tag = "enemy";
-                textureRect = render::IntRect(); // Full sprite
+                textureRect = render::IntRect();
                 scale = 1.0f;
                 break;
-            case 0x05: // ENEMY_SPREAD
+            case 0x05:
                 texturePath = "assets/sprites/r-typesheet3.gif";
                 tag = "enemy_spread";
-                textureRect = render::IntRect(); // Full sprite
+                textureRect = render::IntRect();
                 scale = 3.0f;
                 break;
-            case 0x06: // BOSS
+            case 0x06:
                 texturePath = "assets/sprites/r-typesheet17.gif";
                 tag = "boss";
-                textureRect = render::IntRect(); // Full sprite
+                textureRect = render::IntRect();
                 scale = 2.0f;
                 break;
-            case 0x03: // PROJECTILE (enemy)
+            case 0x03:
                 texturePath = "assets/sprites/r-typesheet1.gif";
                 tag = "projectile_enemy";
                 textureRect = render::IntRect(249, 103, 16, 12);
                 scale = 1.0f;
                 break;
-            case 0x04: // ALLIED_PROJECTILE
+            case 0x04:
                 texturePath = "assets/sprites/r-typesheet1.gif";
                 tag = "projectile";
                 textureRect = render::IntRect(60, 353, 12, 12);
@@ -633,65 +578,61 @@ void Game::processNetworkEntities() {
             _registry.add_component<component::drawable>(
                 ent, component::drawable(texturePath, textureRect, scale, tag));
 
-            // Add animation component based on entity type
-            if (netEntity.type == 0x01) { // PLAYER
+            if (netEntity.type == 0x01) {
                 auto &player_anim =
                     _registry.add_component<component::animation>(
                         ent, component::animation(0.2f, true));
                 player_anim->frames.push_back(
-                    render::IntRect(0, 0, 33, 17)); // Phase 1: neutral up
+                    render::IntRect(0, 0, 33, 17));
                 player_anim->frames.push_back(
-                    render::IntRect(33, 0, 33, 17)); // Phase 2: slight up
+                    render::IntRect(33, 0, 33, 17));
                 player_anim->frames.push_back(
-                    render::IntRect(66, 0, 33, 17)); // Phase 3: middle/neutral
+                    render::IntRect(66, 0, 33, 17));
                 player_anim->frames.push_back(
-                    render::IntRect(99, 0, 33, 17)); // Phase 4: slight down
+                    render::IntRect(99, 0, 33, 17));
                 player_anim->frames.push_back(
-                    render::IntRect(132, 0, 33, 17)); // Phase 5: full down
-                player_anim->current_frame = 2;       // Start at middle frame
-                player_anim->playing = true;          // Animation playing
-            } else if (netEntity.type == 0x02) {      // ENEMY
-                // Regular enemy animation (3 frames from r-typesheet9.gif)
+                    render::IntRect(132, 0, 33, 17));
+                player_anim->current_frame = 2;
+                player_anim->playing = true;
+            } else if (netEntity.type == 0x02) {
                 auto &enemy_anim =
                     _registry.add_component<component::animation>(
                         ent, component::animation(0.5f, true));
                 enemy_anim->frames.push_back(
-                    render::IntRect(0, 0, 50, 58)); // Frame 1
+                    render::IntRect(0, 0, 50, 58));
                 enemy_anim->frames.push_back(
-                    render::IntRect(51, 0, 57, 58)); // Frame 2
+                    render::IntRect(51, 0, 57, 58));
                 enemy_anim->frames.push_back(
-                    render::IntRect(116, 0, 49, 58)); // Frame 3
-            } else if (netEntity.type == 0x05) {      // ENEMY_SPREAD
-                // Spread enemy animation (12 frames from r-typesheet3.gif)
+                    render::IntRect(116, 0, 49, 58));
+            } else if (netEntity.type == 0x05) {
                 auto &enemy_anim =
                     _registry.add_component<component::animation>(
                         ent, component::animation(0.5f, true));
                 enemy_anim->frames.push_back(
-                    render::IntRect(0, 0, 17, 18)); // Frame 1
+                    render::IntRect(0, 0, 17, 18));
                 enemy_anim->frames.push_back(
-                    render::IntRect(17, 0, 17, 18)); // Frame 2
+                    render::IntRect(17, 0, 17, 18));
                 enemy_anim->frames.push_back(
-                    render::IntRect(34, 0, 17, 18)); // Frame 3
+                    render::IntRect(34, 0, 17, 18));
                 enemy_anim->frames.push_back(
-                    render::IntRect(51, 0, 17, 18)); // Frame 4
+                    render::IntRect(51, 0, 17, 18));
                 enemy_anim->frames.push_back(
-                    render::IntRect(68, 0, 17, 18)); // Frame 5
+                    render::IntRect(68, 0, 17, 18));
                 enemy_anim->frames.push_back(
-                    render::IntRect(85, 0, 17, 18)); // Frame 6
+                    render::IntRect(85, 0, 17, 18));
                 enemy_anim->frames.push_back(
-                    render::IntRect(102, 0, 17, 18)); // Frame 7
+                    render::IntRect(102, 0, 17, 18));
                 enemy_anim->frames.push_back(
-                    render::IntRect(119, 0, 17, 18)); // Frame 8
+                    render::IntRect(119, 0, 17, 18));
                 enemy_anim->frames.push_back(
-                    render::IntRect(136, 0, 17, 18)); // Frame 9
+                    render::IntRect(136, 0, 17, 18));
                 enemy_anim->frames.push_back(
-                    render::IntRect(153, 0, 17, 18)); // Frame 10
+                    render::IntRect(153, 0, 17, 18));
                 enemy_anim->frames.push_back(
-                    render::IntRect(170, 0, 17, 18)); // Frame 11
+                    render::IntRect(170, 0, 17, 18));
                 enemy_anim->frames.push_back(
-                    render::IntRect(187, 0, 17, 18)); // Frame 12
-            } else if (netEntity.type == 0x06) {      // BOSS
-                // Boss animation (8 frames from r-typesheet17.gif)
+                    render::IntRect(187, 0, 17, 18));
+            } else if (netEntity.type == 0x06) {
                 auto &boss_anim = _registry.add_component<component::animation>(
                     ent, component::animation(0.1f, true));
                 for (int i = 0; i < 8; ++i) {
@@ -700,15 +641,12 @@ void Game::processNetworkEntities() {
                 }
             }
 
-            // Add health component
             _registry.add_component<component::health>(
                 ent, component::health(netEntity.health));
 
-            // Add network component
             _registry.add_component<component::network_entity>(
                 ent, component::network_entity(net_id));
 
-            // Mark as local player if this is our assigned entity
             if (netEntity.type == 0x01 &&
                 net_id == _networkManager->getAssignedNetId()) {
                 _player = ent;
@@ -716,35 +654,32 @@ void Game::processNetworkEntities() {
                                                           component::input());
             }
         } else {
-            // Update existing entity
             if (!it->second)
                 continue;
             entity ent = *(it->second);
 
-            // Track old position for animation
             float old_y = 0.0f;
             if (ent < positions.size() && positions[ent]) {
                 old_y = positions[ent]->y;
                 positions[ent]->x = netEntity.pos_x * window_size.x;
                 positions[ent]->y = netEntity.pos_y * window_size.y;
 
-                // Update player animation based on vertical movement
-                if (netEntity.type == 0x01) { // PLAYER
+                if (netEntity.type == 0x01) {
                     auto &animations =
                         _registry.get_components<component::animation>();
                     if (ent < animations.size() && animations[ent]) {
                         auto &anim = animations[ent];
                         float delta_y = positions[ent]->y - old_y;
 
-                        if (delta_y < -0.5f) { // Moving up
+                        if (delta_y < -0.5f) {
                             anim->playing = false;
-                            anim->current_frame = 4; // Frame 4: full up
-                        } else if (delta_y > 0.5f) { // Moving down
+                            anim->current_frame = 4;
+                        } else if (delta_y > 0.5f) {
                             anim->playing = false;
-                            anim->current_frame = 0; // Frame 0: full down
-                        } else { // Not moving much vertically
+                            anim->current_frame = 0;
+                        } else {
                             anim->playing = false;
-                            anim->current_frame = 2; // Frame 2: middle/neutral
+                            anim->current_frame = 2;
                         }
                     }
                 }
@@ -756,7 +691,6 @@ void Game::processNetworkEntities() {
         }
     }
 
-    // Remove entities that no longer exist on server
     std::vector<uint32_t> toRemove;
     for (const auto &[net_id, opt_ent] : _networkEntities) {
         if (networkEntities.find(net_id) == networkEntities.end()) {
@@ -764,17 +698,14 @@ void Game::processNetworkEntities() {
             if (opt_ent) {
                 entity ent = *opt_ent;
 
-                // Check if this is a boss being destroyed (victory condition)
                 auto &drawables =
                     _registry.get_components<component::drawable>();
                 if (ent < drawables.size() && drawables[ent] &&
                     drawables[ent]->tag == "boss" && !_victory) {
                     _victory = true;
                     _victoryMenu.setVisible(true);
-                    // Keep the current music playing for victory
                 }
 
-                // Create explosion effect if entity has position
                 if (ent < positions.size() && positions[ent]) {
                     auto explosion_entity = _registry.spawn_entity();
                     _registry.add_component<component::position>(
@@ -796,7 +727,6 @@ void Game::processNetworkEntities() {
                     anim->playing = true;
                 }
 
-                // Check if this is the local player dying
                 if (_player && ent == *_player) {
                     _gameOver = true;
                     _gameOverMenu.setVisible(true);

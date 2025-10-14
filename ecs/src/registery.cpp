@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** registery
+*/
+
 #include "../include/registery.hpp"
 
 entity registry::spawn_entity() { return entity(_next_entity_id++); }

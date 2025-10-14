@@ -1,5 +1,6 @@
 ﻿#include "../include/network/NetworkManager.hpp"
 #include "../include/network/ASIOSocket.hpp"
+#include <cstring>
 #include <iostream>
 
 namespace network {
@@ -25,10 +26,10 @@ std::vector<UDPPacket> NetworkManager::pollUDP() {
     for (const auto &raw_packet : raw_packets) {
         UDPPacket packet = PacketProcessor::parseUDPPacket(raw_packet.data);
 
-        // PLAYER_ASSIGNMENT est traité séparément et n'est pas retourné
+        // PLAYER_ASSIGNMENT is handled separately
         if (packet.msg_type == UDPMessageType::PLAYER_ASSIGNMENT) {
             handlePlayerAssignment(packet);
-            continue; // Ne pas ajouter à la queue
+            continue;
         }
 
         packet_processor_.addPacket(packet);
@@ -91,18 +92,13 @@ void NetworkManager::handlePlayerAssignment(const UDPPacket &packet) {
 }
 
 void NetworkManager::initializeUDPSocket() {
-    // Reset connection state
     resetConnectionState();
-
-    // Call parent to setup UDP socket
     ANetworkManager::initializeUDPSocket();
 
-    // Check if socket initialization failed
     if (getConnectionState() == ConnectionState::ERROR) {
         return;
     }
 
-    // Send initial CLIENT_PING
     auto current_time = static_cast<uint32_t>(
         std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now().time_since_epoch())
@@ -120,13 +116,11 @@ void NetworkManager::initializeUDPSocket() {
 }
 
 void NetworkManager::update(float dt) {
-    // Call parent update for TCP timeouts
     ANetworkManager::update(dt);
 
     auto state = getConnectionState();
     auto now = std::chrono::steady_clock::now();
 
-    // Handle CLIENT_PING retry logic
     if (state == ConnectionState::GAME_STARTING && udp_ping_sent_) {
         bool is_assigned;
         {
@@ -135,10 +129,9 @@ void NetworkManager::update(float dt) {
         }
 
         if (is_assigned) {
-            return; // Assignment received, nothing to do
+            return;
         }
 
-        // Check total timeout
         auto total_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
                                  now - ping_start_time_)
                                  .count();
@@ -151,7 +144,6 @@ void NetworkManager::update(float dt) {
             return;
         }
 
-        // Check retry interval
         auto retry_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
                                  now - last_ping_time_)
                                  .count();
@@ -193,8 +185,6 @@ void NetworkManager::sendPlayerInput(uint8_t direction) {
     UDPPacket packet;
     packet.msg_type = UDPMessageType::PLAYER_INPUT;
     packet.sequence_num = packet_processor_.getNextSendSequence();
-
-    // Payload: 1 byte event_type (0x00 = movement) + 1 byte direction
     packet.payload = {0x00, direction};
     packet.data_length = 2;
 
@@ -202,19 +192,14 @@ void NetworkManager::sendPlayerInput(uint8_t direction) {
 }
 
 void NetworkManager::processMessages() {
-    // Poll TCP messages
     auto tcp_messages = pollTCP();
-    // TCP messages handling could be added here in the future
-    (void)tcp_messages; // Suppress unused variable warning
+    (void)tcp_messages;
 
-    // Poll UDP packets
     auto udp_packets = pollUDP();
     for (const auto &packet : udp_packets) {
         switch (packet.msg_type) {
         case UDPMessageType::ENTITY_CREATE:
             if (packet.payload.size() >= 17) {
-                // Parse ENTITY_CREATE: NET_ID (4) + type (1) + health (4) +
-                // pos_x (4) + pos_y (4)
                 uint32_t net_id =
                     (static_cast<uint32_t>(packet.payload[0]) << 24) |
                     (static_cast<uint32_t>(packet.payload[1]) << 16) |
@@ -256,7 +241,6 @@ void NetworkManager::processMessages() {
             break;
 
         case UDPMessageType::ENTITY_UPDATE:
-            // Parse multiple entities (16 bytes each)
             for (size_t i = 0; i + 16 <= packet.payload.size(); i += 16) {
                 uint32_t net_id =
                     (static_cast<uint32_t>(packet.payload[i]) << 24) |

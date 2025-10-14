@@ -5,16 +5,9 @@
 
 namespace network {
 
-/**
- * @class ASIOTCPSocket
- * @brief ASIO implementation of ITCPSocket
- */
+// ASIO implementation of ITCPSocket
 class ASIOTCPSocket : public ITCPSocket {
   public:
-    /**
-     * @brief Construct ASIO TCP socket
-     * @param io_context ASIO io_context reference
-     */
     explicit ASIOTCPSocket(asio::io_context &io_context);
     ~ASIOTCPSocket() override;
 
@@ -31,16 +24,9 @@ class ASIOTCPSocket : public ITCPSocket {
     asio::ip::tcp::socket socket_;
 };
 
-/**
- * @class ASIOUDPSocket
- * @brief ASIO implementation of IUDPSocket
- */
+// ASIO implementation of IUDPSocket
 class ASIOUDPSocket : public IUDPSocket {
   public:
-    /**
-     * @brief Construct ASIO UDP socket
-     * @param io_context ASIO io_context reference
-     */
     explicit ASIOUDPSocket(asio::io_context &io_context);
     ~ASIOUDPSocket() override;
 
@@ -57,15 +43,9 @@ class ASIOUDPSocket : public IUDPSocket {
     asio::ip::udp::endpoint remote_endpoint_;
 };
 
-/**
- * @class ASIOContext
- * @brief ASIO implementation of IIOContext
- */
+// ASIO implementation of IIOContext
 class ASIOContext : public IIOContext {
   public:
-    /**
-     * @brief Construct ASIO context
-     */
     ASIOContext();
     ~ASIOContext() override;
 
