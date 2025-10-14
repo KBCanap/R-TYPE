@@ -1,95 +1,149 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** settings
+*/
+
 #pragma once
-#include <SFML/Graphics.hpp>
+#include "../../ecs/include/render/IRenderWindow.hpp"
 #include <memory>
+#include <string>
+
+enum class ColorblindMode {
+    None = 0,
+    Protanopia = 1,
+    Deuteranopia = 2,
+    Tritanopia = 3
+};
 
 class Settings {
-public:
-    static Settings& getInstance() {
+  public:
+    static Settings &getInstance() {
         static Settings instance;
         return instance;
     }
 
-    // Contrast settings
-    void setContrast(float contrast) { _contrast = contrast; }
-    float getContrast() const { return _contrast; }
+    void setColorblindMode(ColorblindMode mode) {
+        _colorblindMode = mode;
+        _colorblindShader.reset();
+    }
+    ColorblindMode getColorblindMode() const { return _colorblindMode; }
 
-    // Utility function to apply contrast to a color
-    sf::Color applyContrast(const sf::Color& originalColor) const {
-        float factor = _contrast;
+    std::string getColorblindModeName() const {
+        switch (_colorblindMode) {
+        case ColorblindMode::None:
+            return "None";
+        case ColorblindMode::Protanopia:
+            return "Protanopia";
+        case ColorblindMode::Deuteranopia:
+            return "Deuteranopia";
+        case ColorblindMode::Tritanopia:
+            return "Tritanopia";
+        default:
+            return "None";
+        }
+    }
 
-        // Convert to normalized values
+    render::Color
+    applyColorblindFilter(const render::Color &originalColor) const {
+        if (_colorblindMode == ColorblindMode::None) {
+            return originalColor;
+        }
+
         float r = originalColor.r / 255.0f;
         float g = originalColor.g / 255.0f;
         float b = originalColor.b / 255.0f;
 
-        // Apply contrast adjustment
-        // Formula: newValue = ((oldValue - 0.5) * contrast) + 0.5
-        r = ((r - 0.5f) * factor) + 0.5f;
-        g = ((g - 0.5f) * factor) + 0.5f;
-        b = ((b - 0.5f) * factor) + 0.5f;
+        float newR = r, newG = g, newB = b;
 
-        // Clamp values to [0, 1]
-        r = std::max(0.0f, std::min(1.0f, r));
-        g = std::max(0.0f, std::min(1.0f, g));
-        b = std::max(0.0f, std::min(1.0f, b));
+        switch (_colorblindMode) {
+        case ColorblindMode::Protanopia:
+            newR = 0.567f * r + 0.433f * g;
+            newG = 0.558f * r + 0.442f * g;
+            newB = 0.242f * g + 0.758f * b;
+            break;
+        case ColorblindMode::Deuteranopia:
+            newR = 0.625f * r + 0.375f * g;
+            newG = 0.700f * r + 0.300f * g;
+            newB = 0.300f * g + 0.700f * b;
+            break;
+        case ColorblindMode::Tritanopia:
+            newR = 0.950f * r + 0.050f * g;
+            newG = 0.433f * g + 0.567f * b;
+            newB = 0.475f * g + 0.525f * b;
+            break;
+        default:
+            break;
+        }
 
-        // Convert back to 0-255 range
-        return sf::Color(
-            static_cast<sf::Uint8>(r * 255),
-            static_cast<sf::Uint8>(g * 255),
-            static_cast<sf::Uint8>(b * 255),
-            originalColor.a  // Keep alpha unchanged
+        newR = std::max(0.0f, std::min(1.0f, newR));
+        newG = std::max(0.0f, std::min(1.0f, newG));
+        newB = std::max(0.0f, std::min(1.0f, newB));
+
+        return render::Color(static_cast<uint8_t>(newR * 255),
+                             static_cast<uint8_t>(newG * 255),
+                             static_cast<uint8_t>(newB * 255),
+                             originalColor.a
         );
     }
 
-    // Get contrast shader for true contrast effect
-    sf::Shader* getContrastShader() {
-        if (!_contrastShader) {
-            _contrastShader = std::make_unique<sf::Shader>();
+    render::IShader *getColorblindShader(render::IRenderWindow &window) {
+        if (_colorblindMode == ColorblindMode::None) {
+            return nullptr;
+        }
 
-            // Fragment shader for contrast adjustment
+        if (!_colorblindShader) {
+            _colorblindShader = window.createShader();
+
             const std::string fragmentShaderSource = R"(
                 uniform sampler2D texture;
-                uniform float contrast;
+                uniform int mode;
 
                 void main() {
                     vec4 color = texture2D(texture, gl_TexCoord[0].xy);
+                    vec3 rgb = color.rgb;
+                    vec3 result = rgb;
 
-                    // Apply contrast: (color - 0.5) * contrast + 0.5
-                    color.rgb = ((color.rgb - 0.5) * contrast) + 0.5;
+                    if (mode == 1) {
+                        result.r = 0.567 * rgb.r + 0.433 * rgb.g;
+                        result.g = 0.558 * rgb.r + 0.442 * rgb.g;
+                        result.b = 0.242 * rgb.g + 0.758 * rgb.b;
+                    } else if (mode == 2) {
+                        result.r = 0.625 * rgb.r + 0.375 * rgb.g;
+                        result.g = 0.700 * rgb.r + 0.300 * rgb.g;
+                        result.b = 0.300 * rgb.g + 0.700 * rgb.b;
+                    } else if (mode == 3) {
+                        result.r = 0.950 * rgb.r + 0.050 * rgb.g;
+                        result.g = 0.433 * rgb.g + 0.567 * rgb.b;
+                        result.b = 0.475 * rgb.g + 0.525 * rgb.b;
+                    }
 
-                    // Clamp values to [0, 1]
-                    color.rgb = clamp(color.rgb, 0.0, 1.0);
-
-                    gl_FragColor = color;
+                    gl_FragColor = vec4(result, color.a);
                 }
             )";
 
-            if (_contrastShader->loadFromMemory(fragmentShaderSource, sf::Shader::Fragment)) {
-                _contrastShader->setUniform("texture", sf::Shader::CurrentTexture);
+            if (_colorblindShader->loadFromMemory(
+                    fragmentShaderSource, render::ShaderType::Fragment)) {
+                _colorblindShader->setUniform("texture", 0);
             } else {
-                // Fallback: shader loading failed, disable contrast
-                _contrastShader.reset();
+                _colorblindShader.reset();
             }
         }
 
-        if (_contrastShader) {
-            _contrastShader->setUniform("contrast", _contrast);
+        if (_colorblindShader) {
+            _colorblindShader->setUniform("mode",
+                                          static_cast<int>(_colorblindMode));
         }
 
-        return _contrastShader.get();
+        return _colorblindShader.get();
     }
 
-    // Check if contrast shader is available
-    bool hasContrastShader() const {
-        return _contrastShader != nullptr;
-    }
+    bool hasColorblindShader() const { return _colorblindShader != nullptr; }
 
-    // Sound settings
     void setSoundEnabled(bool enabled) { _soundEnabled = enabled; }
     bool isSoundEnabled() const { return _soundEnabled; }
 
-    // Resolution settings
     void setResolution(unsigned int width, unsigned int height) {
         _resolutionWidth = width;
         _resolutionHeight = height;
@@ -97,16 +151,17 @@ public:
     unsigned int getResolutionWidth() const { return _resolutionWidth; }
     unsigned int getResolutionHeight() const { return _resolutionHeight; }
 
-private:
-    Settings() : _contrast(1.0f), _soundEnabled(true), _resolutionWidth(800), _resolutionHeight(600) {}
+  private:
+    Settings()
+        : _colorblindMode(ColorblindMode::None), _soundEnabled(true),
+          _resolutionWidth(800), _resolutionHeight(600) {}
 
-    float _contrast;
+    ColorblindMode _colorblindMode;
     bool _soundEnabled;
     unsigned int _resolutionWidth;
     unsigned int _resolutionHeight;
-    std::unique_ptr<sf::Shader> _contrastShader;
+    std::unique_ptr<render::IShader> _colorblindShader;
 
-    // Delete copy constructor and assignment operator
-    Settings(const Settings&) = delete;
-    Settings& operator=(const Settings&) = delete;
+    Settings(const Settings &) = delete;
+    Settings &operator=(const Settings &) = delete;
 };

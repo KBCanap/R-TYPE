@@ -1,9 +1,16 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** tick_system
+*/
+
 #pragma once
 #include <chrono>
 #include <functional>
 
 class TickSystem {
-public:
+  public:
     using HighResClock = std::chrono::high_resolution_clock;
     using TimePoint = HighResClock::time_point;
     using Duration = std::chrono::duration<double>;
@@ -16,9 +23,9 @@ public:
     void setMaxCatchupTicks(int max_ticks);
     int getMaxCatchupTicks() const;
 
-    void run(const std::function<bool()>& should_continue,
-             const std::function<void(double)>& update_func,
-             const std::function<void(double)>& render_func);
+    void run(const std::function<bool()> &should_continue,
+             const std::function<void(double)> &update_func,
+             const std::function<void(double)> &render_func);
 
     void reset();
 
@@ -30,7 +37,7 @@ public:
     double getActualTPS() const;
     bool isRunning() const;
 
-private:
+  private:
     void updateTiming();
 
     double _target_tps;

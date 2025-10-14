@@ -15,9 +15,21 @@ set(APP_SOURCES
     src/tick_system.cpp
     src/options_menu.cpp
     src/accessibility_menu.cpp
+    src/keybindings_menu.cpp
+    src/key_bindings.cpp
     src/player_manager.cpp
     src/enemy_manager.cpp
     src/boss_manager.cpp
+    src/pause_menu.cpp
+    src/connection_menu.cpp
+    src/lobby_menu.cpp
+    src/render/RenderFactory.cpp
+    src/render/sfml/SFMLRenderWindow.cpp
+    src/render/sfml/SFMLRenderAudio.cpp
+    src/ASIOSocket.cpp
+    src/NetworkManager.cpp
+    src/NetworkCommandHandler.cpp
+    src/PacketProcessor.cpp
 )
 
 # Création de l'exécutable client
@@ -33,6 +45,11 @@ target_include_directories(r-type_app PRIVATE
 target_link_libraries(r-type_app PRIVATE
     ecs
 )
+
+# Lier avec ASIO pour le NetworkManager
+if(TARGET asio_interface)
+    target_link_libraries(r-type_app PRIVATE asio_interface)
+endif()
 
 # Lier avec SFML
 if(sfml-graphics_FOUND)
@@ -66,6 +83,5 @@ target_compile_definitions(r-type_app PRIVATE
 
 # Optimisations par configuration
 target_compile_options(r-type_app PRIVATE
-    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2>
-    $<$<AND:$<NOT:$<CXX_COMPILER_ID:MSVC>>,$<CONFIG:Release>>:-O3 -DNDEBUG>
+    $<$<CONFIG:Release>:-O3 -DNDEBUG>
 )

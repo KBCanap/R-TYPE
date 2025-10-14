@@ -20,10 +20,10 @@
 
 class StartServer {
     public:
-        StartServer(int port);
+        StartServer(int port, int udp_port);
         ~StartServer();
 
-        void networkLoop();
+        short networkLoop();
         bool sendToClient(uint32_t client_id, const std::string& message);
         void disconnectClient(uint32_t client_id);
         std::vector<uint32_t> getConnectedClients();
@@ -33,6 +33,8 @@ class StartServer {
 
     private:
         int _port;
+        int _udp_port;
+        bool _in_game = false;
         std::unique_ptr<TCPServer> _tcp_server;
         Protocol _protocol;
         GameSession _game_session;

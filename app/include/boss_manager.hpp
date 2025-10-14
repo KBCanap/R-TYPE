@@ -1,17 +1,24 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** boss_manager
+*/
+
 #pragma once
-#include "registery.hpp"
+#include "../../ecs/include/render/IRenderWindow.hpp"
 #include "components.hpp"
-#include <SFML/Graphics.hpp>
+#include "registery.hpp"
 
 class BossManager {
-public:
-    BossManager(registry& reg, sf::RenderWindow& win);
+  public:
+    BossManager(registry &reg, render::IRenderWindow &win);
 
-    // Boss management
     std::optional<entity> spawnBoss();
-    bool shouldSpawnBoss(const std::optional<entity>& player, const std::optional<entity>& boss) const;
+    bool shouldSpawnBoss(const std::optional<entity> &player,
+                         const std::optional<entity> &boss) const;
 
-private:
-    registry& _registry;
-    sf::RenderWindow& _window;
+  private:
+    registry &_registry;
+    render::IRenderWindow &_window;
 };

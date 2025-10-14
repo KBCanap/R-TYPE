@@ -1,0 +1,56 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** lobby_menu
+*/
+
+#pragma once
+#include "../../ecs/include/network/INetwork.hpp"
+#include "../../ecs/include/render/IRenderWindow.hpp"
+#include "audio_manager.hpp"
+#include <chrono>
+#include <memory>
+
+enum class LobbyResult {
+    StartGame,
+    Disconnect,
+    Error
+};
+
+class LobbyMenu {
+  public:
+    LobbyMenu(render::IRenderWindow &win, AudioManager &audioMgr,
+              network::INetwork &netMgr);
+
+    LobbyResult run();
+
+  private:
+    void createUI();
+    void updateButtonScale();
+    void render();
+    void handleNetworkMessages();
+    void sendReadyMessage();
+
+    render::IRenderWindow &_window;
+    AudioManager &_audioManager;
+    network::INetwork &_networkManager;
+
+    std::unique_ptr<render::IFont> _font;
+    std::unique_ptr<render::ITexture> _bgTexture;
+    std::unique_ptr<render::ISprite> _bgSprite1;
+    std::unique_ptr<render::ISprite> _bgSprite2;
+    std::unique_ptr<render::IText> _titleText;
+    std::unique_ptr<render::IText> _playerIdText;
+    std::unique_ptr<render::IShape> _readyButton;
+    std::unique_ptr<render::IText> _readyButtonText;
+    std::unique_ptr<render::IShape> _disconnectButton;
+    std::unique_ptr<render::IText> _disconnectButtonText;
+    bool _isReady;
+    bool _waitingForGameStart;
+    uint8_t _myPlayerId;
+    render::Vector2u _windowSize;
+    render::Vector2u _baseWindowSize;
+    float _bgScrollSpeed;
+    std::chrono::steady_clock::time_point _lastTime;
+};

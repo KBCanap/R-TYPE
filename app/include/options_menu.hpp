@@ -1,9 +1,25 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** options_menu
+*/
+
 #pragma once
-#include <SFML/Graphics.hpp>
+#include "../../ecs/include/render/IRenderWindow.hpp"
 #include "audio_manager.hpp"
+#include "key_bindings.hpp"
+#include <memory>
 #include <vector>
 
-enum class OptionsResult { None, Back, ResolutionChanged, SoundToggled, Accessibility };
+enum class OptionsResult {
+    None,
+    Back,
+    ResolutionChanged,
+    SoundToggled,
+    Accessibility,
+    KeyBindings
+};
 
 struct Resolution {
     unsigned int width;
@@ -12,59 +28,60 @@ struct Resolution {
 };
 
 class OptionsMenu {
-public:
-    OptionsMenu(sf::RenderWindow& win, AudioManager& audioMgr);
+  public:
+    OptionsMenu(render::IRenderWindow &win, AudioManager &audioMgr,
+                KeyBindings &keyBindings);
 
     OptionsResult run();
     void render();
 
-    // Getters for settings
-    Resolution getCurrentResolution() const { return _resolutions[_currentResolution]; }
+    Resolution getCurrentResolution() const {
+        return _resolutions[_currentResolution];
+    }
     bool isSoundEnabled() const { return _soundEnabled; }
 
-private:
+  private:
     void createButtons();
     void updateButtonScale();
     void handleResolutionChange();
     void toggleSound();
 
-private:
-    sf::RenderWindow& _window;
-    AudioManager& _audioManager;
+  private:
+    render::IRenderWindow &_window;
+    AudioManager &_audioManager;
+    KeyBindings &_keyBindings;
 
-    sf::Font _font;
-    sf::Text _titleText;
+    std::unique_ptr<render::IFont> _font;
+    std::unique_ptr<render::IText> _titleText;
 
-    // Resolution settings
     std::vector<Resolution> _resolutions;
     size_t _currentResolution;
-    sf::Text _resolutionLabel;
-    sf::Text _resolutionValue;
-    sf::RectangleShape _resolutionLeftButton;
-    sf::RectangleShape _resolutionRightButton;
-    sf::Text _resolutionLeftText;
-    sf::Text _resolutionRightText;
+    std::unique_ptr<render::IText> _resolutionLabel;
+    std::unique_ptr<render::IText> _resolutionValue;
+    std::unique_ptr<render::IShape> _resolutionLeftButton;
+    std::unique_ptr<render::IShape> _resolutionRightButton;
+    std::unique_ptr<render::IText> _resolutionLeftText;
+    std::unique_ptr<render::IText> _resolutionRightText;
 
-    // Sound settings
     bool _soundEnabled;
-    sf::Text _soundLabel;
-    sf::Text _soundValue;
-    sf::RectangleShape _soundButton;
-    sf::Text _soundButtonText;
+    std::unique_ptr<render::IText> _soundLabel;
+    std::unique_ptr<render::IText> _soundValue;
+    std::unique_ptr<render::IShape> _soundButton;
+    std::unique_ptr<render::IText> _soundButtonText;
 
-    // Accessibility button
-    sf::RectangleShape _accessibilityButton;
-    sf::Text _accessibilityButtonText;
+    std::unique_ptr<render::IShape> _accessibilityButton;
+    std::unique_ptr<render::IText> _accessibilityButtonText;
 
-    // Back button
-    sf::RectangleShape _backButton;
-    sf::Text _backButtonText;
+    std::unique_ptr<render::IShape> _keyBindingsButton;
+    std::unique_ptr<render::IText> _keyBindingsButtonText;
 
-    sf::Vector2u _windowSize;
+    std::unique_ptr<render::IShape> _backButton;
+    std::unique_ptr<render::IText> _backButtonText;
 
-    // Background (scrolling)
-    sf::Texture _bgTexture;
-    sf::Sprite _bgSprite1;
-    sf::Sprite _bgSprite2;
+    render::Vector2u _windowSize;
+
+    std::unique_ptr<render::ITexture> _bgTexture;
+    std::unique_ptr<render::ISprite> _bgSprite1;
+    std::unique_ptr<render::ISprite> _bgSprite2;
     float _bgScrollSpeed;
 };
