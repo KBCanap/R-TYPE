@@ -5,10 +5,7 @@
 
 namespace network {
 
-/**
- * @class NetworkManager
- * @brief Client-side network manager with packet processing
- */
+// Client-side network manager with packet processing
 class NetworkManager : public ANetworkManager {
   public:
     NetworkManager();
@@ -22,9 +19,6 @@ class NetworkManager : public ANetworkManager {
     bool sendPlayerInput(const PlayerInputData &input) override;
     void update(float dt) override;
 
-    /**
-     * @brief Get the assigned player NET_ID (thread-safe)
-     */
     uint32_t getAssignedPlayerNetId() const;
 
     /**
@@ -47,12 +41,10 @@ class NetworkManager : public ANetworkManager {
 
     PacketProcessor packet_processor_;
 
-    // Player assignment state (thread-safe)
     mutable std::mutex player_mutex_;
     uint32_t assigned_player_net_id_ = 0;
     bool player_assigned_ = false;
 
-    // CLIENT_PING retry logic
     static constexpr int MAX_PING_RETRIES = 3;
     static constexpr float PING_RETRY_INTERVAL_S = 1.0f;
     static constexpr float PING_TOTAL_TIMEOUT_S = 10.0f;

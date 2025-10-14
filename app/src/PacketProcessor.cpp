@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** PacketProcessor
+*/
+
 #include "../include/network/PacketProcessor.hpp"
 #include <arpa/inet.h>
 #include <cstring>
@@ -139,7 +146,7 @@ PacketProcessor::parseEntityCreate(const std::vector<uint8_t> &data) {
     entity.entity_type = static_cast<EntityType>(data[offset]);
     offset += 1;
 
-    // HEALTH (4 bytes) - CHANGEMENT ICI pour compatibilité serveur
+    // HEALTH (4 bytes) - CHANGEMENT ICI pour compatibilitï¿½ serveur
     entity.health = (static_cast<uint32_t>(data[offset]) << 24) |
                     (static_cast<uint32_t>(data[offset + 1]) << 16) |
                     (static_cast<uint32_t>(data[offset + 2]) << 8) |

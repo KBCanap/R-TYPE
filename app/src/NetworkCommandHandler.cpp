@@ -239,7 +239,6 @@ entity NetworkCommandHandler::createEnemyEntity(
     registry_.add_component<component::velocity>(
         enemy, component::velocity(0.0f, 0.0f));
 
-    // Wave enemy - use r-typesheet9.gif
     registry_.add_component<component::drawable>(
         enemy, component::drawable("assets/sprites/r-typesheet9.gif",
                                    render::IntRect(), 1.0f, "enemy"));
@@ -257,12 +256,11 @@ entity NetworkCommandHandler::createEnemyEntity(
     registry_.add_component<component::ai_input>(
         enemy, component::ai_input(true, fire_interval, movement_pattern));
 
-    // Add animation frames for wave enemy (3 frames)
     auto &anim = registry_.add_component<component::animation>(
         enemy, component::animation(0.5f, true));
-    anim->frames.push_back(render::IntRect(0, 0, 50, 58));   // Frame 1
-    anim->frames.push_back(render::IntRect(51, 0, 57, 58));  // Frame 2
-    anim->frames.push_back(render::IntRect(116, 0, 49, 58)); // Frame 3
+    anim->frames.push_back(render::IntRect(0, 0, 50, 58));
+    anim->frames.push_back(render::IntRect(51, 0, 57, 58));
+    anim->frames.push_back(render::IntRect(116, 0, 49, 58));
 
     return enemy;
 }
@@ -281,7 +279,6 @@ entity NetworkCommandHandler::createBossEntity(
     registry_.add_component<component::velocity>(
         boss, component::velocity(0.0f, 100.0f));
 
-    // Boss - use r-typesheet17.gif
     registry_.add_component<component::drawable>(
         boss, component::drawable("assets/sprites/r-typesheet17.gif",
                                   render::IntRect(), 2.0f, "boss"));
@@ -292,17 +289,11 @@ entity NetworkCommandHandler::createBossEntity(
     registry_.add_component<component::health>(boss,
                                                component::health(cmd.health));
 
-    // No weapon component needed - server handles all shooting in multiplayer
-
-    // Boss AI input - no movement pattern (bounce is handled by
-    // position_system)
     auto boss_ai = registry_.add_component<component::ai_input>(
         boss, component::ai_input(
                   true, 0.5f, component::ai_movement_pattern::straight(0.0f)));
-    // Disable AI movement so it doesn't override the bounce behavior
     boss_ai->movement_pattern.base_speed = 0.0f;
 
-    // Boss animation: 8 frames
     auto &boss_anim = registry_.add_component<component::animation>(
         boss, component::animation(0.1f, true));
     for (int i = 0; i < 8; ++i) {

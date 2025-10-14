@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** components
+*/
+
 #pragma once
 #include "render/IRenderWindow.hpp"
 #include <SFML/Graphics.hpp>

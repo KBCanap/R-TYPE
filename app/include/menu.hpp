@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** menu
+*/
+
 #pragma once
 #include "../../ecs/include/render/IRenderWindow.hpp"
 #include "audio_manager.hpp"
@@ -15,17 +22,16 @@ class Menu {
     Menu(registry &reg, render::IRenderWindow &win, AudioManager &audioMgr,
          KeyBindings &keyBindings);
 
-    MenuResult run();      // Boucle du menu
-    void update(float dt); // Update background et ennemis
-    void render();         // Dessin de tout
+    MenuResult run();
+    void update(float dt);
+    void render();
 
   private:
-    void createButtons();        // Création boutons et textes
-    void createEnemies();        // Création ennemis
-    void resetEnemies();         // Reset positions ennemis
-    void updateButtonScale();    // Reposition et resize boutons/texte
-    void updateEnemyPositions(); // Met à jour les positions des ennemis lors du
-                                 // resize
+    void createButtons();
+    void createEnemies();
+    void resetEnemies();
+    void updateButtonScale();
+    void updateEnemyPositions();
 
   private:
     registry &_registry;

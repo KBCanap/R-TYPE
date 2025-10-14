@@ -191,6 +191,7 @@ Table of Contents
       ENEMY       = 0x02
       PROJECTILE  = 0x03
       ALLIED_PROJECTILE = 0x04
+      BOSS        = 0x05
 
    ENEMY_PROJECTILE refers to projectiles fired by enemies that can
    damage players. ALLIED_PROJECTILE refers to projectiles fired by

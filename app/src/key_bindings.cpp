@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** key_bindings
+*/
+
 #include "../include/key_bindings.hpp"
 
 std::string KeyBindings::getKeyName(render::Key key) {

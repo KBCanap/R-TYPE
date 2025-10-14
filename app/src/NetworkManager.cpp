@@ -1,5 +1,6 @@
 ﻿#include "../include/network/NetworkManager.hpp"
 #include "../include/network/ASIOSocket.hpp"
+#include <cstring>
 #include <iostream>
 
 namespace network {
@@ -36,7 +37,7 @@ std::vector<UDPPacket> NetworkManager::pollUDP() {
         if (packet.msg_type == UDPMessageType::PLAYER_ASSIGNMENT) {
             std::cout << "[NetworkManager] Handling PLAYER_ASSIGNMENT packet" << std::endl;
             handlePlayerAssignment(packet);
-            continue; // Ne pas ajouter à la queue
+            continue;
         }
 
         std::cout << "[NetworkManager] Adding packet to processor queue" << std::endl;
@@ -103,18 +104,13 @@ void NetworkManager::handlePlayerAssignment(const UDPPacket &packet) {
 }
 
 void NetworkManager::initializeUDPSocket() {
-    // Reset connection state
     resetConnectionState();
-
-    // Call parent to setup UDP socket
     ANetworkManager::initializeUDPSocket();
 
-    // Check if socket initialization failed
     if (getConnectionState() == ConnectionState::ERROR) {
         return;
     }
 
-    // Send initial CLIENT_PING
     auto current_time = static_cast<uint32_t>(
         std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now().time_since_epoch())
@@ -132,13 +128,11 @@ void NetworkManager::initializeUDPSocket() {
 }
 
 void NetworkManager::update(float dt) {
-    // Call parent update for TCP timeouts
     ANetworkManager::update(dt);
 
     auto state = getConnectionState();
     auto now = std::chrono::steady_clock::now();
 
-    // Handle CLIENT_PING retry logic
     if (state == ConnectionState::GAME_STARTING && udp_ping_sent_) {
         bool is_assigned;
         {
@@ -147,10 +141,9 @@ void NetworkManager::update(float dt) {
         }
 
         if (is_assigned) {
-            return; // Assignment received, nothing to do
+            return;
         }
 
-        // Check total timeout
         auto total_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
                                  now - ping_start_time_)
                                  .count();
@@ -163,7 +156,6 @@ void NetworkManager::update(float dt) {
             return;
         }
 
-        // Check retry interval
         auto retry_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
                                  now - last_ping_time_)
                                  .count();
@@ -212,7 +204,6 @@ void NetworkManager::sendPlayerFire() {
     sendUDP(packet);
 }
 
-// ✅ Votre méthode existante est correcte pour MOVE
 void NetworkManager::sendPlayerInput(uint8_t direction) {
     std::cout << "[NetworkManager] sendPlayerInput called with direction: 0x"
               << std::hex << static_cast<int>(direction) << std::dec << std::endl;

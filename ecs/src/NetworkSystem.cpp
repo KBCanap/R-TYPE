@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** NetworkSystem
+*/
+
 #include "../include/network/NetworkSystem.hpp"
 #include <iostream>
 

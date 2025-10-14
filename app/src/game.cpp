@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** game
+*/
+
 #include "../include/game.hpp"
 #include "../include/accessibility_menu.hpp"
 #include "../include/keybindings_menu.hpp"
@@ -24,7 +31,6 @@ Game::Game(registry &reg, render::IRenderWindow &win, AudioManager &audioMgr,
 
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-    // Register network components if in multiplayer mode
     if (_isMultiplayer) {
         _registry.register_component<component::network_entity>();
         _registry.register_component<component::network_state>();
@@ -38,8 +44,6 @@ Game::Game(registry &reg, render::IRenderWindow &win, AudioManager &audioMgr,
 
         systems::set_network_command_handler(_networkCommandHandler.get());
     }
-
-    // Create background
     _background = _registry.spawn_entity();
     auto &bg_component = _registry.add_component<component::background>(
         *_background, component::background(30.f));
@@ -50,13 +54,10 @@ Game::Game(registry &reg, render::IRenderWindow &win, AudioManager &audioMgr,
         bg_component->texture->loadFromImage(*fallback_image);
     }
 
-    // Load r-type font for score display
     _scoreFont = _window.createFont();
     if (!_scoreFont->loadFromFile("assets/r-type.otf")) {
     }
 
-    // In multiplayer, don't create local player yet - wait for server
-    // assignment
     if (!_isMultiplayer) {
         _player = _playerManager.createPlayer(_playerRelativeX,
                                               _playerRelativeY, _playerSpeed);
@@ -66,17 +67,13 @@ Game::Game(registry &reg, render::IRenderWindow &win, AudioManager &audioMgr,
 void Game::handleEvents(bool &running, float /*dt*/) {
     render::Event event;
     while (_window.pollEvent(event)) {
-        // Mettre à jour l'état des touches pour input_system
         systems::update_key_state(event);
-
-        // Handle window close
         if (event.type == render::EventType::Closed) {
             running = false;
             _shouldExit = true;
             return;
         }
 
-        // Handle window resize
         if (event.type == render::EventType::Resized) {
             _playerManager.updatePlayerPosition(_player, _playerRelativeX,
                                                 _playerRelativeY);
@@ -85,12 +82,9 @@ void Game::handleEvents(bool &running, float /*dt*/) {
             _victoryMenu.onWindowResize();
         }
 
-        // Handle game over menu
         if (_gameOver) {
             MenuAction action = _gameOverMenu.handleEvents(event);
             if (action == MenuAction::REPLAY) {
-                // In multiplayer, REPLAY means return to menu (exit game)
-                // In solo, REPLAY means restart the game
                 if (_isMultiplayer) {
                     running = false;
                     _shouldExit = true;
@@ -103,12 +97,9 @@ void Game::handleEvents(bool &running, float /*dt*/) {
             }
         }
 
-        // Handle victory menu
         if (_victory) {
             MenuAction action = _victoryMenu.handleEvents(event);
             if (action == MenuAction::REPLAY) {
-                // In multiplayer, REPLAY means return to menu (exit game)
-                // In solo, REPLAY means restart the game
                 if (_isMultiplayer) {
                     running = false;
                     _shouldExit = true;
@@ -121,16 +112,13 @@ void Game::handleEvents(bool &running, float /*dt*/) {
             }
         }
 
-        // Handle key presses
         if (event.type == render::EventType::KeyPressed) {
-            // Escape to exit
             if (event.key.code == render::Key::Escape) {
                 running = false;
                 _shouldExit = true;
                 return;
             }
 
-            // Handle weapon switching (solo mode only)
             if (!_gameOver && !_victory && !_isMultiplayer) {
                 if (event.key.code == render::Key::Num1) {
                     _playerManager.changePlayerWeaponToSingle(_player);
@@ -165,7 +153,6 @@ void Game::handleEvents(bool &running, float /*dt*/) {
 }
 
 void Game::update(float dt) {
-    // Use multiplayer logic if network manager is present
     if (_isMultiplayer && _networkManager) {
         updateMultiplayer(dt);
         return;
@@ -180,40 +167,32 @@ void Game::update(float dt) {
     auto &drawables = _registry.get_components<component::drawable>();
     auto &inputs = _registry.get_components<component::input>();
 
-    // Input system - always runs to capture input state
     systems::input_system(_registry, inputs, _window, &_keyBindings);
 
-    // AI input system for enemies - always runs
     auto &ai_inputs = _registry.get_components<component::ai_input>();
     systems::ai_input_system(_registry, ai_inputs, dt);
 
-    // Only allow player control if game is not over and not victory
     if (!_gameOver && !_victory) {
         systems::control_system(_registry, controllables, velocities, inputs,
                                 dt);
     }
 
-    // Weapon system - handle weapon firing and projectile creation
     if (!_gameOver && !_victory) {
         auto &weapons = _registry.get_components<component::weapon>();
         systems::weapon_system(_registry, weapons, positions, inputs, ai_inputs,
                                _gameTime);
     }
 
-    // These systems should continue running even during game over
     systems::position_system(_registry, positions, velocities, inputs, _window,
                              _gameTime, dt);
 
-    // Update projectile lifetimes and cleanup
     systems::projectile_system(_registry, projectiles, positions, _window, dt);
 
-    // Update player relative position and constrain to screen bounds
     if (_player && !_gameOver && !_victory) {
         auto &player_pos = positions[*_player];
         if (player_pos) {
             render::Vector2u window_size = _window.getSize();
 
-            // Constrain player to screen bounds
             player_pos->x = std::max(
                 0.f, std::min(player_pos->x,
                               static_cast<float>(window_size.x) - 40.f));
@@ -221,7 +200,6 @@ void Game::update(float dt) {
                 0.f, std::min(player_pos->y,
                               static_cast<float>(window_size.y) - 40.f));
 
-            // Update relative position
             _playerRelativeX =
                 player_pos->x / static_cast<float>(window_size.x);
             _playerRelativeY =
@@ -235,11 +213,9 @@ void Game::update(float dt) {
                                   hitboxes);
     }
 
-    // Health system - process damage and handle entity death
     auto &healths = _registry.get_components<component::health>();
     systems::health_system(_registry, healths, dt);
 
-    // Check for victory (boss defeated)
     if (!_gameOver && !_victory && _boss) {
         auto &boss_pos = positions[*_boss];
         auto &boss_drawable = drawables[*_boss];
@@ -255,14 +231,12 @@ void Game::update(float dt) {
         systems::score_system(_registry, scores, dt);
     }
 
-    // Audio system
     auto &sound_effects = _registry.get_components<component::sound_effect>();
     auto &musics = _registry.get_components<component::music>();
     auto &triggers = _registry.get_components<component::audio_trigger>();
     systems::audio_system(_registry, sound_effects, musics, triggers,
                           _audioManager.getAudioSystem());
 
-    // Check if player is still alive
     if (!_gameOver && !isPlayerAlive()) {
         _gameOver = true;
         _gameOverMenu.setVisible(true);
@@ -271,14 +245,11 @@ void Game::update(float dt) {
         _audioManager.playMusic(MusicType::GAME_OVER, false);
     }
 
-    // Check score and spawn boss using BossManager
     if (!_gameOver && !_victory &&
         _bossManager.shouldSpawnBoss(_player, _boss)) {
         _boss = _bossManager.spawnBoss();
     }
 
-    // Spawn enemies - only if game is not over, not victory AND boss hasn't
-    // spawned yet
     if (!_gameOver && !_victory && !_boss) {
         _enemySpawnTimer += dt;
         if (_enemySpawnTimer >= _enemySpawnInterval) {
@@ -288,7 +259,6 @@ void Game::update(float dt) {
         }
     }
 
-    // Remove enemies that are off-screen
     _enemyManager.cleanupOffscreenEnemies(_enemies);
 }
 
@@ -307,11 +277,6 @@ void Game::render(float dt) {
         if (my_entity) {
             renderPlayerInfo(*my_entity);
         }
-
-        // ❌ SUPPRIMER - Le score n'est pas dans le protocole
-        // uint32_t game_score = _networkCommandHandler->getGameScore();
-        // renderScore(game_score);
-
     } else if (_player) {
         // Solo mode - affichage normal
         renderPlayerInfo(*_player);
@@ -323,7 +288,6 @@ void Game::render(float dt) {
     }
 
 #ifdef DEBUG_MODE
-    // Draw debug hitboxes
     {
         auto &hitboxes = _registry.get_components<component::hitbox>();
 
@@ -334,10 +298,8 @@ void Game::render(float dt) {
                 hitbox_outline->setPosition(
                     positions[i]->x + hitboxes[i]->offset_x,
                     positions[i]->y + hitboxes[i]->offset_y);
-                hitbox_outline->setFillColor(
-                    render::Color(0, 0, 0, 0)); // Transparent
+                hitbox_outline->setFillColor(render::Color(0, 0, 0, 0));
 
-                // Different colors for different entity types
                 if (drawables[i] && drawables[i]->tag == "player") {
                     hitbox_outline->setOutlineColor(render::Color::Green());
                 } else if (drawables[i] &&
@@ -431,7 +393,6 @@ void Game::resetGame() {
     _enemySpawnTimer = 0.f;
     _audioManager.playMusic(MusicType::IN_GAME, true);
 
-    // Kill all existing entities
     if (_player) {
         _registry.kill_entity(*_player);
         _player.reset();
@@ -449,7 +410,6 @@ void Game::resetGame() {
     }
     _enemies.clear();
 
-    // Kill all projectiles and other entities by checking all components
     auto &positions = _registry.get_components<component::position>();
     for (size_t i = 0; i < positions.size(); ++i) {
         if (positions[i]) {
@@ -457,7 +417,6 @@ void Game::resetGame() {
         }
     }
 
-    // Recreate background
     _background = _registry.spawn_entity();
     auto &bg_component = _registry.add_component<component::background>(
         *_background, component::background(30.f));
@@ -468,11 +427,10 @@ void Game::resetGame() {
         bg_component->texture->loadFromImage(*fallback_image);
     }
 
-    // Recreate player using PlayerManager
     _player = _playerManager.createPlayer(_playerRelativeX, _playerRelativeY,
                                           _playerSpeed);
 }
-// Multiplayer-specific update logic
+
 void Game::updateMultiplayer(float dt) {
     _gameTime += dt;
 
@@ -493,13 +451,11 @@ void Game::updateMultiplayer(float dt) {
     auto &positions = _registry.get_components<component::position>();
     auto &inputs = _registry.get_components<component::input>();
 
-    // Input system - capture local player input
     systems::input_system(_registry, inputs, _window, &_keyBindings);
 
     // Send player input to server (garder votre logique existante)
     sendPlayerInput(dt);
 
-    // Update background scrolling
     auto &backgrounds = _registry.get_components<component::background>();
     for (size_t i = 0; i < backgrounds.size() && i < positions.size(); ++i) {
         if (backgrounds[i] && positions[i]) {
