@@ -98,13 +98,15 @@ void NetworkManager::handlePlayerAssignment(const UDPPacket &packet) {
 
     uint32_t net_id = PacketProcessor::parsePlayerAssignment(packet.payload);
 
-    std::cout << "[NetworkManager] PLAYER_ASSIGNMENT received - NET_ID: " << net_id << std::endl;
+    std::cout << "[NetworkManager] PLAYER_ASSIGNMENT received - NET_ID: "
+              << net_id << std::endl;
 
     {
         std::lock_guard<std::mutex> lock(player_mutex_);
         assigned_player_net_id_ = net_id;
         player_assigned_ = true;
-        std::cout << "[NetworkManager] Player assignment stored successfully" << std::endl;
+        std::cout << "[NetworkManager] Player assignment stored successfully"
+                  << std::endl;
     }
 
     updateState(ConnectionState::IN_GAME);

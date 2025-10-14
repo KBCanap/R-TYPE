@@ -158,8 +158,9 @@ void ConnectionMenu::render() {
 }
 
 ConnectionMenuResult ConnectionMenu::run(ConnectionInfo &outConnectionInfo) {
-    std::cout << "[ConnectionMenu] Using server: " << outConnectionInfo.serverHost
-              << ":" << outConnectionInfo.serverPort << std::endl;
+    std::cout << "[ConnectionMenu] Using server: "
+              << outConnectionInfo.serverHost << ":"
+              << outConnectionInfo.serverPort << std::endl;
 
     int selectedButton = 0; // 0=solo, 1=multiplayer, 2=back
 
@@ -207,13 +208,14 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo &outConnectionInfo) {
 
                     if (mouseX >= centerX - 200 && mouseX <= centerX + 200 &&
                         mouseY >= centerY + 20 && mouseY <= centerY + 90) {
-                        
+
                         // ✅ CORRECTION : NE PAS modifier outConnectionInfo
                         // Les valeurs sont déjà correctes depuis main.cpp
-                        std::cout << "[ConnectionMenu] Multiplayer selected with: " 
-                                  << outConnectionInfo.serverHost << ":" 
-                                  << outConnectionInfo.serverPort << std::endl;
-                        
+                        std::cout
+                            << "[ConnectionMenu] Multiplayer selected with: "
+                            << outConnectionInfo.serverHost << ":"
+                            << outConnectionInfo.serverPort << std::endl;
+
                         return ConnectionMenuResult::Multiplayer;
                     }
 
@@ -259,9 +261,10 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo &outConnectionInfo) {
                 }
                 if (event.key.code == render::Key::Num2) {
                     // ✅ CORRECTION : NE PAS modifier outConnectionInfo
-                    std::cout << "[ConnectionMenu] Multiplayer selected (key) with: " 
-                              << outConnectionInfo.serverHost << ":" 
-                              << outConnectionInfo.serverPort << std::endl;
+                    std::cout
+                        << "[ConnectionMenu] Multiplayer selected (key) with: "
+                        << outConnectionInfo.serverHost << ":"
+                        << outConnectionInfo.serverPort << std::endl;
                     return ConnectionMenuResult::Multiplayer;
                 }
                 if (event.key.code == render::Key::Num3) {
@@ -273,8 +276,9 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo &outConnectionInfo) {
                         return ConnectionMenuResult::Solo;
                     } else if (selectedButton == 1) {
                         // ✅ CORRECTION : NE PAS modifier outConnectionInfo
-                        std::cout << "[ConnectionMenu] Multiplayer selected (enter) with: " 
-                                  << outConnectionInfo.serverHost << ":" 
+                        std::cout << "[ConnectionMenu] Multiplayer selected "
+                                     "(enter) with: "
+                                  << outConnectionInfo.serverHost << ":"
                                   << outConnectionInfo.serverPort << std::endl;
                         return ConnectionMenuResult::Multiplayer;
                     } else {

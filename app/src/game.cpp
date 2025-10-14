@@ -297,8 +297,7 @@ void Game::render(float dt) {
                 hitbox_outline->setPosition(
                     positions[i]->x + hitboxes[i]->offset_x,
                     positions[i]->y + hitboxes[i]->offset_y);
-                hitbox_outline->setFillColor(
-                    render::Color(0, 0, 0, 0));
+                hitbox_outline->setFillColor(render::Color(0, 0, 0, 0));
 
                 if (drawables[i] && drawables[i]->tag == "player") {
                     hitbox_outline->setOutlineColor(render::Color::Green());
@@ -501,17 +500,21 @@ void Game::sendPlayerInput(float dt) {
     if (_inputSendTimer >= _inputSendInterval) {
         _inputSendTimer = 0.0f;
 
-        if (!_networkManager) return;
+        if (!_networkManager)
+            return;
 
         uint32_t my_net_id = _networkManager->getAssignedPlayerNetId();
-        std::cout << "[Game] My NET_ID from NetworkManager: " << my_net_id << std::endl;
+        std::cout << "[Game] My NET_ID from NetworkManager: " << my_net_id
+                  << std::endl;
 
-        if (my_net_id == 0 || !_networkCommandHandler) return;
+        if (my_net_id == 0 || !_networkCommandHandler)
+            return;
 
         auto my_entity = _networkCommandHandler->findEntityByNetId(my_net_id);
 
         if (!my_entity) {
-            std::cout << "[Game] Entity not found for NET_ID: " << my_net_id << std::endl;
+            std::cout << "[Game] Entity not found for NET_ID: " << my_net_id
+                      << std::endl;
             return;
         }
 
@@ -523,10 +526,14 @@ void Game::sendPlayerInput(float dt) {
         auto &playerInput = inputs[*my_entity];
 
         uint8_t direction = 0;
-        if (playerInput->up) direction |= 0x01;
-        if (playerInput->down) direction |= 0x02;
-        if (playerInput->left) direction |= 0x04;
-        if (playerInput->right) direction |= 0x08;
+        if (playerInput->up)
+            direction |= 0x01;
+        if (playerInput->down)
+            direction |= 0x02;
+        if (playerInput->left)
+            direction |= 0x04;
+        if (playerInput->right)
+            direction |= 0x08;
 
         if (direction != 0) {
             _networkManager->sendPlayerInput(direction);

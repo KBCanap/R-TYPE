@@ -503,8 +503,8 @@ void GameLogic::movementSystem(registry &reg, sparse_array<Position> &positions,
             Position &pos = pos_opt.value();
             Velocity &vel = vel_opt.value();
 
-            pos.x += (vel.vx / 800.0f) * dt;
-            pos.y += (vel.vy / 600.0f) * dt;
+            pos.x += 300;
+            pos.y += 150;
 
             pos.x = std::max(0.0f, std::min(pos.x, 1.0f));
             pos.y = std::max(0.0f, std::min(pos.y, 1.0f));
