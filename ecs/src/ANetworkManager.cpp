@@ -1,4 +1,11 @@
-﻿#include "../include/network/ANetworkManager.hpp"
+﻿/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** ANetworkManager
+*/
+
+#include "../include/network/ANetworkManager.hpp"
 #include <iostream>
 
 namespace network {
@@ -247,24 +254,18 @@ bool ANetworkManager::isConnected() const {
 
 bool ANetworkManager::sendTCP(MessageType msg_type,
                               const std::vector<uint8_t> &data) {
-    return false; // Implemented in NetworkManager
+    return false;
 }
 
-bool ANetworkManager::sendUDP(const UDPPacket &packet) {
-    return false; // Implemented in NetworkManager
-}
+bool ANetworkManager::sendUDP(const UDPPacket &packet) { return false; }
 
 bool ANetworkManager::sendPlayerInput(const PlayerInputData &input) {
-    return false; // Implemented in NetworkManager
+    return false;
 }
 
-std::vector<TCPMessage> ANetworkManager::pollTCP() {
-    return {}; // Implemented in NetworkManager
-}
+std::vector<TCPMessage> ANetworkManager::pollTCP() { return {}; }
 
-std::vector<UDPPacket> ANetworkManager::pollUDP() {
-    return {}; // Implemented in NetworkManager
-}
+std::vector<UDPPacket> ANetworkManager::pollUDP() { return {}; }
 
 bool ANetworkManager::hasMessages() const {
     std::lock_guard<std::mutex> lock(tcp_queue_mutex_);

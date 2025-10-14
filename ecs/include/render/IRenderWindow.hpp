@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** IRenderWindow
+*/
+
 #pragma once
 #include <cstdint>
 #include <memory>

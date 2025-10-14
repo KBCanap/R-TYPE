@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** tick_system
+*/
+
 #include "../include/tick_system.hpp"
 #include <algorithm>
 #include <cmath>

@@ -1,4 +1,11 @@
-﻿#include "../include/audio_manager.hpp"
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** main
+*/
+
+#include "../include/audio_manager.hpp"
 #include "../include/connection_menu.hpp"
 #include "../include/game.hpp"
 #include "../include/key_bindings.hpp"
@@ -140,7 +147,6 @@ int main(int argc, char **argv) {
     AudioManager audioManager(*audioSystem);
     KeyBindings keyBindings;
 
-    // Enregistre les composants
     reg.register_component<component::position>();
     reg.register_component<component::velocity>();
     reg.register_component<component::drawable>();

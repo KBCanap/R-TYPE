@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** SFMLRenderWindow
+*/
+
 #pragma once
 #include "../../../../ecs/include/render/IRenderWindow.hpp"
 #include <SFML/Graphics.hpp>

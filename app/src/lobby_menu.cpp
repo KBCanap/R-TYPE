@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** lobby_menu
+*/
+
 #include "../include/lobby_menu.hpp"
 #include "../include/settings.hpp"
 #include <iostream>
@@ -10,7 +17,6 @@ LobbyMenu::LobbyMenu(render::IRenderWindow &win, AudioManager &audioMgr,
     _windowSize = _baseWindowSize;
     _myPlayerId = _networkManager.getPlayerID();
 
-    // Load background
     _bgTexture = _window.createTexture();
     if (!_bgTexture->loadFromFile("assets/background.jpg")) {
         std::cerr << "Failed to load background.jpg" << std::endl;
@@ -21,7 +27,6 @@ LobbyMenu::LobbyMenu(render::IRenderWindow &win, AudioManager &audioMgr,
     _bgSprite1->setTexture(*_bgTexture);
     _bgSprite2->setTexture(*_bgTexture);
 
-    // Scale background
     auto texSize = _bgTexture->getSize();
     float scaleX = static_cast<float>(_windowSize.x) / texSize.x;
     float scaleY = static_cast<float>(_windowSize.y) / texSize.y;
@@ -29,7 +34,6 @@ LobbyMenu::LobbyMenu(render::IRenderWindow &win, AudioManager &audioMgr,
     _bgSprite2->setScale(scaleX, scaleY);
     _bgSprite2->setPosition(static_cast<float>(_windowSize.x), 0.f);
 
-    // Load font
     _font = _window.createFont();
     if (!_font->loadFromFile("assets/r-type.otf")) {
         std::cerr << "Failed to load font r-type.otf" << std::endl;
@@ -42,7 +46,6 @@ LobbyMenu::LobbyMenu(render::IRenderWindow &win, AudioManager &audioMgr,
 void LobbyMenu::createUI() {
     Settings &settings = Settings::getInstance();
 
-    // Title
     _titleText = _window.createText();
     _titleText->setFont(*_font);
     _titleText->setString("WAITING FOR PLAYERS");
@@ -50,7 +53,6 @@ void LobbyMenu::createUI() {
     _titleText->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
 
-    // Player ID text
     _playerIdText = _window.createText();
     _playerIdText->setFont(*_font);
     _playerIdText->setString("YOU ARE PLAYER " + std::to_string(_myPlayerId));
@@ -58,7 +60,6 @@ void LobbyMenu::createUI() {
     _playerIdText->setFillColor(
         settings.applyColorblindFilter(render::Color(150, 200, 255)));
 
-    // Ready button
     _readyButton = _window.createRectangleShape(render::Vector2f(350, 70));
     _readyButton->setFillColor(render::Color(70, 180, 70));
     _readyButton->setOutlineColor(
@@ -72,7 +73,6 @@ void LobbyMenu::createUI() {
     _readyButtonText->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
 
-    // Disconnect button
     _disconnectButton = _window.createRectangleShape(render::Vector2f(350, 70));
     _disconnectButton->setFillColor(render::Color(180, 70, 70));
     _disconnectButton->setOutlineColor(
@@ -94,40 +94,33 @@ void LobbyMenu::updateButtonScale() {
     float centerX = _windowSize.x / 2.0f;
     float centerY = _windowSize.y / 2.0f;
 
-    // Title
     render::FloatRect titleBounds = _titleText->getLocalBounds();
     _titleText->setPosition(centerX - titleBounds.width / 2, centerY - 200);
 
-    // Player ID
     render::FloatRect playerIdBounds = _playerIdText->getLocalBounds();
     _playerIdText->setPosition(centerX - playerIdBounds.width / 2,
                                centerY - 120);
 
-    // Ready button
     _readyButton->setPosition(centerX - 175, centerY + 20);
     render::FloatRect readyBtnBounds = _readyButtonText->getLocalBounds();
     _readyButtonText->setPosition(centerX - readyBtnBounds.width / 2,
                                   centerY + 40);
 
-    // Disconnect button
     _disconnectButton->setPosition(centerX - 175, centerY + 110);
     render::FloatRect disconnectBtnBounds =
         _disconnectButtonText->getLocalBounds();
     _disconnectButtonText->setPosition(centerX - disconnectBtnBounds.width / 2,
                                        centerY + 130);
 
-    // Update background scale
     float scaleX = static_cast<float>(_windowSize.x) / _bgTexture->getSize().x;
     float scaleY = static_cast<float>(_windowSize.y) / _bgTexture->getSize().y;
     _bgSprite1->setScale(scaleX, scaleY);
     _bgSprite2->setScale(scaleX, scaleY);
 
-    // Adjust scroll speed proportionally
     _bgScrollSpeed = _windowSize.x * 0.125f;
 }
 
 void LobbyMenu::handleNetworkMessages() {
-    // Poll TCP messages
     auto tcpMessages = _networkManager.pollTCP();
     for (const auto &msg : tcpMessages) {
         if (msg.msg_type == network::MessageType::TCP_GAME_START) {
@@ -140,7 +133,6 @@ void LobbyMenu::handleNetworkMessages() {
         }
     }
 
-    // Check connection state
     auto state = _networkManager.getConnectionState();
     if (state == network::ConnectionState::ERROR ||
         state == network::ConnectionState::DISCONNECTED) {
@@ -149,9 +141,6 @@ void LobbyMenu::handleNetworkMessages() {
 }
 
 void LobbyMenu::sendReadyMessage() {
-    // Send TCP_READY according to RFC:
-    // MSG_TYPE = 0x04, DATA_LENGTH = 0 (no payload)
-    // Format: 04 00 00 00
     std::cout << "[Lobby] Sending TCP_READY (0x04 0x00 0x00 0x00)..."
               << std::endl;
 
@@ -170,7 +159,6 @@ void LobbyMenu::sendReadyMessage() {
 void LobbyMenu::render() {
     _window.clear();
 
-    // Draw scrolling background
     _window.draw(*_bgSprite1);
     _window.draw(*_bgSprite2);
 
@@ -190,16 +178,13 @@ LobbyResult LobbyMenu::run() {
               << static_cast<int>(_myPlayerId) << std::endl;
 
     while (_window.isOpen()) {
-        // Calculate delta time
         auto currentTime = std::chrono::steady_clock::now();
         float dt =
             std::chrono::duration<float>(currentTime - _lastTime).count();
         _lastTime = currentTime;
 
-        // Handle network messages
         handleNetworkMessages();
 
-        // Check if game is starting
         if (_waitingForGameStart &&
             _networkManager.getConnectionState() ==
                 network::ConnectionState::GAME_STARTING) {
@@ -207,7 +192,6 @@ LobbyResult LobbyMenu::run() {
             return LobbyResult::StartGame;
         }
 
-        // Background scroll
         auto bg1Pos = _bgSprite1->getPosition();
         auto bg2Pos = _bgSprite2->getPosition();
         _bgSprite1->setPosition(bg1Pos.x - _bgScrollSpeed * dt, bg1Pos.y);
@@ -220,7 +204,6 @@ LobbyResult LobbyMenu::run() {
         if (bg2Pos.x + _windowSize.x < 0)
             _bgSprite2->setPosition(bg1Pos.x + _windowSize.x, 0.f);
 
-        // Handle events
         render::Event event;
         while (_window.pollEvent(event)) {
             if (event.type == render::EventType::Closed) {
@@ -232,7 +215,6 @@ LobbyResult LobbyMenu::run() {
                 updateButtonScale();
             }
 
-            // Mouse click handling
             if (event.type == render::EventType::MouseButtonPressed) {
                 if (event.mouseButton.button == render::Mouse::Left) {
                     float mouseX = static_cast<float>(event.mouseButton.x);
@@ -241,14 +223,12 @@ LobbyResult LobbyMenu::run() {
                     float centerX = _windowSize.x / 2.0f;
                     float centerY = _windowSize.y / 2.0f;
 
-                    // Check ready button (centerY + 20, size 350x70)
                     if (!_isReady && mouseX >= centerX - 175 &&
                         mouseX <= centerX + 175 && mouseY >= centerY + 20 &&
                         mouseY <= centerY + 90) {
                         sendReadyMessage();
                     }
 
-                    // Check disconnect button (centerY + 110, size 350x70)
                     if (mouseX >= centerX - 175 && mouseX <= centerX + 175 &&
                         mouseY >= centerY + 110 && mouseY <= centerY + 180) {
                         _networkManager.disconnect();
@@ -257,14 +237,12 @@ LobbyResult LobbyMenu::run() {
                 }
             }
 
-            // Keyboard handling
             if (event.type == render::EventType::KeyPressed) {
                 if (event.key.code == render::Key::Escape) {
                     _networkManager.disconnect();
                     return LobbyResult::Disconnect;
                 }
 
-                // Space to ready up
                 if (event.key.code == render::Key::Space && !_isReady) {
                     sendReadyMessage();
                 }

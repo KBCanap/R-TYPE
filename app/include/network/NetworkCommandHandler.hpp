@@ -13,20 +13,9 @@
 #include <optional>
 #include <unordered_map>
 
-/**
- * @class NetworkCommandHandler
- * @brief Handles network commands and manages entity creation/updates
- */
+// Handles network commands and manages entity creation/updates
 class NetworkCommandHandler : public network::INetworkCommandHandler {
   public:
-    /**
-     * @brief Construct command handler
-     * @param registry Game registry
-     * @param window Render window
-     * @param player_mgr Player manager
-     * @param enemy_mgr Enemy manager
-     * @param boss_mgr Boss manager
-     */
     NetworkCommandHandler(registry &registry, render::IRenderWindow &window,
                           PlayerManager &player_mgr, EnemyManager &enemy_mgr,
                           BossManager &boss_mgr);
@@ -43,11 +32,6 @@ class NetworkCommandHandler : public network::INetworkCommandHandler {
     void onRawTCPMessage(const network::TCPMessage &msg) override;
     void onRawUDPPacket(const network::UDPPacket &packet) override;
 
-    /**
-     * @brief Find local entity by network ID
-     * @param net_id Network ID
-     * @return Optional entity
-     */
     std::optional<entity> findEntityByNetId(uint32_t net_id) const;
 
     /**
@@ -59,18 +43,7 @@ class NetworkCommandHandler : public network::INetworkCommandHandler {
     }
 
   private:
-    /**
-     * @brief Create player entity from command
-     * @param cmd Create entity command
-     * @return Created entity
-     */
     entity createPlayerEntity(const network::CreateEntityCommand &cmd);
-
-    /**
-     * @brief Create enemy entity from command
-     * @param cmd Create entity command
-     * @return Created entity
-     */
     entity createEnemyEntity(const network::CreateEntityCommand &cmd);
 
     /**
@@ -79,12 +52,6 @@ class NetworkCommandHandler : public network::INetworkCommandHandler {
      * @return Created entity
      */
     entity createBossEntity(const network::CreateEntityCommand &cmd);
-
-    /**
-     * @brief Create projectile entity from command
-     * @param cmd Create entity command
-     * @return Created entity
-     */
     entity createProjectileEntity(const network::CreateEntityCommand &cmd);
 
     registry &registry_;

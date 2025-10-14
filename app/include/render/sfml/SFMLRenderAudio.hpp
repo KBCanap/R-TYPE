@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** SFMLRenderAudio
+*/
+
 #pragma once
 #include "../../../../ecs/include/render/IRenderAudio.hpp"
 #include <SFML/Audio.hpp>

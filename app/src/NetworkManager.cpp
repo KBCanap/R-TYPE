@@ -1,5 +1,6 @@
 ﻿#include "../include/network/NetworkManager.hpp"
 #include "../include/network/ASIOSocket.hpp"
+#include <cstring>
 #include <iostream>
 
 namespace network {
@@ -22,27 +23,33 @@ std::vector<TCPMessage> NetworkManager::pollTCP() {
 std::vector<UDPPacket> NetworkManager::pollUDP() {
     auto raw_packets = pollRawUDP();
 
-    std::cout << "[NetworkManager] Received " << raw_packets.size() << " raw UDP packets" << std::endl;
+    std::cout << "[NetworkManager] Received " << raw_packets.size()
+              << " raw UDP packets" << std::endl;
 
     for (const auto &raw_packet : raw_packets) {
-        std::cout << "[NetworkManager] Raw packet size: " << raw_packet.data.size() << " bytes" << std::endl;
+        std::cout << "[NetworkManager] Raw packet size: "
+                  << raw_packet.data.size() << " bytes" << std::endl;
 
         UDPPacket packet = PacketProcessor::parseUDPPacket(raw_packet.data);
 
-        std::cout << "[NetworkManager] Parsed packet type: " << static_cast<int>(packet.msg_type)
+        std::cout << "[NetworkManager] Parsed packet type: "
+                  << static_cast<int>(packet.msg_type)
                   << " payload size: " << packet.payload.size() << std::endl;
 
         if (packet.msg_type == UDPMessageType::PLAYER_ASSIGNMENT) {
-            std::cout << "[NetworkManager] Handling PLAYER_ASSIGNMENT packet" << std::endl;
+            std::cout << "[NetworkManager] Handling PLAYER_ASSIGNMENT packet"
+                      << std::endl;
             handlePlayerAssignment(packet);
         }
 
-        std::cout << "[NetworkManager] Adding packet to processor queue" << std::endl;
+        std::cout << "[NetworkManager] Adding packet to processor queue"
+                  << std::endl;
         packet_processor_.addPacket(packet);
     }
 
     auto processed_packets = packet_processor_.getProcessedPackets();
-    std::cout << "[NetworkManager] Returning " << processed_packets.size() << " processed packets" << std::endl;
+    std::cout << "[NetworkManager] Returning " << processed_packets.size()
+              << " processed packets" << std::endl;
 
     return processed_packets;
 }
@@ -104,18 +111,13 @@ void NetworkManager::handlePlayerAssignment(const UDPPacket &packet) {
 }
 
 void NetworkManager::initializeUDPSocket() {
-    // Reset connection state
     resetConnectionState();
-
-    // Call parent to setup UDP socket
     ANetworkManager::initializeUDPSocket();
 
-    // Check if socket initialization failed
     if (getConnectionState() == ConnectionState::ERROR) {
         return;
     }
 
-    // Send initial CLIENT_PING
     auto current_time = static_cast<uint32_t>(
         std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now().time_since_epoch())
@@ -133,13 +135,11 @@ void NetworkManager::initializeUDPSocket() {
 }
 
 void NetworkManager::update(float dt) {
-    // Call parent update for TCP timeouts
     ANetworkManager::update(dt);
 
     auto state = getConnectionState();
     auto now = std::chrono::steady_clock::now();
 
-    // Handle CLIENT_PING retry logic
     if (state == ConnectionState::GAME_STARTING && udp_ping_sent_) {
         bool is_assigned;
         {
@@ -148,10 +148,9 @@ void NetworkManager::update(float dt) {
         }
 
         if (is_assigned) {
-            return; // Assignment received, nothing to do
+            return;
         }
 
-        // Check total timeout
         auto total_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
                                  now - ping_start_time_)
                                  .count();
@@ -164,7 +163,6 @@ void NetworkManager::update(float dt) {
             return;
         }
 
-        // Check retry interval
         auto retry_elapsed = std::chrono::duration_cast<std::chrono::seconds>(
                                  now - last_ping_time_)
                                  .count();
@@ -213,10 +211,10 @@ void NetworkManager::sendPlayerFire() {
     sendUDP(packet);
 }
 
-// ✅ Votre méthode existante est correcte pour MOVE
 void NetworkManager::sendPlayerInput(uint8_t direction) {
     std::cout << "[NetworkManager] sendPlayerInput called with direction: 0x"
-              << std::hex << static_cast<int>(direction) << std::dec << std::endl;
+              << std::hex << static_cast<int>(direction) << std::dec
+              << std::endl;
 
     UDPPacket packet;
     packet.msg_type = UDPMessageType::PLAYER_INPUT;
@@ -224,12 +222,14 @@ void NetworkManager::sendPlayerInput(uint8_t direction) {
     packet.payload = {0x01, direction};
     packet.data_length = 2;
 
-    std::cout << "[NetworkManager] Created packet - Type: " << static_cast<int>(packet.msg_type)
+    std::cout << "[NetworkManager] Created packet - Type: "
+              << static_cast<int>(packet.msg_type)
               << ", Sequence: " << packet.sequence_num
               << ", Payload size: " << packet.payload.size() << std::endl;
 
     bool result = sendUDP(packet);
-    std::cout << "[NetworkManager] sendUDP result: " << (result ? "SUCCESS" : "FAILED") << std::endl;
+    std::cout << "[NetworkManager] sendUDP result: "
+              << (result ? "SUCCESS" : "FAILED") << std::endl;
 }
 
 } // namespace network

@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** connection_menu
+*/
+
 #pragma once
 #include "../../ecs/include/render/IRenderWindow.hpp"
 #include "audio_manager.hpp"
@@ -20,11 +27,6 @@ class ConnectionMenu {
   public:
     ConnectionMenu(render::IRenderWindow &win, AudioManager &audioMgr);
 
-    /**
-     * @brief Run the connection menu
-     * @param outConnectionInfo Output parameter for server connection info
-     * @return ConnectionMenuResult indicating user choice
-     */
     ConnectionMenuResult run(ConnectionInfo &outConnectionInfo);
 
   private:
@@ -52,7 +54,6 @@ class ConnectionMenu {
     std::unique_ptr<render::IShape> _backButton;
     std::unique_ptr<render::IText> _backButtonText;
 
-    // Server settings (hardcoded)
     std::string _serverHost;
     std::string _serverPort;
 

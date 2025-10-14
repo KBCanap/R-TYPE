@@ -14,7 +14,6 @@
 #include <optional>
 #include <vector>
 
-// Forward declaration
 namespace network {
 class NetworkManager;
 }

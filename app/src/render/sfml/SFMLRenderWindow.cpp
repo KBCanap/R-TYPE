@@ -4,13 +4,11 @@
 namespace render {
 namespace sfml {
 
-// SFMLImage implementation
 void SFMLImage::create(unsigned int width, unsigned int height,
                        const Color &color) {
     _image.create(width, height, sf::Color(color.r, color.g, color.b, color.a));
 }
 
-// SFMLTexture implementation
 bool SFMLTexture::loadFromFile(const std::string &filename) {
     return _texture.loadFromFile(filename);
 }
@@ -27,7 +25,6 @@ Vector2u SFMLTexture::getSize() const {
 
 void SFMLTexture::setSmooth(bool smooth) { _texture.setSmooth(smooth); }
 
-// SFMLShader implementation
 bool SFMLShader::loadFromMemory(const std::string &shader, ShaderType type) {
     sf::Shader::Type sfmlType = (type == ShaderType::Fragment)
                                     ? sf::Shader::Fragment
@@ -43,7 +40,6 @@ void SFMLShader::setUniform(const std::string &name, int value) {
     _shader.setUniform(name, value);
 }
 
-// SFMLSprite implementation
 void SFMLSprite::setTexture(ITexture &texture) {
     auto &sfmlTexture = dynamic_cast<SFMLTexture &>(texture);
     _sprite.setTexture(sfmlTexture.getNativeTexture());
@@ -93,7 +89,6 @@ FloatRect SFMLSprite::getGlobalBounds() const {
     return FloatRect(bounds.left, bounds.top, bounds.width, bounds.height);
 }
 
-// SFMLShape implementation
 void SFMLShape::setPosition(float x, float y) { _shape->setPosition(x, y); }
 
 void SFMLShape::setPosition(const Vector2f &position) {
@@ -117,12 +112,10 @@ FloatRect SFMLShape::getGlobalBounds() const {
     return FloatRect(bounds.left, bounds.top, bounds.width, bounds.height);
 }
 
-// SFMLFont implementation
 bool SFMLFont::loadFromFile(const std::string &filename) {
     return _font.loadFromFile(filename);
 }
 
-// SFMLText implementation
 void SFMLText::setFont(IFont &font) {
     auto &sfmlFont = dynamic_cast<SFMLFont &>(font);
     _text.setFont(sfmlFont.getNativeFont());
@@ -164,7 +157,6 @@ FloatRect SFMLText::getLocalBounds() const {
     return FloatRect(bounds.left, bounds.top, bounds.width, bounds.height);
 }
 
-// SFMLRenderWindow implementation
 SFMLRenderWindow::SFMLRenderWindow(unsigned int width, unsigned int height,
                                    const std::string &title)
     : _window(sf::VideoMode(width, height), title) {}
@@ -186,7 +178,6 @@ Vector2u SFMLRenderWindow::getSize() const {
 
 void SFMLRenderWindow::setSize(const Vector2u &size) {
     _window.setSize(sf::Vector2u(size.x, size.y));
-    // Reset view to match new window size
     sf::View view(sf::FloatRect(0, 0, static_cast<float>(size.x),
                                 static_cast<float>(size.y)));
     _window.setView(view);
@@ -210,7 +201,6 @@ bool SFMLRenderWindow::pollEvent(Event &event) {
         return false;
     }
 
-    // Convert SFML event to generic event
     switch (sfEvent.type) {
     case sf::Event::Closed:
         event.type = EventType::Closed;
@@ -330,7 +320,6 @@ std::unique_ptr<IImage> SFMLRenderWindow::createImage() {
     return std::make_unique<SFMLImage>();
 }
 
-// SFMLView implementation
 void SFMLView::reset(const FloatRect &rectangle) {
     _view.reset(sf::FloatRect(rectangle.left, rectangle.top, rectangle.width,
                               rectangle.height));
@@ -358,7 +347,6 @@ Vector2f SFMLView::getCenter() const {
     return Vector2f(center.x, center.y);
 }
 
-// View management
 void SFMLRenderWindow::setView(IView &view) {
     auto &sfmlView = dynamic_cast<SFMLView &>(view);
     _window.setView(sfmlView.getNativeView());
@@ -372,7 +360,6 @@ std::unique_ptr<IView> SFMLRenderWindow::createView() {
     return std::make_unique<SFMLView>();
 }
 
-// Helper methods
 sf::Color SFMLRenderWindow::toSFMLColor(const Color &color) const {
     return sf::Color(color.r, color.g, color.b, color.a);
 }
@@ -382,7 +369,6 @@ Color SFMLRenderWindow::fromSFMLColor(const sf::Color &color) const {
 }
 
 Key SFMLRenderWindow::fromSFMLKey(sf::Keyboard::Key key) const {
-    // Mapping SFML keys to generic keys
     static const std::unordered_map<sf::Keyboard::Key, Key> keyMap = {
         {sf::Keyboard::Unknown, Key::Unknown},
         {sf::Keyboard::A, Key::A},
@@ -505,7 +491,6 @@ Mouse SFMLRenderWindow::fromSFMLMouse(sf::Mouse::Button button) const {
 }
 
 sf::Keyboard::Key SFMLRenderWindow::toSFMLKey(Key key) {
-    // Mapping generic keys to SFML keys
     static const std::unordered_map<Key, sf::Keyboard::Key> keyMap = {
         {Key::Unknown, sf::Keyboard::Unknown},
         {Key::A, sf::Keyboard::A},
@@ -673,7 +658,7 @@ sf::Event SFMLRenderWindow::toSFMLEvent(const Event &event) {
         sfEvent.size.height = event.size.height;
         break;
     default:
-        sfEvent.type = sf::Event::Count; // Unknown event
+        sfEvent.type = sf::Event::Count;
         break;
     }
 
