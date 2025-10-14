@@ -8,18 +8,18 @@
 #ifndef GAMESERVERLOOP_HPP_
 #define GAMESERVERLOOP_HPP_
 
+#include "GameLogic.hpp"
 #include "UdpProtocole.hpp"
 #include "UdpServer.hpp"
-#include "GameLogic.hpp"
+#include <atomic>
 #include <chrono>
+#include <csignal>
 #include <cstdint>
 #include <memory>
-#include <atomic>
 #include <thread>
-#include <csignal>
 
 class GameServerLoop {
-public:
+  public:
     GameServerLoop(uint16_t port = 4242, uint32_t max_clients = 4);
     ~GameServerLoop();
 
@@ -28,10 +28,10 @@ public:
     bool isRunning() const { return _running; }
 
     static void signalHandler(int signal);
-    static GameServerLoop* instance;
+    static GameServerLoop *instance;
     void broadcastEntityUpdates();
 
-private:
+  private:
     void run();
     void processMessages();
     void setupSignalHandlers();

@@ -12,11 +12,7 @@
 #include <chrono>
 #include <memory>
 
-enum class LobbyResult {
-    StartGame,
-    Disconnect,
-    Error
-};
+enum class LobbyResult { StartGame, Disconnect, Error };
 
 class LobbyMenu {
   public:

@@ -16,7 +16,7 @@
 using ClientId = size_t;
 
 class GameSession {
-public:
+  public:
     GameSession();
     ~GameSession() = default;
 
@@ -30,10 +30,10 @@ public:
     size_t getClientCount() const { return _clients.size(); }
     bool isFull() const { return _clients.size() >= MAX_PLAYERS; }
 
-private:
+  private:
     std::unordered_map<ClientId, ClientState> _clients;
     uint8_t _next_player_id;
-    
+
     uint8_t getNextPlayerId();
 };
 

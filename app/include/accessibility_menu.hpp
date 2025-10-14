@@ -23,8 +23,7 @@ class AccessibilityMenu {
   private:
     void createButtons();
     void updateButtonScale();
-    void cycleColorblindMode(
-        int direction);
+    void cycleColorblindMode(int direction);
 
   private:
     render::IRenderWindow &_window;

@@ -83,9 +83,7 @@ class Settings {
 
         return render::Color(static_cast<uint8_t>(newR * 255),
                              static_cast<uint8_t>(newG * 255),
-                             static_cast<uint8_t>(newB * 255),
-                             originalColor.a
-        );
+                             static_cast<uint8_t>(newB * 255), originalColor.a);
     }
 
     render::IShader *getColorblindShader(render::IRenderWindow &window) {

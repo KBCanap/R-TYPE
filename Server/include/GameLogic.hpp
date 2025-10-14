@@ -10,22 +10,27 @@
 
 #include "../../ecs/include/registery.hpp"
 #include <chrono>
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <deque>
+#include <random>
 #include <sys/types.h>
 #include <unordered_map>
 #include <vector>
-#include <random>
 
 // Input events
 enum InputEvent {
-    KEY_UP_PRESS, KEY_UP_RELEASE,
-    KEY_DOWN_PRESS, KEY_DOWN_RELEASE,
-    KEY_LEFT_PRESS, KEY_LEFT_RELEASE,
-    KEY_RIGHT_PRESS, KEY_RIGHT_RELEASE,
-    KEY_SHOOT_PRESS, KEY_SHOOT_RELEASE
+    KEY_UP_PRESS,
+    KEY_UP_RELEASE,
+    KEY_DOWN_PRESS,
+    KEY_DOWN_RELEASE,
+    KEY_LEFT_PRESS,
+    KEY_LEFT_RELEASE,
+    KEY_RIGHT_PRESS,
+    KEY_RIGHT_RELEASE,
+    KEY_SHOOT_PRESS,
+    KEY_SHOOT_RELEASE
 };
 
 // Component structures for ECS
@@ -130,7 +135,7 @@ struct WorldSnapshot {
  * @brief Class to handle the game logic for R-Type multiplayer server
  */
 class GameLogic {
-public:
+  public:
     GameLogic(std::shared_ptr<registry> reg);
     ~GameLogic();
 
@@ -157,7 +162,7 @@ public:
     uint getCurrentTick() const { return _current_tick; }
     uint generateNetId();
 
-private:
+  private:
     std::shared_ptr<registry> _registry;
     std::queue<ClientEvent> _event_queue;
     std::mutex _event_mutex;
@@ -199,57 +204,42 @@ private:
     entity findEntityByNetId(uint net_id);
 
     // Systems
-    static void inputSystem(registry &reg,
-                           sparse_array<InputState> &inputs,
-                           sparse_array<Velocity> &velocities,
-                           sparse_array<PlayerComponent> &players,
-                           float dt);
+    static void inputSystem(registry &reg, sparse_array<InputState> &inputs,
+                            sparse_array<Velocity> &velocities,
+                            sparse_array<PlayerComponent> &players, float dt);
 
-    static void movementSystem(registry &reg,
-                              sparse_array<Position> &positions,
-                              sparse_array<Velocity> &velocities,
-                              float dt);
+    static void movementSystem(registry &reg, sparse_array<Position> &positions,
+                               sparse_array<Velocity> &velocities, float dt);
 
-    static void weaponSystem(registry &reg,
-                            sparse_array<Weapon> &weapons,
-                            sparse_array<Position> &positions,
-                            sparse_array<InputState> &inputs,
-                            sparse_array<PlayerComponent> &players,
-                            float game_time);
+    static void weaponSystem(registry &reg, sparse_array<Weapon> &weapons,
+                             sparse_array<Position> &positions,
+                             sparse_array<InputState> &inputs,
+                             sparse_array<PlayerComponent> &players,
+                             float game_time);
 
     static void projectileSystem(registry &reg,
-                                sparse_array<Projectile> &projectiles,
-                                sparse_array<Position> &positions,
-                                float dt);
+                                 sparse_array<Projectile> &projectiles,
+                                 sparse_array<Position> &positions, float dt);
 
-    static void collisionSystem(registry &reg,
-                               sparse_array<Position> &positions,
-                               sparse_array<Hitbox> &hitboxes,
-                               sparse_array<Projectile> &projectiles,
-                               sparse_array<PlayerComponent> &players,
-                               sparse_array<Enemy> &enemies,
-                               sparse_array<Health> &healths,
-                               sparse_array<Score> &scores,
-                               sparse_array<NetworkComponent> &network_comps,
-                               float dt);
+    static void collisionSystem(
+        registry &reg, sparse_array<Position> &positions,
+        sparse_array<Hitbox> &hitboxes, sparse_array<Projectile> &projectiles,
+        sparse_array<PlayerComponent> &players, sparse_array<Enemy> &enemies,
+        sparse_array<Health> &healths, sparse_array<Score> &scores,
+        sparse_array<NetworkComponent> &network_comps, float dt);
 
-    static void healthSystem(registry &reg,
-                            sparse_array<Health> &healths,
-                            sparse_array<NetworkComponent> &network_comps,
-                            float dt);
-
-    static void enemyAISystem(registry &reg,
-                             sparse_array<Enemy> &enemies,
-                             sparse_array<Position> &positions,
-                             sparse_array<Velocity> &velocities,
+    static void healthSystem(registry &reg, sparse_array<Health> &healths,
+                             sparse_array<NetworkComponent> &network_comps,
                              float dt);
 
-    static void bossAISystem(registry &reg,
-                            sparse_array<Boss> &bosses,
-                            sparse_array<Position> &positions,
-                            sparse_array<Velocity> &velocities,
-                            sparse_array<Health> &healths,
-                            float dt);
+    static void enemyAISystem(registry &reg, sparse_array<Enemy> &enemies,
+                              sparse_array<Position> &positions,
+                              sparse_array<Velocity> &velocities, float dt);
+
+    static void bossAISystem(registry &reg, sparse_array<Boss> &bosses,
+                             sparse_array<Position> &positions,
+                             sparse_array<Velocity> &velocities,
+                             sparse_array<Health> &healths, float dt);
 };
 
 #endif /* !GAMELOGIC_COMPLETE_HPP_ */

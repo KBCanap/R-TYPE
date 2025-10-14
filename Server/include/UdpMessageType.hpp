@@ -30,19 +30,15 @@ enum EntityType : uint8_t {
 };
 
 // Player input event types
-enum EventType : uint8_t {
-    MOVE = 0x01,
-    SHOOT = 0x02,
-    QUIT = 0x03
-};
+enum EventType : uint8_t { MOVE = 0x01, SHOOT = 0x02, QUIT = 0x03 };
 
 // Movement directions
 enum Direction : uint8_t {
     NONE = 0x00,
-    UP = 0x01,      // bit 0
-    DOWN = 0x02,    // bit 1
-    LEFT = 0x04,    // bit 2
-    RIGHT = 0x08    // bit 3
+    UP = 0x01,   // bit 0
+    DOWN = 0x02, // bit 1
+    LEFT = 0x04, // bit 2
+    RIGHT = 0x08 // bit 3
 };
 
 // Constants

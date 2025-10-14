@@ -18,11 +18,11 @@ struct ClientMessage {
 };
 
 class MessageQueue {
-public:
+  public:
     MessageQueue() = default;
     ~MessageQueue() = default;
 
-    void push(const ClientMessage& message) {
+    void push(const ClientMessage &message) {
         _queue.push(std::make_shared<ClientMessage>(message));
     }
 
@@ -35,13 +35,9 @@ public:
         return message;
     }
 
-    bool empty() const {
-        return _queue.empty();
-    }
+    bool empty() const { return _queue.empty(); }
 
-    size_t size() const {
-        return _queue.size();
-    }
+    size_t size() const { return _queue.size(); }
 
     void clear() {
         while (!_queue.empty()) {
@@ -49,7 +45,7 @@ public:
         }
     }
 
-private:
+  private:
     std::queue<std::shared_ptr<ClientMessage>> _queue;
 };
 
