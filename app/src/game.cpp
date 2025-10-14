@@ -35,15 +35,14 @@ Game::Game(registry &reg, render::IRenderWindow &win, AudioManager &audioMgr,
         _registry.register_component<component::network_entity>();
         _registry.register_component<component::network_state>();
 
-        // Initialiser le système réseau
         systems::initialize_network_system(_networkManager);
 
-        // Créer et configurer le NetworkCommandHandler
         _networkCommandHandler = std::make_unique<NetworkCommandHandler>(
             _registry, _window, _playerManager, _enemyManager, _bossManager);
 
         systems::set_network_command_handler(_networkCommandHandler.get());
     }
+
     _background = _registry.spawn_entity();
     auto &bg_component = _registry.add_component<component::background>(
         *_background, component::background(30.f));
@@ -68,6 +67,7 @@ void Game::handleEvents(bool &running, float /*dt*/) {
     render::Event event;
     while (_window.pollEvent(event)) {
         systems::update_key_state(event);
+
         if (event.type == render::EventType::Closed) {
             running = false;
             _shouldExit = true;
@@ -269,7 +269,6 @@ void Game::render(float dt) {
     auto &drawables = _registry.get_components<component::drawable>();
     systems::render_system(_registry, positions, drawables, _window, dt);
 
-    // Afficher les infos du joueur (HP uniquement en multijoueur)
     if (_isMultiplayer && _networkCommandHandler) {
         uint32_t my_net_id = _networkCommandHandler->getAssignedPlayerNetId();
         auto my_entity = _networkCommandHandler->findEntityByNetId(my_net_id);
@@ -277,8 +276,8 @@ void Game::render(float dt) {
         if (my_entity) {
             renderPlayerInfo(*my_entity);
         }
+
     } else if (_player) {
-        // Solo mode - affichage normal
         renderPlayerInfo(*_player);
 
         auto &scores = _registry.get_components<component::score>();
@@ -298,7 +297,8 @@ void Game::render(float dt) {
                 hitbox_outline->setPosition(
                     positions[i]->x + hitboxes[i]->offset_x,
                     positions[i]->y + hitboxes[i]->offset_y);
-                hitbox_outline->setFillColor(render::Color(0, 0, 0, 0));
+                hitbox_outline->setFillColor(
+                    render::Color(0, 0, 0, 0));
 
                 if (drawables[i] && drawables[i]->tag == "player") {
                     hitbox_outline->setOutlineColor(render::Color::Green());
@@ -325,7 +325,6 @@ void Game::render(float dt) {
     _window.display();
 }
 
-// Nouvelles méthodes d'aide pour le rendu
 void Game::renderPlayerInfo(entity player_entity) {
     auto &healths = _registry.get_components<component::health>();
 
@@ -434,10 +433,7 @@ void Game::resetGame() {
 void Game::updateMultiplayer(float dt) {
     _gameTime += dt;
 
-    // Utiliser le système réseau ECS au lieu de la logique personnalisée
     if (_networkManager) {
-        // Le NetworkSystem s'occupe de tout : messages TCP/UDP,
-        // NetworkCommandHandler
         systems::network_system(dt);
 
         // Vérifier l'état de connexion
@@ -454,7 +450,6 @@ void Game::updateMultiplayer(float dt) {
 
     systems::input_system(_registry, inputs, _window, &_keyBindings);
 
-    // Send player input to server (garder votre logique existante)
     sendPlayerInput(dt);
 
     auto &backgrounds = _registry.get_components<component::background>();
@@ -468,11 +463,9 @@ void Game::updateMultiplayer(float dt) {
         }
     }
 
-    // Vérifier les conditions de fin de jeu
     checkGameEndConditions();
 }
 
-// Nouvelle méthode pour vérifier les conditions de fin
 void Game::checkGameEndConditions() {
     if (_networkCommandHandler) {
         uint32_t my_net_id = _networkCommandHandler->getAssignedPlayerNetId();
@@ -482,7 +475,6 @@ void Game::checkGameEndConditions() {
                 _networkCommandHandler->findEntityByNetId(my_net_id);
 
             if (!my_entity) {
-                // Le joueur n'existe plus = Game Over
                 if (!_gameOver) {
                     _gameOver = true;
                     _gameOverMenu.setVisible(true);
@@ -491,7 +483,6 @@ void Game::checkGameEndConditions() {
                     _audioManager.playMusic(MusicType::GAME_OVER, false);
                 }
             } else {
-                // Trouver notre entité joueur pour l'affichage
                 _player = my_entity;
 
                 auto &inputs = _registry.get_components<component::input>();
@@ -510,16 +501,19 @@ void Game::sendPlayerInput(float dt) {
     if (_inputSendTimer >= _inputSendInterval) {
         _inputSendTimer = 0.0f;
 
-        if (!_networkManager || !_networkCommandHandler)
-            return;
+        if (!_networkManager) return;
 
-        uint32_t my_net_id = _networkCommandHandler->getAssignedPlayerNetId();
+        uint32_t my_net_id = _networkManager->getAssignedPlayerNetId();
+        std::cout << "[Game] My NET_ID from NetworkManager: " << my_net_id << std::endl;
+
+        if (my_net_id == 0 || !_networkCommandHandler) return;
+
         auto my_entity = _networkCommandHandler->findEntityByNetId(my_net_id);
 
-        std::cout << "BITEEEEEEEEE\n";
-        if (!my_entity)
+        if (!my_entity) {
+            std::cout << "[Game] Entity not found for NET_ID: " << my_net_id << std::endl;
             return;
-        std::cout << "CULLLLLLLLLLL\n";
+        }
 
         auto &inputs = _registry.get_components<component::input>();
         if (*my_entity >= inputs.size() || !inputs[*my_entity])
@@ -529,16 +523,11 @@ void Game::sendPlayerInput(float dt) {
         auto &playerInput = inputs[*my_entity];
 
         uint8_t direction = 0;
-        if (playerInput->up)
-            direction |= 0x01;
-        if (playerInput->down)
-            direction |= 0x02;
-        if (playerInput->left)
-            direction |= 0x04;
-        if (playerInput->right)
-            direction |= 0x08;
-        std::cout << "SALOPEEEEEEEEEEE\n";
-        // Envoyer mouvement si nécessaire
+        if (playerInput->up) direction |= 0x01;
+        if (playerInput->down) direction |= 0x02;
+        if (playerInput->left) direction |= 0x04;
+        if (playerInput->right) direction |= 0x08;
+
         if (direction != 0) {
             _networkManager->sendPlayerInput(direction);
         }

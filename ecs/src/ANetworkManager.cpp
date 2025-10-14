@@ -385,19 +385,28 @@ void ANetworkManager::initializeUDPSocket() {
 
 void ANetworkManager::startAsyncUDPReceive() {
     if (!udp_socket_ || !udp_socket_->isOpen()) {
+        std::cout << "[DEBUG] UDP socket not open, cannot start async receive" << std::endl;
         return;
     }
 
+    std::cout << "[DEBUG] Starting UDP async receive..." << std::endl;
+    
     udp_socket_->asyncReceive(
         udp_read_buffer_, [this](bool success, size_t bytes_transferred) {
             auto current_state = getConnectionState();
+            
+            std::cout << "[DEBUG] UDP callback - State: " << static_cast<int>(current_state) 
+                      << " Success: " << success << " Bytes: " << bytes_transferred << std::endl;
 
             if (current_state == ConnectionState::DISCONNECTED ||
                 current_state == ConnectionState::ERROR) {
+                std::cout << "[DEBUG] UDP callback - Stopping due to DISCONNECTED/ERROR state" << std::endl;
                 return;
             }
 
             if (success && bytes_transferred > 0) {
+                std::cout << "[DEBUG] UDP callback - Processing " << bytes_transferred << " bytes" << std::endl;
+                
                 std::vector<uint8_t> data(udp_read_buffer_.begin(),
                                           udp_read_buffer_.begin() +
                                               bytes_transferred);
@@ -409,12 +418,18 @@ void ANetworkManager::startAsyncUDPReceive() {
                 {
                     std::lock_guard<std::mutex> lock(udp_queue_mutex_);
                     raw_udp_queue_.push(raw_packet);
+                    std::cout << "[DEBUG] UDP callback - Packet queued, queue size: " << raw_udp_queue_.size() << std::endl;
                 }
+            } else {
+                std::cout << "[DEBUG] UDP callback - No data received or error" << std::endl;
             }
 
             if (current_state != ConnectionState::DISCONNECTED &&
                 current_state != ConnectionState::ERROR) {
+                std::cout << "[DEBUG] UDP callback - Posting next receive" << std::endl;
                 io_context_->post([this]() { startAsyncUDPReceive(); });
+            } else {
+                std::cout << "[DEBUG] UDP callback - NOT posting next receive, state: " << static_cast<int>(current_state) << std::endl;
             }
         });
 }
