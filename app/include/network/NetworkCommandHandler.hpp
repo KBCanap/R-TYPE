@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../../../ecs/include/components.hpp"
 #include "../../../ecs/include/network/NetworkCommands.hpp"
 #include "../../../ecs/include/network/NetworkComponents.hpp"
@@ -8,23 +8,14 @@
 #include "../enemy_manager.hpp"
 #include "../player_manager.hpp"
 #include "PacketProcessor.hpp"
+#include <atomic>
+#include <mutex>
 #include <optional>
 #include <unordered_map>
 
-/**
- * @class NetworkCommandHandler
- * @brief Handles network commands and manages entity creation/updates
- */
+// Handles network commands and manages entity creation/updates
 class NetworkCommandHandler : public network::INetworkCommandHandler {
   public:
-    /**
-     * @brief Construct command handler
-     * @param registry Game registry
-     * @param window Render window
-     * @param player_mgr Player manager
-     * @param enemy_mgr Enemy manager
-     * @param boss_mgr Boss manager
-     */
     NetworkCommandHandler(registry &registry, render::IRenderWindow &window,
                           PlayerManager &player_mgr, EnemyManager &enemy_mgr,
                           BossManager &boss_mgr);
@@ -41,40 +32,19 @@ class NetworkCommandHandler : public network::INetworkCommandHandler {
     void onRawTCPMessage(const network::TCPMessage &msg) override;
     void onRawUDPPacket(const network::UDPPacket &packet) override;
 
-    /**
-     * @brief Find local entity by network ID
-     * @param net_id Network ID
-     * @return Optional entity
-     */
     std::optional<entity> findEntityByNetId(uint32_t net_id) const;
 
     /**
      * @brief Get assigned player NET_ID
      * @return Player NET_ID or 0 if not assigned
      */
-    uint32_t getAssignedPlayerNetId() const { return assigned_player_net_id_; }
+    uint32_t getAssignedPlayerNetId() const {
+        return assigned_player_net_id_.load();
+    }
 
   private:
-    /**
-     * @brief Create player entity from command
-     * @param cmd Create entity command
-     * @return Created entity
-     */
     entity createPlayerEntity(const network::CreateEntityCommand &cmd);
-
-    /**
-     * @brief Create enemy entity from command
-     * @param cmd Create entity command
-     * @return Created entity
-     */
     entity createEnemyEntity(const network::CreateEntityCommand &cmd);
-
-    /**
-     * @brief Create enemy spread entity from command
-     * @param cmd Create entity command
-     * @return Created entity
-     */
-    entity createEnemySpreadEntity(const network::CreateEntityCommand &cmd);
 
     /**
      * @brief Create boss entity from command
@@ -82,12 +52,6 @@ class NetworkCommandHandler : public network::INetworkCommandHandler {
      * @return Created entity
      */
     entity createBossEntity(const network::CreateEntityCommand &cmd);
-
-    /**
-     * @brief Create projectile entity from command
-     * @param cmd Create entity command
-     * @return Created entity
-     */
     entity createProjectileEntity(const network::CreateEntityCommand &cmd);
 
     registry &registry_;
@@ -96,7 +60,9 @@ class NetworkCommandHandler : public network::INetworkCommandHandler {
     EnemyManager &enemy_manager_;
     BossManager &boss_manager_;
 
+    std::atomic<uint32_t> assigned_player_net_id_{0};
+
+    mutable std::mutex net_id_mutex_;
     std::unordered_map<uint32_t, entity> net_id_to_entity_;
     network::PacketProcessor packet_processor_;
-    uint32_t assigned_player_net_id_ = 0;
 };

@@ -49,15 +49,14 @@ enum class UDPMessageType : uint8_t {
 
 /**
  * @enum EntityType
- * @brief Entity types from RFC
+ * @brief Entity types from RFC UDP
  */
 enum class EntityType : uint8_t {
     PLAYER = 0x01,
-    ENEMY = 0x02, // Enemy with wave movement (single OR burst shot - random)
-    ENEMY_SPREAD = 0x05, // Spread shooting enemy (spread shot, zigzag movement)
-    BOSS = 0x06,         // Boss enemy
+    ENEMY = 0x02,
     PROJECTILE = 0x03,
-    ALLIED_PROJECTILE = 0x04
+    ALLIED_PROJECTILE = 0x04,
+    BOSS = 0x05
 };
 
 /**

@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** weapon_presets
+*/
+
 #pragma once
 #include "components.hpp"
 #include "registery.hpp"

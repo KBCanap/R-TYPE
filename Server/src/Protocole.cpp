@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <iostream>
+#include <unistd.h>
 
 Protocol::Protocol() {}
 

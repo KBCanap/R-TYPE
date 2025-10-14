@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** game_menu
+*/
+
 #include "../include/game_menu.hpp"
 #include <stdexcept>
 

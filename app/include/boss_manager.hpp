@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** boss_manager
+*/
+
 #pragma once
 #include "../../ecs/include/render/IRenderWindow.hpp"
 #include "components.hpp"
@@ -7,7 +14,6 @@ class BossManager {
   public:
     BossManager(registry &reg, render::IRenderWindow &win);
 
-    // Boss management
     std::optional<entity> spawnBoss();
     bool shouldSpawnBoss(const std::optional<entity> &player,
                          const std::optional<entity> &boss) const;

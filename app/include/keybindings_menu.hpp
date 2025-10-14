@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** keybindings_menu
+*/
+
 #pragma once
 #include "../../ecs/include/render/IRenderWindow.hpp"
 #include "audio_manager.hpp"
@@ -30,7 +37,6 @@ class KeyBindingsMenu {
     std::unique_ptr<render::IFont> _font;
     std::unique_ptr<render::IText> _titleText;
 
-    // Key binding entries (one per action)
     struct KeyBindingEntry {
         GameAction action;
         std::string actionName;
@@ -41,15 +47,12 @@ class KeyBindingsMenu {
     };
     std::vector<KeyBindingEntry> _bindings;
 
-    // Reset button
     std::unique_ptr<render::IShape> _resetButton;
     std::unique_ptr<render::IText> _resetButtonText;
 
-    // Back button
     std::unique_ptr<render::IShape> _backButton;
     std::unique_ptr<render::IText> _backButtonText;
 
-    // Waiting for key state
     bool _waitingForKey;
     GameAction _currentAction;
     std::unique_ptr<render::IText> _waitingText;

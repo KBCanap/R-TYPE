@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** audio_manager
+*/
+
 #pragma once
 #include "render/IRenderAudio.hpp"
 #include <memory>

@@ -1,4 +1,11 @@
-﻿#include "../include/network/ANetworkManager.hpp"
+﻿/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** ANetworkManager
+*/
+
+#include "../include/network/ANetworkManager.hpp"
 #include <iostream>
 
 namespace network {
@@ -30,11 +37,23 @@ ConnectionResult ANetworkManager::connectTCP(const std::string &host,
     connection_start_ = std::chrono::steady_clock::now();
     last_activity_ = connection_start_;
 
-    io_thread_ = std::thread([this]() { io_context_->run(); });
-
     startReadTCPHeader();
 
-    // Send TCP_CONNECT message
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    std::cout << "Starting I/O thread..." << std::endl;
+    io_thread_ = std::thread([this]() {
+        try {
+            io_context_->run();
+        } catch (const std::exception &e) {
+            std::cerr << "I/O thread exception: " << e.what() << std::endl;
+            updateState(ConnectionState::ERROR);
+        }
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    std::cout << "Sending TCP_CONNECT..." << std::endl;
     std::vector<uint8_t> connect_msg = {0x01, 0x00, 0x00, 0x00};
     if (!sendRawTCP(connect_msg)) {
         result.error_message = "Failed to send TCP_CONNECT";
@@ -42,6 +61,7 @@ ConnectionResult ANetworkManager::connectTCP(const std::string &host,
         return result;
     }
 
+    std::cout << "TCP_CONNECT sent, waiting for response..." << std::endl;
     result.success = true;
     return result;
 }
@@ -53,27 +73,20 @@ void ANetworkManager::startReadTCPHeader() {
 
     tcp_socket_->asyncReadExactly(
         tcp_header_buffer_, 4, [this](bool success, size_t bytes_transferred) {
-            // Check if we're in a state where we should still read TCP
             auto current_state = getConnectionState();
             if (current_state == ConnectionState::IN_GAME ||
-                current_state == ConnectionState::DISCONNECTED) {
-                // Stop reading TCP in game mode or when disconnected
+                current_state == ConnectionState::DISCONNECTED ||
+                current_state == ConnectionState::ERROR) {
                 return;
             }
 
             if (!success || bytes_transferred != 4) {
-                // Only log error if we're still in a connected state
-                if (current_state != ConnectionState::DISCONNECTED &&
-                    current_state != ConnectionState::ERROR) {
-                    std::cerr << "Failed to read TCP header" << std::endl;
-                    updateState(ConnectionState::ERROR);
-                }
+                std::cerr << "Failed to read TCP header" << std::endl;
+                updateState(ConnectionState::ERROR);
                 return;
             }
 
             uint8_t msg_type = tcp_header_buffer_[0];
-
-            // DATA_LENGTH is 3 bytes in network byte order
             uint32_t data_length = 0;
             data_length |= static_cast<uint32_t>(tcp_header_buffer_[1]) << 16;
             data_length |= static_cast<uint32_t>(tcp_header_buffer_[2]) << 8;
@@ -84,7 +97,9 @@ void ANetworkManager::startReadTCPHeader() {
             if (data_length == 0) {
                 std::vector<uint8_t> complete_msg = tcp_header_buffer_;
                 processCompleteTCPMessage(complete_msg);
-                startReadTCPHeader();
+
+                // ✅ CORRECTION : Utiliser l'interface abstraite
+                io_context_->post([this]() { startReadTCPHeader(); });
             } else {
                 readTCPPayload(msg_type, data_length);
             }
@@ -92,8 +107,7 @@ void ANetworkManager::startReadTCPHeader() {
 }
 
 void ANetworkManager::readTCPPayload(uint8_t msg_type, uint32_t data_length) {
-    // Protection contre les buffer overflow
-    const uint32_t MAX_PAYLOAD_SIZE = 65536; // 64KB max
+    const uint32_t MAX_PAYLOAD_SIZE = 65536;
 
     if (data_length > MAX_PAYLOAD_SIZE) {
         std::cerr << "TCP payload too large: " << data_length << " bytes"
@@ -127,7 +141,8 @@ void ANetworkManager::readTCPPayload(uint8_t msg_type, uint32_t data_length) {
                                 tcp_payload_buffer_.begin() + data_length);
 
             processCompleteTCPMessage(complete_msg);
-            startReadTCPHeader();
+
+            io_context_->post([this]() { startReadTCPHeader(); });
         });
 }
 
@@ -192,7 +207,6 @@ void ANetworkManager::processCompleteTCPMessage(
         break;
     }
 
-    // Queue raw message for higher-level processing
     RawTCPMessage raw_msg;
     raw_msg.data = complete_msg;
     raw_msg.timestamp = std::chrono::steady_clock::now();
@@ -204,7 +218,6 @@ void ANetworkManager::processCompleteTCPMessage(
 void ANetworkManager::disconnect() {
     updateState(ConnectionState::DISCONNECTED);
 
-    // Close sockets first to stop async operations
     if (tcp_socket_ && tcp_socket_->isOpen()) {
         tcp_socket_->disconnect();
     }
@@ -213,17 +226,14 @@ void ANetworkManager::disconnect() {
         udp_socket_->close();
     }
 
-    // Stop io_context after closing sockets
     if (io_context_) {
         io_context_->stop();
     }
 
-    // Wait for io_thread to finish
     if (io_thread_.joinable()) {
         io_thread_.join();
     }
 
-    // Reset sockets after thread has joined
     tcp_socket_.reset();
     udp_socket_.reset();
 
@@ -244,24 +254,18 @@ bool ANetworkManager::isConnected() const {
 
 bool ANetworkManager::sendTCP(MessageType msg_type,
                               const std::vector<uint8_t> &data) {
-    return false; // Implemented in NetworkManager
+    return false;
 }
 
-bool ANetworkManager::sendUDP(const UDPPacket &packet) {
-    return false; // Implemented in NetworkManager
-}
+bool ANetworkManager::sendUDP(const UDPPacket &packet) { return false; }
 
 bool ANetworkManager::sendPlayerInput(const PlayerInputData &input) {
-    return false; // Implemented in NetworkManager
+    return false;
 }
 
-std::vector<TCPMessage> ANetworkManager::pollTCP() {
-    return {}; // Implemented in NetworkManager
-}
+std::vector<TCPMessage> ANetworkManager::pollTCP() { return {}; }
 
-std::vector<UDPPacket> ANetworkManager::pollUDP() {
-    return {}; // Implemented in NetworkManager
-}
+std::vector<UDPPacket> ANetworkManager::pollUDP() { return {}; }
 
 bool ANetworkManager::hasMessages() const {
     std::lock_guard<std::mutex> lock(tcp_queue_mutex_);
@@ -381,39 +385,65 @@ void ANetworkManager::initializeUDPSocket() {
 
 void ANetworkManager::startAsyncUDPReceive() {
     if (!udp_socket_ || !udp_socket_->isOpen()) {
+        std::cout << "[DEBUG] UDP socket not open, cannot start async receive"
+                  << std::endl;
         return;
     }
 
-    udp_socket_->asyncReceive(
-        udp_read_buffer_, [this](bool success, size_t bytes_transferred) {
-            // Check if we're still connected before processing
-            auto current_state = getConnectionState();
-            if (current_state == ConnectionState::DISCONNECTED ||
-                current_state == ConnectionState::ERROR) {
-                return;
+    std::cout << "[DEBUG] Starting UDP async receive..." << std::endl;
+
+    udp_socket_->asyncReceive(udp_read_buffer_, [this](
+                                                    bool success,
+                                                    size_t bytes_transferred) {
+        auto current_state = getConnectionState();
+
+        std::cout << "[DEBUG] UDP callback - State: "
+                  << static_cast<int>(current_state) << " Success: " << success
+                  << " Bytes: " << bytes_transferred << std::endl;
+
+        if (current_state == ConnectionState::DISCONNECTED ||
+            current_state == ConnectionState::ERROR) {
+            std::cout << "[DEBUG] UDP callback - Stopping due to "
+                         "DISCONNECTED/ERROR state"
+                      << std::endl;
+            return;
+        }
+
+        if (success && bytes_transferred > 0) {
+            std::cout << "[DEBUG] UDP callback - Processing "
+                      << bytes_transferred << " bytes" << std::endl;
+
+            std::vector<uint8_t> data(udp_read_buffer_.begin(),
+                                      udp_read_buffer_.begin() +
+                                          bytes_transferred);
+
+            RawUDPPacket raw_packet;
+            raw_packet.data = data;
+            raw_packet.timestamp = std::chrono::steady_clock::now();
+
+            {
+                std::lock_guard<std::mutex> lock(udp_queue_mutex_);
+                raw_udp_queue_.push(raw_packet);
+                std::cout
+                    << "[DEBUG] UDP callback - Packet queued, queue size: "
+                    << raw_udp_queue_.size() << std::endl;
             }
+        } else {
+            std::cout << "[DEBUG] UDP callback - No data received or error"
+                      << std::endl;
+        }
 
-            if (success && bytes_transferred > 0) {
-                std::vector<uint8_t> data(udp_read_buffer_.begin(),
-                                          udp_read_buffer_.begin() +
-                                              bytes_transferred);
-
-                RawUDPPacket raw_packet;
-                raw_packet.data = data;
-                raw_packet.timestamp = std::chrono::steady_clock::now();
-
-                {
-                    std::lock_guard<std::mutex> lock(udp_queue_mutex_);
-                    raw_udp_queue_.push(raw_packet);
-                }
-            }
-
-            // Only continue receiving if we're still connected
-            if (current_state != ConnectionState::DISCONNECTED &&
-                current_state != ConnectionState::ERROR) {
-                startAsyncUDPReceive();
-            }
-        });
+        if (current_state != ConnectionState::DISCONNECTED &&
+            current_state != ConnectionState::ERROR) {
+            std::cout << "[DEBUG] UDP callback - Posting next receive"
+                      << std::endl;
+            io_context_->post([this]() { startAsyncUDPReceive(); });
+        } else {
+            std::cout
+                << "[DEBUG] UDP callback - NOT posting next receive, state: "
+                << static_cast<int>(current_state) << std::endl;
+        }
+    });
 }
 
 } // namespace network

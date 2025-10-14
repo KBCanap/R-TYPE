@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** weapon
+*/
+
 #include "../include/components.hpp"
 #include "../include/registery.hpp"
 #include <cmath>
@@ -5,13 +12,11 @@
 namespace component {
 
 void weapon::fire(registry &r, const position &shooter_pos, bool is_friendly) {
-    // If custom fire function is set, use it instead
     if (fire_function) {
         fire_function(r, shooter_pos, is_friendly);
         return;
     }
 
-    // Default firing behavior
     float base_angle = 0.0f;
     float angle_step = spread_angle;
 
@@ -33,33 +38,26 @@ void weapon::fire(registry &r, const position &shooter_pos, bool is_friendly) {
             vx = std::abs(vx); // Player projectiles go right
         }
 
-        // Create projectile entity
         entity projectile_entity = r.spawn_entity();
 
-        // Add position
         r.add_component(projectile_entity,
                         position(shooter_pos.x + (is_friendly ? 50.0f : -20.0f),
                                  shooter_pos.y + 25.0f));
 
-        // Add velocity
         r.add_component(projectile_entity, velocity(vx, vy));
 
-        // Add projectile component
         r.add_component(projectile_entity,
                         projectile(projectile_damage, projectile_speed,
                                    is_friendly, "bullet", projectile_lifetime,
                                    projectile_piercing, projectile_max_hits));
 
-        // Add projectile pattern behavior
         r.add_component(projectile_entity,
                         projectile_behavior(movement_pattern));
 
-        // Add drawable
         r.add_component(projectile_entity,
                         drawable("assets/sprites/r-typesheet1.gif",
                                  projectile_sprite_rect, 1.0f, "projectile"));
 
-        // Add hitbox
         r.add_component(
             projectile_entity,
             hitbox(static_cast<float>(projectile_sprite_rect.width) * 2.0f,

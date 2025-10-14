@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** audio_manager
+*/
+
 #include "../include/audio_manager.hpp"
 #include <iostream>
 

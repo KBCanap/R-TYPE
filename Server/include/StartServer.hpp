@@ -8,7 +8,6 @@
 #ifndef STARTSERVER_HPP_
 #define STARTSERVER_HPP_
 
-#include "GameServer.hpp"
 #include "GameSession.hpp"
 #include "Protocole.hpp"
 #include "TcpServer.hpp"
@@ -21,10 +20,10 @@
 
 class StartServer {
   public:
-    StartServer(int port);
+    StartServer(int port, int udp_port);
     ~StartServer();
 
-    void networkLoop();
+    short networkLoop();
     bool sendToClient(uint32_t client_id, const std::string &message);
     void disconnectClient(uint32_t client_id);
     std::vector<uint32_t> getConnectedClients();
@@ -34,11 +33,11 @@ class StartServer {
 
   private:
     int _port;
+    int _udp_port;
+    bool _in_game = false;
     std::unique_ptr<TCPServer> _tcp_server;
-    std::unique_ptr<GameServer> _game_server;
     Protocol _protocol;
     GameSession _game_session;
-    bool _game_started{false};
 
     std::atomic<bool> _running{true};
 

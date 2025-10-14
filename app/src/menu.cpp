@@ -1,3 +1,9 @@
+/*
+** EPITECH PROJECT, 2025
+** R-TYPE
+** File description:
+** menu
+*/
 
 #include "../include/menu.hpp"
 #include "../include/accessibility_menu.hpp"
@@ -58,8 +64,6 @@ void Menu::createButtons() {
 
     std::vector<std::string> labels = {"Play", "Options", "Quit"};
 
-    // Utiliser les dimensions actuelles de la fenêtre au lieu des dimensions de
-    // base
     float btnWidth = _windowSize.x * 0.25f;
     float btnHeight = _windowSize.y * 0.08f;
     float startY = _windowSize.y * 0.6f;
@@ -81,7 +85,6 @@ void Menu::createButtons() {
         text->setFillColor(render::Color::White());
 
         render::FloatRect bounds = text->getLocalBounds();
-        // Since IText doesn't have setOrigin, we center by adjusting position
         float textX = (_windowSize.x - btnWidth) / 2.f + btnWidth / 2.f -
                       (bounds.width / 2.f);
         float textY =
@@ -93,25 +96,18 @@ void Menu::createButtons() {
 }
 
 void Menu::updateButtonScale() {
-    // Recréer les boutons avec les nouvelles dimensions au lieu de les
-    // redimensionner
     createButtons();
 
-    // Redimensionner le background après changement de résolution
     float scaleX = static_cast<float>(_windowSize.x) / _bgTexture->getSize().x;
     float scaleY = static_cast<float>(_windowSize.y) / _bgTexture->getSize().y;
     _bgSprite1->setScale(scaleX, scaleY);
     _bgSprite2->setScale(scaleX, scaleY);
 
-    // Ajuster la vitesse de scroll proportionnellement
     _bgScrollSpeed = _windowSize.x * 0.125f;
 
-    // Repositionner les sprites de background
     _bgSprite1->setPosition(0.f, 0.f);
     _bgSprite2->setPosition(static_cast<float>(_windowSize.x), 0.f);
 
-    // Repositionner les ennemis proportionnellement à la nouvelle taille de
-    // fenêtre
     updateEnemyPositions();
 }
 
@@ -124,19 +120,16 @@ void Menu::updateEnemyPositions() {
         auto &draw = drawables[_enemies[i]];
 
         if (pos) {
-            // Recalculer les positions de base proportionnellement
             float x = _windowSize.x * 0.1f + i * (_windowSize.x * 0.15f);
             float y = _windowSize.y * 0.1f + (i % 2) * (_windowSize.y * 0.08f);
 
             pos->x = x;
             pos->y = y;
 
-            // Mettre à jour les positions de départ
             _enemyStartPositions[i] = {x, y};
         }
 
         if (draw) {
-            // Recalculer la taille proportionnellement
             float enemySize = std::min(_windowSize.x, _windowSize.y) * 0.04f;
             draw->size = enemySize;
         }
@@ -150,8 +143,6 @@ void Menu::createEnemies() {
     for (int i = 0; i < 5; ++i) {
         auto e = _registry.spawn_entity();
 
-        // Calculer les positions en fonction de la taille actuelle de la
-        // fenêtre
         float x = _windowSize.x * 0.1f + i * (_windowSize.x * 0.15f);
         float y = _windowSize.y * 0.1f + (i % 2) * (_windowSize.y * 0.08f);
 
@@ -160,7 +151,6 @@ void Menu::createEnemies() {
         _registry.add_component<component::velocity>(
             e, component::velocity(50.f, 0.f));
 
-        // Taille de l'ennemi proportionnelle à la fenêtre
         float enemySize = std::min(_windowSize.x, _windowSize.y) * 0.04f;
         _registry.add_component<component::drawable>(
             e, component::drawable(render::Color::Red(), enemySize));
@@ -227,27 +217,22 @@ MenuResult Menu::run() {
                             _enemyStartPositions.clear();
                             return MenuResult::Play;
                         case 1: {
-                            // Options menu now uses render interface
                             OptionsMenu optionsMenu(_window, _audioManager,
                                                     _keyBindings);
                             OptionsResult result = optionsMenu.run();
 
                             if (result == OptionsResult::Accessibility) {
-                                // User wants to access accessibility menu (now
-                                // migrated)
                                 AccessibilityMenu accessibilityMenu(
                                     _window, _audioManager);
                                 accessibilityMenu.run();
                             }
 
                             if (result == OptionsResult::KeyBindings) {
-                                // User wants to access key bindings menu
                                 KeyBindingsMenu keyBindingsMenu(
                                     _window, _audioManager, _keyBindings);
                                 keyBindingsMenu.run();
                             }
 
-                            // Update window size in case resolution changed
                             _windowSize = _window.getSize();
                             updateButtonScale();
                             break;
@@ -262,11 +247,6 @@ MenuResult Menu::run() {
             if (event.type == render::EventType::Resized) {
                 _windowSize = {event.size.width, event.size.height};
 
-                // Note: IRenderWindow doesn't have setView, so we skip view
-                // management The SFML implementation should handle this
-                // internally
-
-                // Redimensionner et repositionner le background correctement
                 float scaleX =
                     static_cast<float>(_windowSize.x) / _bgTexture->getSize().x;
                 float scaleY =
@@ -274,16 +254,11 @@ MenuResult Menu::run() {
                 _bgSprite1->setScale(scaleX, scaleY);
                 _bgSprite2->setScale(scaleX, scaleY);
 
-                // Repositionner les sprites en gardant leur logique de
-                // défilement Si le premier sprite est encore visible, on garde
-                // sa position relative
                 float currentBg1X = _bgSprite1->getPosition().x;
                 float currentBg2X = _bgSprite2->getPosition().x;
 
-                // Recalculer les positions en gardant l'état de défilement
                 if (currentBg1X <= 0 &&
                     currentBg1X > -static_cast<float>(_windowSize.x)) {
-                    // bg1 est le sprite principal visible
                     _bgSprite1->setPosition(
                         currentBg1X * (_windowSize.x /
                                        static_cast<float>(_baseWindowSize.x)),
@@ -293,7 +268,6 @@ MenuResult Menu::run() {
                             static_cast<float>(_windowSize.x),
                         0.f);
                 } else {
-                    // bg2 est le sprite principal visible
                     _bgSprite2->setPosition(
                         currentBg2X * (_windowSize.x /
                                        static_cast<float>(_baseWindowSize.x)),
@@ -304,14 +278,10 @@ MenuResult Menu::run() {
                         0.f);
                 }
 
-                // Recréer les boutons et repositionner les ennemis
                 updateButtonScale();
 
-                // Ajuster la vitesse de scroll du background
-                // proportionnellement
-                _bgScrollSpeed = _windowSize.x * 0.125f; // 100/800 = 0.125
+                _bgScrollSpeed = _windowSize.x * 0.125f;
 
-                // Mettre à jour la taille de base pour les futurs calculs
                 _baseWindowSize = _windowSize;
             }
         }

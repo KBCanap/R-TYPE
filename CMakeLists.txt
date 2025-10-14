@@ -73,10 +73,15 @@ set(SERVER_SOURCES
     Server/src/main.cpp
     Server/src/StartServer.cpp
     Server/src/GameSession.cpp
-    Server/src/GameServer.cpp
     Server/src/ClientState.cpp
     Server/src/Protocole.cpp
     Server/src/Tcpserver.cpp
+    Server/src/UdpServer.cpp
+    Server/src/MessageQueue.cpp
+    Server/src/GameServerLoop.cpp
+    Server/src/UdpProtocole.cpp
+    Server/src/GameLogic.cpp
+    ecs/src/registery.cpp
 )
 
 add_executable(r-type_server ${SERVER_SOURCES})
