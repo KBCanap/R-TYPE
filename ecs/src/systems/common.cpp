@@ -10,16 +10,13 @@
 
 namespace systems {
 
-static const char* ENEMY_TAGS[] = {
-    "enemy",
-    "enemy_zigzag",
-    "enemy_spread",
-    "boss"
-};
+static const char *ENEMY_TAGS[] = {"enemy", "enemy_zigzag", "enemy_spread",
+                                   "boss"};
 
-static const size_t ENEMY_TAGS_COUNT = sizeof(ENEMY_TAGS) / sizeof(ENEMY_TAGS[0]);
+static const size_t ENEMY_TAGS_COUNT =
+    sizeof(ENEMY_TAGS) / sizeof(ENEMY_TAGS[0]);
 
-bool is_enemy_tag(const std::string& tag) {
+bool is_enemy_tag(const std::string &tag) {
     for (size_t i = 0; i < ENEMY_TAGS_COUNT; ++i) {
         if (tag == ENEMY_TAGS[i]) {
             return true;
@@ -29,24 +26,20 @@ bool is_enemy_tag(const std::string& tag) {
 }
 
 static const render::IntRect EXPLOSION_FRAMES[] = {
-    render::IntRect(70, 290, 36, 32),
-    render::IntRect(106, 290, 36, 32),
-    render::IntRect(142, 290, 36, 32),
-    render::IntRect(178, 290, 35, 32)
-};
+    render::IntRect(70, 290, 36, 32), render::IntRect(106, 290, 36, 32),
+    render::IntRect(142, 290, 36, 32), render::IntRect(178, 290, 35, 32)};
 
-static const size_t EXPLOSION_FRAMES_COUNT = sizeof(EXPLOSION_FRAMES) / sizeof(EXPLOSION_FRAMES[0]);
+static const size_t EXPLOSION_FRAMES_COUNT =
+    sizeof(EXPLOSION_FRAMES) / sizeof(EXPLOSION_FRAMES[0]);
 
 void create_explosion(registry &r, float x, float y) {
     auto explosion_entity = r.spawn_entity();
-    r.add_component<component::position>(
-        explosion_entity,
-        component::position(x, y));
+    r.add_component<component::position>(explosion_entity,
+                                         component::position(x, y));
     r.add_component<component::drawable>(
         explosion_entity,
         component::drawable("assets/sprites/r-typesheet1.gif",
-                            EXPLOSION_FRAMES[0], 2.0f,
-                            "explosion"));
+                            EXPLOSION_FRAMES[0], 2.0f, "explosion"));
 
     auto &anim = r.add_component<component::animation>(
         explosion_entity, component::animation(0.1f, false, true));

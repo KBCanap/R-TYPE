@@ -15,16 +15,20 @@ void score_system(registry &r, sparse_array<component::score> &scores,
 
     for (size_t i = 0; i < scores.size(); ++i) {
         auto &score = scores[i];
-        if (!score) continue;
+        if (!score)
+            continue;
 
         score->survival_time += dt;
 
-        float time_since_award = score->survival_time - score->last_time_point_awarded;
+        float time_since_award =
+            score->survival_time - score->last_time_point_awarded;
         bool should_award = (time_since_award >= SCORE_INTERVAL);
 
         // Branchless score update
         score->current_score += should_award;
-        score->last_time_point_awarded = should_award ? score->survival_time : score->last_time_point_awarded;
+        score->last_time_point_awarded = should_award
+                                             ? score->survival_time
+                                             : score->last_time_point_awarded;
     }
 }
 
