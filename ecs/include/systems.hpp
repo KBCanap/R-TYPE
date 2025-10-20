@@ -15,6 +15,10 @@
 class KeyBindings;
 
 namespace systems {
+// Helper functions (defined in systems/common.cpp)
+bool is_enemy_tag(const std::string& tag);
+void create_explosion(registry &r, float x, float y);
+
 void update_key_state(const render::Event &event);
 
 void position_system(registry &r, sparse_array<component::position> &positions,

@@ -8,10 +8,22 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Fichiers sources ECS
 set(ECS_SOURCES
     src/registery.cpp
-    src/systems.cpp
     src/projectile_pattern.cpp
     src/ai_movement_pattern.cpp
     src/weapon.cpp
+    # Systems sources
+    src/systems/common.cpp
+    src/systems/position_system.cpp
+    src/systems/weapon_system.cpp
+    src/systems/control_system.cpp
+    src/systems/render_system.cpp
+    src/systems/collision_system.cpp
+    src/systems/audio_system.cpp
+    src/systems/input_system.cpp
+    src/systems/projectile_system.cpp
+    src/systems/ai_input_system.cpp
+    src/systems/score_system.cpp
+    src/systems/health_system.cpp
     # Network sources
     src/NetworkSystem.cpp
     src/ANetworkManager.cpp
