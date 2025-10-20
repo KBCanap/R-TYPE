@@ -178,21 +178,12 @@ int main(int argc, char **argv) {
             ConnectionMenuResult connResult = connectionMenu.run(connInfo);
 
             if (connResult == ConnectionMenuResult::Solo) {
-                std::cout << "[Main] Starting SOLO game..." << std::endl;
                 Game game(reg, *window, audioManager,
                           keyBindings); // nullptr = solo
                 game.run();
-                std::cout << "[Main] Solo game ended, returning to main menu..."
-                          << std::endl;
             } else if (connResult == ConnectionMenuResult::Multiplayer) {
-                // ✅ CORRECTION : Restaurer les bonnes valeurs après
-                // ConnectionMenu
                 connInfo.serverHost = config.server_ip;   // Force la bonne IP
                 connInfo.serverPort = config.server_port; // Force le bon port
-
-                std::cout << "[Main] ✅ Forcing connection to: "
-                          << connInfo.serverHost << ":" << connInfo.serverPort
-                          << std::endl;
 
                 auto networkManager =
                     std::make_unique<network::NetworkManager>();
@@ -201,9 +192,7 @@ int main(int argc, char **argv) {
                     connInfo.serverHost, connInfo.serverPort);
 
                 if (connectionResult.success) {
-                    std::cout << "[Main] TCP connection successful!"
-                              << std::endl;
-
+                    
                     // Show lobby menu
                     LobbyMenu lobbyMenu(*window, audioManager, *networkManager);
                     LobbyResult lobbyResult = lobbyMenu.run();
@@ -211,34 +200,20 @@ int main(int argc, char **argv) {
                     uint8_t playerId = networkManager->getPlayerID();
                     uint16_t udpPort = networkManager->getUDPPort();
 
-                    std::cout
-                        << "[Main] Player ID: " << static_cast<int>(playerId)
-                        << std::endl;
-                    std::cout << "[Main] UDP Port: " << udpPort << std::endl;
 
                     if (lobbyResult == LobbyResult::StartGame) {
-                        std::cout << "[Main] 🎮 Starting MULTIPLAYER game..."
-                                  << std::endl;
 
                         // Launch multiplayer game with network manager
                         Game game(reg, *window, audioManager, keyBindings,
                                   networkManager.get());
                         game.run();
 
-                        std::cout
-                            << "[Main] Game ended, returning to main menu..."
-                            << std::endl;
                     } else {
                         std::cout << "[Main] Lobby exited" << std::endl;
                     }
 
                     // Disconnect gracefully
                     networkManager->disconnect();
-                } else {
-                    std::cerr << "[Main] ❌ Connection failed: "
-                              << connectionResult.error_message << std::endl;
-                    std::cout << "[Main] Returning to main menu..."
-                              << std::endl;
                 }
             }
             // Si "Back" est pressé, retourner au menu principal
