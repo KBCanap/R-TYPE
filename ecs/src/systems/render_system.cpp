@@ -50,13 +50,13 @@ static void render_background(component::background &bg,
     float scale_x = static_cast<float>(window_size.x) / texture_size.x;
     float scale_y = static_cast<float>(window_size.y) / texture_size.y;
 
-    auto sprite1 = window.createSprite();
+    std::unique_ptr<render::ISprite> sprite1 = window.createSprite();
     sprite1->setTexture(*bg.texture);
     sprite1->setPosition(bg.offset_x, 0);
     sprite1->setScale(scale_x, scale_y);
     draw_sprite_with_shader(window, *sprite1, shader);
 
-    auto sprite2 = window.createSprite();
+    std::unique_ptr<render::ISprite> sprite2 = window.createSprite();
     sprite2->setTexture(*bg.texture);
     sprite2->setPosition(bg.offset_x + static_cast<float>(window_size.x), 0);
     sprite2->setScale(scale_x, scale_y);
@@ -111,7 +111,7 @@ static void render_shape(const component::drawable &draw,
                          const component::position &pos,
                          render::IRenderWindow &window,
                          render::IShader *shader) {
-    auto shape = window.createRectangleShape(render::Vector2f(draw.size, draw.size));
+    std::unique_ptr<render::IShape> shape = window.createRectangleShape(render::Vector2f(draw.size, draw.size));
     shape->setPosition(pos.x, pos.y);
     shape->setFillColor(draw.color);
     draw_shape_with_shader(window, *shape, shader);
@@ -120,21 +120,21 @@ static void render_shape(const component::drawable &draw,
 void render_system(registry &r, sparse_array<component::position> &positions,
                    sparse_array<component::drawable> &drawables,
                    render::IRenderWindow &window, float dt) {
-    auto &animations = r.get_components<component::animation>();
-    auto &backgrounds = r.get_components<component::background>();
+    sparse_array<component::animation> &animations = r.get_components<component::animation>();
+    sparse_array<component::background> &backgrounds = r.get_components<component::background>();
 
     Settings &settings = Settings::getInstance();
     render::IShader *colorblindShader = settings.getColorblindShader(window);
 
     for (size_t i = 0; i < backgrounds.size(); ++i) {
-        auto &bg = backgrounds[i];
+        std::optional<component::background> &bg = backgrounds[i];
         if (!bg) continue;
         render_background(*bg, window, colorblindShader, dt);
     }
 
     for (size_t i = 0; i < std::min(animations.size(), drawables.size()); ++i) {
-        auto &anim = animations[i];
-        auto &drawable = drawables[i];
+        std::optional<component::animation> &anim = animations[i];
+        std::optional<component::drawable> &drawable = drawables[i];
 
         if (!anim || !drawable || !anim->playing || anim->frames.empty()) continue;
 
@@ -167,8 +167,8 @@ void render_system(registry &r, sparse_array<component::position> &positions,
     }
 
     for (size_t i = 0; i < std::min(positions.size(), drawables.size()); ++i) {
-        auto &pos = positions[i];
-        auto &draw = drawables[i];
+        std::optional<component::position> &pos = positions[i];
+        std::optional<component::drawable> &draw = drawables[i];
 
         if (!pos || !draw) continue;
 

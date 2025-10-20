@@ -17,16 +17,16 @@ void position_system(registry &r, sparse_array<component::position> &positions,
                      sparse_array<component::input> &inputs,
                      render::IRenderWindow &window, float current_time,
                      float dt) {
-    auto &drawables = r.get_components<component::drawable>();
+    sparse_array<component::drawable> &drawables = r.get_components<component::drawable>();
     render::Vector2u window_size = window.getSize();
     const float max_y = static_cast<float>(window_size.y) - 100.0f;
 
     for (size_t i = 0;
          i < std::min({drawables.size(), positions.size(), velocities.size()});
          ++i) {
-        auto &drawable = drawables[i];
-        auto &pos = positions[i];
-        auto &vel = velocities[i];
+        std::optional<component::drawable> &drawable = drawables[i];
+        std::optional<component::position> &pos = positions[i];
+        std::optional<component::velocity> &vel = velocities[i];
 
         bool is_boss = drawable && (drawable->tag == "boss");
         bool has_components = pos && vel;
@@ -44,8 +44,8 @@ void position_system(registry &r, sparse_array<component::position> &positions,
     }
 
     for (size_t i = 0; i < std::min(positions.size(), velocities.size()); ++i) {
-        auto &pos = positions[i];
-        auto &vel = velocities[i];
+        std::optional<component::position> &pos = positions[i];
+        std::optional<component::velocity> &vel = velocities[i];
         bool valid = pos && vel;
         float dt_mult = valid ? dt : 0.0f;
 

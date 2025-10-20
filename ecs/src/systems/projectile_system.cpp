@@ -15,8 +15,8 @@ void projectile_system(registry &r,
                        sparse_array<component::projectile> &projectiles,
                        sparse_array<component::position> &positions,
                        render::IRenderWindow &window, float dt) {
-    auto &velocities = r.get_components<component::velocity>();
-    auto &behaviors = r.get_components<component::projectile_behavior>();
+    sparse_array<component::velocity> &velocities = r.get_components<component::velocity>();
+    sparse_array<component::projectile_behavior> &behaviors = r.get_components<component::projectile_behavior>();
     std::vector<size_t> entities_to_kill;
     render::Vector2u window_size = window.getSize();
 
@@ -27,9 +27,9 @@ void projectile_system(registry &r,
     for (size_t i = 0; i < std::min({projectiles.size(), positions.size(),
                                      velocities.size()});
          ++i) {
-        auto &projectile = projectiles[i];
-        auto &pos = positions[i];
-        auto &vel = velocities[i];
+        std::optional<component::projectile> &projectile = projectiles[i];
+        std::optional<component::position> &pos = positions[i];
+        std::optional<component::velocity> &vel = velocities[i];
 
         bool valid = projectile && pos && vel;
         if (!valid) continue;
@@ -58,7 +58,7 @@ void projectile_system(registry &r,
         }
     }
 
-    for (auto entity_idx : entities_to_kill) {
+    for (size_t entity_idx : entities_to_kill) {
         r.kill_entity(entity(entity_idx));
     }
 }

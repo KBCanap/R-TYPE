@@ -14,9 +14,8 @@ void score_system(registry &r, sparse_array<component::score> &scores,
     const float SCORE_INTERVAL = 1.0f;
 
     for (size_t i = 0; i < scores.size(); ++i) {
-        auto &score = scores[i];
-        if (!score)
-            continue;
+        std::optional<component::score> &score = scores[i];
+        if (!score) continue;
 
         score->survival_time += dt;
 

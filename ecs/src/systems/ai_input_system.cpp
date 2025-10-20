@@ -11,11 +11,11 @@ namespace systems {
 
 void ai_input_system(registry &r, sparse_array<component::ai_input> &ai_inputs,
                      float dt) {
-    auto &positions = r.get_components<component::position>();
-    auto &velocities = r.get_components<component::velocity>();
+    sparse_array<component::position> &positions = r.get_components<component::position>();
+    sparse_array<component::velocity> &velocities = r.get_components<component::velocity>();
 
     for (size_t i = 0; i < ai_inputs.size(); ++i) {
-        auto &ai_input = ai_inputs[i];
+        std::optional<component::ai_input> &ai_input = ai_inputs[i];
         if (!ai_input) continue;
 
         // Update fire timer and state

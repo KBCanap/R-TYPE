@@ -54,11 +54,11 @@ void input_system(registry & /*r*/, sparse_array<component::input> &inputs,
     };
 
     for (size_t i = 0; i < inputs.size(); ++i) {
-        auto &input = inputs[i];
+        std::optional<component::input> &input = inputs[i];
         if (!input) continue;
 
         // Process all keys in a loop to reduce branching
-        for (const auto &ks : key_states) {
+        for (const KeyState &ks : key_states) {
             bool prev_state = (*input).*(ks.current_field);
             bool curr_state = g_pressed_keys.count(ks.key) > 0;
 

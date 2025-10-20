@@ -44,7 +44,7 @@ static void award_enemy_kill_score(sparse_array<component::score> &scores,
                                     sparse_array<component::drawable> &drawables,
                                     int points) {
     for (size_t score_idx = 0; score_idx < scores.size(); ++score_idx) {
-        auto &score = scores[score_idx];
+        std::optional<component::score> &score = scores[score_idx];
         if (!score) continue;
         if (score_idx >= drawables.size()) continue;
         if (!drawables[score_idx]) continue;
@@ -101,10 +101,10 @@ static bool process_projectile_collision(
     std::vector<size_t> &entities_to_kill,
     std::vector<std::pair<float, float>> &explosion_positions) {
 
-    auto &target_pos = positions[target_idx];
-    auto &target_drawable = drawables[target_idx];
-    auto &projectile = projectiles[proj_idx];
-    auto &proj_pos = positions[proj_idx];
+    std::optional<component::position> &target_pos = positions[target_idx];
+    std::optional<component::drawable> &target_drawable = drawables[target_idx];
+    std::optional<component::projectile> &projectile = projectiles[proj_idx];
+    std::optional<component::position> &proj_pos = positions[proj_idx];
 
     bool valid_target = target_pos && target_drawable &&
                        (target_idx != proj_idx) && !projectiles[target_idx];
@@ -144,12 +144,12 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
                       sparse_array<component::hitbox> &hitboxes) {
     std::vector<size_t> entities_to_kill;
     std::vector<std::pair<float, float>> explosion_positions;
-    auto &scores = r.get_components<component::score>();
-    auto &healths = r.get_components<component::health>();
+    sparse_array<component::score> &scores = r.get_components<component::score>();
+    sparse_array<component::health> &healths = r.get_components<component::health>();
 
     for (size_t proj_idx = 0; proj_idx < projectiles.size(); ++proj_idx) {
-        auto &projectile = projectiles[proj_idx];
-        auto &proj_pos = positions[proj_idx];
+        std::optional<component::projectile> &projectile = projectiles[proj_idx];
+        std::optional<component::position> &proj_pos = positions[proj_idx];
 
         if (!projectile || !proj_pos) continue;
 
@@ -169,9 +169,9 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
     const int COLLISION_DAMAGE = 50;
 
     for (size_t player_idx = 0; player_idx < std::min(positions.size(), drawables.size()); ++player_idx) {
-        auto &player_pos = positions[player_idx];
-        auto &player_drawable = drawables[player_idx];
-        auto &player_hitbox = hitboxes[player_idx];
+        std::optional<component::position> &player_pos = positions[player_idx];
+        std::optional<component::drawable> &player_drawable = drawables[player_idx];
+        std::optional<component::hitbox> &player_hitbox = hitboxes[player_idx];
 
         bool valid_player = player_pos && player_drawable && player_hitbox &&
                            (player_drawable->tag == "player");
@@ -181,9 +181,9 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
         float player_top = player_pos->y + player_hitbox->offset_y;
 
         for (size_t enemy_idx = 0; enemy_idx < std::min(positions.size(), drawables.size()); ++enemy_idx) {
-            auto &enemy_pos = positions[enemy_idx];
-            auto &enemy_drawable = drawables[enemy_idx];
-            auto &enemy_hitbox = hitboxes[enemy_idx];
+            std::optional<component::position> &enemy_pos = positions[enemy_idx];
+            std::optional<component::drawable> &enemy_drawable = drawables[enemy_idx];
+            std::optional<component::hitbox> &enemy_hitbox = hitboxes[enemy_idx];
 
             bool valid_enemy = enemy_pos && enemy_drawable && enemy_hitbox &&
                               is_enemy_tag(enemy_drawable->tag) && (enemy_idx != player_idx);
@@ -223,11 +223,11 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
         std::unique(entities_to_kill.begin(), entities_to_kill.end()),
         entities_to_kill.end());
 
-    for (auto entity_idx : entities_to_kill) {
+    for (size_t entity_idx : entities_to_kill) {
         r.kill_entity(entity(entity_idx));
     }
 
-    for (const auto &explosion_pos : explosion_positions) {
+    for (const std::pair<float, float> &explosion_pos : explosion_positions) {
         create_explosion(r, explosion_pos.first, explosion_pos.second);
     }
 }

@@ -15,7 +15,7 @@ static void award_score_for_enemy_kill(sparse_array<component::score> &scores,
                                         sparse_array<component::drawable> &drawables,
                                         int points) {
     for (size_t score_idx = 0; score_idx < scores.size(); ++score_idx) {
-        auto &score = scores[score_idx];
+        std::optional<component::score> &score = scores[score_idx];
         if (!score) continue;
         if (score_idx >= drawables.size()) continue;
         if (!drawables[score_idx]) continue;
@@ -48,12 +48,12 @@ static void handle_entity_death(registry &r, size_t entity_idx,
 void health_system(registry &r, sparse_array<component::health> &healths,
                    float dt) {
     std::vector<size_t> entities_to_kill;
-    auto &positions = r.get_components<component::position>();
-    auto &drawables = r.get_components<component::drawable>();
-    auto &scores = r.get_components<component::score>();
+    sparse_array<component::position> &positions = r.get_components<component::position>();
+    sparse_array<component::drawable> &drawables = r.get_components<component::drawable>();
+    sparse_array<component::score> &scores = r.get_components<component::score>();
 
     for (size_t i = 0; i < healths.size(); ++i) {
-        auto &health = healths[i];
+        std::optional<component::health> &health = healths[i];
         if (!health) continue;
 
         health->current_hp -= health->pending_damage;
@@ -66,7 +66,7 @@ void health_system(registry &r, sparse_array<component::health> &healths,
         handle_entity_death(r, i, positions, drawables, scores);
     }
 
-    for (auto entity_idx : entities_to_kill) {
+    for (size_t entity_idx : entities_to_kill) {
         r.kill_entity(entity(entity_idx));
     }
 }

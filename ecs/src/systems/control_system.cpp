@@ -13,8 +13,8 @@ void control_system(registry &r,
                     sparse_array<component::controllable> &controllables,
                     sparse_array<component::velocity> &velocities,
                     sparse_array<component::input> &inputs, float /*dt*/) {
-    auto &animations = r.get_components<component::animation>();
-    auto &drawables = r.get_components<component::drawable>();
+    sparse_array<component::animation> &animations = r.get_components<component::animation>();
+    sparse_array<component::drawable> &drawables = r.get_components<component::drawable>();
 
     struct InputMapping {
         bool component::input::*input_ptr;
@@ -31,14 +31,14 @@ void control_system(registry &r,
     for (size_t i = 0;
          i < std::min({controllables.size(), velocities.size(), inputs.size()});
          ++i) {
-        auto &ctrl = controllables[i];
-        auto &vel = velocities[i];
-        auto &input = inputs[i];
+        std::optional<component::controllable> &ctrl = controllables[i];
+        std::optional<component::velocity> &vel = velocities[i];
+        std::optional<component::input> &input = inputs[i];
         if (ctrl && vel && input) {
             vel->vx = vel->vy = 0;
 
             // Branchless input mapping (max 1 branch per iteration)
-            for (const auto &mapping : input_mappings) {
+            for (const InputMapping &mapping : input_mappings) {
                 bool is_active = (*input).*mapping.input_ptr;
                 float value =
                     is_active ? (ctrl->speed * mapping.multiplier) : 0.0f;
@@ -51,7 +51,7 @@ void control_system(registry &r,
             if (i < animations.size() && animations[i] &&
                 i < drawables.size() && drawables[i] &&
                 drawables[i]->tag == "player") {
-                auto &anim = animations[i];
+                std::optional<component::animation> &anim = animations[i];
 
                 struct AnimationState {
                     bool playing;

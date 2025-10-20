@@ -33,15 +33,16 @@ static const size_t EXPLOSION_FRAMES_COUNT =
     sizeof(EXPLOSION_FRAMES) / sizeof(EXPLOSION_FRAMES[0]);
 
 void create_explosion(registry &r, float x, float y) {
-    auto explosion_entity = r.spawn_entity();
-    r.add_component<component::position>(explosion_entity,
-                                         component::position(x, y));
+    entity explosion_entity = r.spawn_entity();
+    r.add_component<component::position>(
+        explosion_entity,
+        component::position(x, y));
     r.add_component<component::drawable>(
         explosion_entity,
         component::drawable("assets/sprites/r-typesheet1.gif",
                             EXPLOSION_FRAMES[0], 2.0f, "explosion"));
 
-    auto &anim = r.add_component<component::animation>(
+    std::optional<component::animation> &anim = r.add_component<component::animation>(
         explosion_entity, component::animation(0.1f, false, true));
     for (size_t i = 0; i < EXPLOSION_FRAMES_COUNT; ++i) {
         anim->frames.push_back(EXPLOSION_FRAMES[i]);

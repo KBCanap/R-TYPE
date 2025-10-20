@@ -24,23 +24,23 @@ void audio_system(registry & /*r*/,
 
     for (size_t i = 0; i < std::min(sound_effects.size(), triggers.size());
          ++i) {
-        auto &sound_effect = sound_effects[i];
-        auto &trigger = triggers[i];
+        std::optional<component::sound_effect> &sound_effect = sound_effects[i];
+        std::optional<component::audio_trigger> &trigger = triggers[i];
 
         bool should_trigger = sound_effect && trigger && !trigger->triggered;
         if (!should_trigger) continue;
 
         // Single map lookup instead of two
-        auto buffer_it = sound_buffers.find(sound_effect->sound_path);
+        std::unordered_map<std::string, render::ISoundBuffer *>::iterator buffer_it = sound_buffers.find(sound_effect->sound_path);
         bool buffer_exists = (buffer_it != sound_buffers.end());
 
         // Load buffer if needed (max 2 branches)
         if (!buffer_exists) {
-            auto *buffer = audioManager.createSoundBuffer();
+            render::ISoundBuffer *buffer = audioManager.createSoundBuffer();
             bool loaded = buffer->loadFromFile(sound_effect->sound_path);
             if (loaded) {
                 sound_buffers[sound_effect->sound_path] = buffer;
-                auto *sound = audioManager.createSound();
+                render::ISound *sound = audioManager.createSound();
                 sound->setBuffer(*buffer);
                 sounds[sound_effect->sound_path] = sound;
                 buffer_exists = true;
@@ -51,7 +51,7 @@ void audio_system(registry & /*r*/,
 
         // Play sound if buffer exists
         if (buffer_exists) {
-            auto *sound = sounds[sound_effect->sound_path];
+            render::ISound *sound = sounds[sound_effect->sound_path];
             sound->setVolume(sound_effect->volume);
             sound->play();
             sound_effect->is_playing = true;
@@ -62,24 +62,24 @@ void audio_system(registry & /*r*/,
         // Update playing status (max 2 branches but separated)
         bool should_check_status = sound_effect && sound_effect->is_playing;
         if (should_check_status) {
-            auto sound_it = sounds.find(sound_effect->sound_path);
+            std::unordered_map<std::string, render::ISound *>::iterator sound_it = sounds.find(sound_effect->sound_path);
             bool sound_found = (sound_it != sounds.end());
             if (sound_found) {
-                auto *sound = sound_it->second;
+                render::ISound *sound = sound_it->second;
                 sound_effect->is_playing = (sound->getStatus() == render::AudioStatus::Playing);
             }
         }
     }
 
     for (size_t i = 0; i < std::min(musics.size(), triggers.size()); ++i) {
-        auto &music = musics[i];
-        auto &trigger = triggers[i];
+        std::optional<component::music> &music = musics[i];
+        std::optional<component::audio_trigger> &trigger = triggers[i];
 
         bool should_start = music && trigger && !trigger->triggered && !music->is_playing;
         if (!should_start) continue;
 
         // Get or create track (max 2 branches)
-        auto track_it = music_tracks.find(music->music_path);
+        std::unordered_map<std::string, render::IMusic *>::iterator track_it = music_tracks.find(music->music_path);
         render::IMusic *track = nullptr;
 
         if (track_it == music_tracks.end()) {
@@ -102,10 +102,10 @@ void audio_system(registry & /*r*/,
         // Update playing status (max 2 branches but separated)
         bool should_check_music_status = music && music->is_playing;
         if (should_check_music_status) {
-            auto track_it = music_tracks.find(music->music_path);
+            std::unordered_map<std::string, render::IMusic *>::iterator track_it = music_tracks.find(music->music_path);
             bool track_found = (track_it != music_tracks.end());
             if (track_found) {
-                auto *track = track_it->second;
+                render::IMusic *track = track_it->second;
                 music->is_playing = (track->getStatus() == render::AudioStatus::Playing);
             }
         }

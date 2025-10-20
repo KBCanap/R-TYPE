@@ -16,8 +16,8 @@ void weapon_system(registry &r, sparse_array<component::weapon> &weapons,
                    float current_time) {
 
     for (size_t i = 0; i < std::min({weapons.size(), positions.size()}); ++i) {
-        auto &weapon = weapons[i];
-        auto &pos = positions[i];
+        std::optional<component::weapon> &weapon = weapons[i];
+        std::optional<component::position> &pos = positions[i];
 
         // Branchless input check
         bool has_input = (i < inputs.size()) && inputs[i] && inputs[i]->fire;
