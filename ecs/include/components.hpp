@@ -7,29 +7,10 @@
 
 #pragma once
 #include "render/IRenderWindow.hpp"
-#include <SFML/Graphics.hpp>
 #include <cmath>
 #include <functional>
 #include <memory>
 #include <string>
-
-namespace render {
-inline IntRect toRenderIntRect(const sf::IntRect &rect) {
-    return IntRect(rect.left, rect.top, rect.width, rect.height);
-}
-
-inline sf::IntRect toSFMLIntRect(const IntRect &rect) {
-    return sf::IntRect(rect.left, rect.top, rect.width, rect.height);
-}
-
-inline Color toRenderColor(const sf::Color &color) {
-    return Color(color.r, color.g, color.b, color.a);
-}
-
-inline sf::Color toSFMLColor(const Color &color) {
-    return sf::Color(color.r, color.g, color.b, color.a);
-}
-} // namespace render
 
 class registry;
 
