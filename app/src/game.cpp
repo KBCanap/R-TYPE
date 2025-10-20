@@ -504,24 +504,18 @@ void Game::sendPlayerInput(float dt) {
             return;
 
         uint32_t my_net_id = _networkManager->getAssignedPlayerNetId();
-        std::cout << "[Game] My NET_ID from NetworkManager: " << my_net_id
-                  << std::endl;
 
         if (my_net_id == 0 || !_networkCommandHandler)
             return;
 
         auto my_entity = _networkCommandHandler->findEntityByNetId(my_net_id);
 
-        if (!my_entity) {
-            std::cout << "[Game] Entity not found for NET_ID: " << my_net_id
-                      << std::endl;
+        if (!my_entity)
             return;
-        }
 
         auto &inputs = _registry.get_components<component::input>();
         if (*my_entity >= inputs.size() || !inputs[*my_entity])
             return;
-        std::cout << "MAIS PKKKKKKKKKKK\n";
 
         auto &playerInput = inputs[*my_entity];
 
