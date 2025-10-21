@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** StartServer.hpp
 ** File description:
-** class that manage the launch the network and game logic
+** Lobby server managing multiple game instances via fork
 */
 
 #ifndef STARTSERVER_HPP_
@@ -16,39 +16,97 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
+#include <sys/types.h>
+
+// Structure to track running game instances
+struct GameInstance {
+    uint16_t lobby_id;
+    uint16_t server_id;
+    pid_t process_id;
+    uint16_t udp_port;
+    uint32_t server_ip;
+    std::vector<ClientId> player_ids;
+    
+    GameInstance() : lobby_id(0), server_id(0), process_id(0), 
+                     udp_port(0), server_ip(0) {}
+    
+    GameInstance(uint16_t lid, uint16_t sid, pid_t pid, uint16_t port, uint32_t ip)
+        : lobby_id(lid), server_id(sid), process_id(pid), 
+          udp_port(port), server_ip(ip) {}
+};
 
 class StartServer {
   public:
-    StartServer(int port, int udp_port);
+    StartServer(int port, int base_udp_port);
     ~StartServer();
 
-    short networkLoop();
-    bool sendToClient(uint32_t client_id, const std::string &message);
-    void disconnectClient(uint32_t client_id);
-    std::vector<uint32_t> getConnectedClients();
+    void run();
     void stop();
 
     static StartServer *getInstance() { return _instance; }
 
   private:
-    int _port;
-    int _udp_port;
-    bool _in_game = false;
+    // Server configuration
+    int _tcp_port;
+    int _base_udp_port;
+    uint16_t _next_server_id;
+    
+    // Server components
     std::unique_ptr<TCPServer> _tcp_server;
     Protocol _protocol;
     GameSession _game_session;
-
+    
+    // Running state
     std::atomic<bool> _running{true};
-
-    void processMessage(const ClientMessage &message);
-    void handleConnect(uint32_t client_id);
-    void handleReady(uint32_t client_id);
-    void startGame();
-    void setupSignalHandlers();
-
+    
+    // Game instance tracking
+    std::unordered_map<uint16_t, GameInstance> _game_instances; // lobby_id -> GameInstance
+    std::unordered_map<uint16_t, uint16_t> _udp_port_allocations; // udp_port -> lobby_id
+    
+    // Signal handling
     static StartServer *_instance;
     static void signalHandler(int signal);
+    static void childSignalHandler(int signal);
+    void setupSignalHandlers();
+    
+    // Main loop
+    void lobbyLoop();
+    void processMessage(const ClientMessage &message);
+    
+    // Message handlers - Connection
+    void handleConnect(uint32_t client_id, const std::vector<uint8_t> &data);
+    
+    // Message handlers - Lobby Navigation
+    void handleLobbyListRequest(uint32_t client_id);
+    void handleLobbyInfoRequest(uint32_t client_id, const std::vector<uint8_t> &data);
+    
+    // Message handlers - Lobby Management
+    void handleCreateLobby(uint32_t client_id, const std::vector<uint8_t> &data);
+    void handleJoinLobby(uint32_t client_id, const std::vector<uint8_t> &data);
+    void handleLeaveLobby(uint32_t client_id);
+    
+    // Message handlers - Game Flow
+    void handleReady(uint32_t client_id);
+    
+    // Game instance management
+    uint16_t allocateUdpPort();
+    void freeUdpPort(uint16_t port);
+    bool startGameInstance(uint16_t lobby_id);
+    void cleanupFinishedGames();
+    
+    // Broadcasting
+    void broadcastToLobby(uint16_t lobby_id, const std::string &message, 
+                          std::optional<ClientId> exclude = std::nullopt);
+    
+    // Client management
+    void handleClientDisconnect(uint32_t client_id);
+    
+    // Utilities
+    bool sendToClient(uint32_t client_id, const std::string &message);
+    void sendError(uint32_t client_id, ProtocolError error);
+    uint32_t getServerIp() const;
 };
 
 #endif /* !STARTSERVER_HPP_ */

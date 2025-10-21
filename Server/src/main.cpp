@@ -2,10 +2,9 @@
 ** EPITECH PROJECT, 2025
 ** main.cpp
 ** File description:
-** created by dylan adg
+** Entry point for R-Type lobby server with multi-instance game management
 */
 
-#include "GameServerLoop.hpp"
 #include "StartServer.hpp"
 #include <cstring>
 #include <iostream>
@@ -14,18 +13,25 @@
 
 struct ServerConfig {
     int tcp_port;
-    int udp_port;
+    int base_udp_port;
     bool valid;
 };
 
 static void show_helper() {
     std::cout << "USAGE:" << std::endl;
-    std::cout << "./r-type_server [-p <tcp_port>] [-u <udp_port>]" << std::endl;
-    std::cout << "OPTIONS:" << std::endl;
-    std::cout << "  -p <port>    TCP port number (1024-65535)" << std::endl;
-    std::cout << "  -u <port>    UDP port number (1024-65535)" << std::endl;
+    std::cout << "./r-type_server [-p <tcp_port>] [-u <base_udp_port>]" << std::endl;
+    std::cout << "\nDESCRIPTION:" << std::endl;
+    std::cout << "  Starts a lobby server that manages multiple game instances." << std::endl;
+    std::cout << "  Each game instance will use a unique UDP port starting from base_udp_port." << std::endl;
+    std::cout << "\nOPTIONS:" << std::endl;
+    std::cout << "  -p <port>    TCP port number for lobby server (1024-65535)" << std::endl;
+    std::cout << "  -u <port>    Base UDP port number for game instances (1024-65535)" << std::endl;
     std::cout << "  -h           Show this help message" << std::endl;
-    std::cout << "\nExample: ./r-type_server -p 8080 -u 8081" << std::endl;
+    std::cout << "\nEXAMPLE:" << std::endl;
+    std::cout << "  ./r-type_server -p 8000 -u 8080" << std::endl;
+    std::cout << "  This will:" << std::endl;
+    std::cout << "    - Start lobby server on TCP port 8000" << std::endl;
+    std::cout << "    - Allocate game instances starting at UDP port 8080, 8081, 8082..." << std::endl;
 }
 
 static bool is_a_valid_port(const char *str) {
@@ -54,8 +60,7 @@ static ServerConfig parse_arguments(int ac, char **av) {
     for (int i = 1; i < ac; i++) {
         if (std::strcmp(av[i], "-p") == 0) {
             if (i + 1 >= ac || !is_a_valid_port(av[i + 1])) {
-                std::cerr << "Error: Invalid or missing TCP port after -p flag"
-                          << std::endl;
+                std::cerr << "Error: Invalid or missing TCP port after -p flag" << std::endl;
                 show_helper();
                 return config;
             }
@@ -63,7 +68,7 @@ static ServerConfig parse_arguments(int ac, char **av) {
             i++;
         } else if (std::strcmp(av[i], "-u") == 0) {
             if (i + 1 >= ac || !is_a_valid_port(av[i + 1])) {
-                std::cerr << "Error: Invalid or missing UDP port after -u flag"
+                std::cerr << "Error: Invalid or missing base UDP port after -u flag"
                           << std::endl;
                 show_helper();
                 return config;
@@ -87,7 +92,7 @@ static ServerConfig parse_arguments(int ac, char **av) {
     }
 
     config.tcp_port = ports["-p"];
-    config.udp_port = ports["-u"];
+    config.base_udp_port = ports["-u"];
     config.valid = true;
 
     return config;
@@ -100,23 +105,29 @@ int main(int ac, char **av) {
         return (ac == 1 || (ac == 2 && std::strcmp("-h", av[1]) == 0)) ? 0 : 84;
     }
 
+    std::cout << "\n╔═══════════════════════════════════════════╗" << std::endl;
+    std::cout << "║       R-TYPE LOBBY SERVER v1.0            ║" << std::endl;
+    std::cout << "╚═══════════════════════════════════════════╝" << std::endl;
+    std::cout << "\nConfiguration:" << std::endl;
+    std::cout << "  TCP Port (Lobby):  " << config.tcp_port << std::endl;
+    std::cout << "  UDP Port (Base):   " << config.base_udp_port << std::endl;
+    std::cout << "\nServer Features:" << std::endl;
+    std::cout << "  ✓ Multi-lobby support" << std::endl;
+    std::cout << "  ✓ Multi-instance game management (fork)" << std::endl;
+    std::cout << "  ✓ Dynamic UDP port allocation" << std::endl;
+    std::cout << "  ✓ 2-4 players per game" << std::endl;
+    std::cout << "\nPress Ctrl+C to stop the server\n" << std::endl;
+
     try {
-        StartServer server(config.tcp_port, config.udp_port);
-
-        short nb_client = server.networkLoop();
-
-        if (nb_client == 0) {
-            return 0;
-        }
-        std::cout << "nb client :" << nb_client << std::endl;
-        GameServerLoop game_loop(config.udp_port, nb_client);
-        game_loop.start();
-        while (game_loop.isRunning()) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
-        game_loop.stop();
+        StartServer server(config.tcp_port, config.base_udp_port);
+        
+        // Run the lobby server (infinite loop until SIGINT/SIGTERM)
+        server.run();
+        
+        std::cout << "\nServer stopped gracefully." << std::endl;
+        
     } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "\n✗ Fatal Error: " << e.what() << std::endl;
         return 84;
     }
 

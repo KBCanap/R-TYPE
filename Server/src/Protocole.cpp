@@ -117,7 +117,7 @@ std::string
 Protocol::createLobbyListResponse(const std::vector<LobbyInfo> &lobbies) {
     std::vector<uint8_t> data;
 
-    uint16_t lobby_count = htons(static_cast<uint16_t>(lobbies.size()));
+    uint16_t lobby_count = static_cast<uint16_t>(lobbies.size());
     data.push_back(static_cast<uint8_t>(lobby_count >> 8));
     data.push_back(static_cast<uint8_t>(lobby_count & 0xFF));
 
@@ -186,13 +186,13 @@ Protocol::createJoinLobbyAck(uint16_t lobby_id, uint8_t your_player_id,
                              const std::vector<PlayerInfo> &players) {
     std::vector<uint8_t> data;
 
-    uint16_t lobby_id_network = htons(lobby_id);
+    uint16_t lobby_id_network = static_cast<uint16_t>(lobby_id);
     data.push_back(static_cast<uint8_t>(lobby_id_network >> 8));
     data.push_back(static_cast<uint8_t>(lobby_id_network & 0xFF));
 
     data.push_back(your_player_id);
 
-    uint16_t player_count = htons(static_cast<uint16_t>(players.size()));
+    uint16_t player_count = static_cast<uint16_t>(players.size());
     data.push_back(static_cast<uint8_t>(player_count >> 8));
     data.push_back(static_cast<uint8_t>(player_count & 0xFF));
 
@@ -244,9 +244,14 @@ std::string Protocol::parseUsername(const std::vector<uint8_t> &data) {
     if (data.size() < 2)
         return "";
 
-    uint16_t username_len = (static_cast<uint16_t>(data[0]) << 8) | data[1];
+    std::cout << "DATA SIZE: " << data.size() << " data : " << data[2] << " "
+              << data[3] << std::endl;
+    uint16_t username_len;
+    memcpy(&username_len, data.data(), sizeof(uint16_t));
     username_len = ntohs(username_len);
 
+
+    std::cout << "USERNAME LENGTH: " << username_len << std::endl;
     if (data.size() < 2 + username_len)
         return "";
 
