@@ -30,7 +30,7 @@ enum EntityType : uint8_t {
 };
 
 // Player input event types
-enum EventType : uint8_t { MOVE = 0x01, SHOOT = 0x02, QUIT = 0x03 };
+enum EventType_s : uint8_t { MOVE = 0x01, SHOOT = 0x02, QUIT = 0x03 };
 
 // Movement directions
 enum Direction : uint8_t {
@@ -71,7 +71,7 @@ struct EntityUpdateData {
 } __attribute__((packed));
 
 struct PlayerInputData {
-    EventType event_type;
+    EventType_s event_type;
     Direction direction;
 } __attribute__((packed));
 

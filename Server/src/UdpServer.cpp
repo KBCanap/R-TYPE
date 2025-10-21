@@ -35,10 +35,10 @@ void UDPServer::start_receive() {
                     msg.client_id = existing_client->id;
                     msg.client_endpoint = existing_client->endpoint_str;
                     msg.message = std::string(buf->data(), len);
-                    std::cout << "Received message from client "
+                    /*std::cout << "Received message from client "
                               << existing_client->id << " ("
                               << existing_client->endpoint_str << "): " << len
-                              << " bytes" << std::endl;
+                              << " bytes" << std::endl;*/
                     enqueueMessage(msg);
                 } else if (canAcceptNewClient()) {
                     uint32_t client_id = generateClientId();

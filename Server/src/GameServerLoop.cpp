@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <ostream>
 
 GameServerLoop *GameServerLoop::instance = nullptr;
 
@@ -184,44 +185,16 @@ void GameServerLoop::processMessages() {
                           << msg.client_id << std::endl;
             }
         } else if (parsed.type == PLAYER_INPUT && parsed.data.size() >= 2) {
-            std::cout << "PLAYER INPUT [ " << PLAYER_INPUT << " ]\n";
             uint8_t event_type = parsed.data[0];
             uint8_t direction = parsed.data[1];
+            std::cout << "[GameServerLoop] Received PLAYER_INPUT from client " << msg.client_id
+                << " | Event Type: 0x" << std::hex << static_cast<int>(event_type)
+                << " | Direction: 0x" << std::hex << static_cast<int>(direction)
+                << " | Sequence #: " << std::dec << parsed.sequence_num << std::endl;
+
 
             if (event_type == 0x01) {
-                _game_logic->pushClientEvent(
-                    {msg.client_id, KEY_UP_RELEASE, parsed.sequence_num,
-                     std::chrono::steady_clock::now()});
-                _game_logic->pushClientEvent(
-                    {msg.client_id, KEY_DOWN_RELEASE, parsed.sequence_num,
-                     std::chrono::steady_clock::now()});
-                _game_logic->pushClientEvent(
-                    {msg.client_id, KEY_LEFT_RELEASE, parsed.sequence_num,
-                     std::chrono::steady_clock::now()});
-                _game_logic->pushClientEvent(
-                    {msg.client_id, KEY_RIGHT_RELEASE, parsed.sequence_num,
-                     std::chrono::steady_clock::now()});
-
-                if (direction & 0x01) {
-                    _game_logic->pushClientEvent(
-                        {msg.client_id, KEY_UP_PRESS, parsed.sequence_num,
-                         std::chrono::steady_clock::now()});
-                }
-                if (direction & 0x02) {
-                    _game_logic->pushClientEvent(
-                        {msg.client_id, KEY_DOWN_PRESS, parsed.sequence_num,
-                         std::chrono::steady_clock::now()});
-                }
-                if (direction & 0x04) {
-                    _game_logic->pushClientEvent(
-                        {msg.client_id, KEY_LEFT_PRESS, parsed.sequence_num,
-                         std::chrono::steady_clock::now()});
-                }
-                if (direction & 0x08) {
-                    _game_logic->pushClientEvent(
-                        {msg.client_id, KEY_RIGHT_PRESS, parsed.sequence_num,
-                         std::chrono::steady_clock::now()});
-                }
+                _game_logic->updatePlayerInputState(msg.client_id, direction);
             } else if (event_type == 0x02) {
                 _game_logic->pushClientEvent(
                     {msg.client_id, KEY_SHOOT_PRESS, parsed.sequence_num,

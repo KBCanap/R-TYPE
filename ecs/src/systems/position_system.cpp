@@ -9,6 +9,7 @@
 #include "../../include/render/IRenderWindow.hpp"
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 namespace systems {
 
@@ -27,6 +28,7 @@ void position_system(registry &r, sparse_array<component::position> &positions,
         std::optional<component::drawable> &drawable = drawables[i];
         std::optional<component::position> &pos = positions[i];
         std::optional<component::velocity> &vel = velocities[i];
+
 
         bool is_boss = drawable && (drawable->tag == "boss");
         bool has_components = pos && vel;
@@ -53,6 +55,9 @@ void position_system(registry &r, sparse_array<component::position> &positions,
             pos->x += vel->vx * dt_mult;
             pos->y += vel->vy * dt_mult;
         }
+                std::cout << "x= " << pos->x
+                << "y= " << pos->y
+                << "\n";
     }
 }
 

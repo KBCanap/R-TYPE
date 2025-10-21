@@ -6,6 +6,8 @@
 */
 
 #include "../../include/systems.hpp"
+#include <algorithm>
+#include <iostream>
 
 namespace systems {
 
@@ -21,7 +23,6 @@ void control_system(registry &r,
         bool is_x_axis;
         float multiplier;
     };
-
     static const InputMapping input_mappings[] = {
         {&component::input::left, true, -1.0f},
         {&component::input::right, true, 1.0f},
@@ -34,6 +35,9 @@ void control_system(registry &r,
         std::optional<component::controllable> &ctrl = controllables[i];
         std::optional<component::velocity> &vel = velocities[i];
         std::optional<component::input> &input = inputs[i];
+            std::cout << "[GameLogic] Updated input for client "
+          << " | up=" << input->up << " down=" << input->down
+          << " left=" << input->left << " right=" << input->right << std::endl;
         if (ctrl && vel && input) {
             vel->vx = vel->vy = 0;
 

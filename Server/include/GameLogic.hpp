@@ -9,6 +9,9 @@
 #define GAMELOGIC_COMPLETE_HPP_
 
 #include "../../ecs/include/registery.hpp"
+#include "../../ecs/include/components.hpp"
+#include "../../ecs/include/systems.hpp"
+#include "../../ecs/include/network/NetworkComponents.hpp"
 #include <chrono>
 #include <deque>
 #include <memory>
@@ -33,79 +36,6 @@ enum InputEvent {
     KEY_SHOOT_RELEASE
 };
 
-// Component structures for ECS
-struct Position {
-    float x;
-    float y;
-};
-
-struct Velocity {
-    float vx;
-    float vy;
-};
-
-struct InputState {
-    bool up = false;
-    bool down = false;
-    bool left = false;
-    bool right = false;
-    bool shoot = false;
-    int weapon_type = 0; // 0=single, 1=rapid, 2=burst, 3=spread
-};
-
-struct PlayerComponent {
-    uint client_id;
-    bool is_active;
-    float respawn_timer = 0.0f;
-};
-
-struct Health {
-    int current_hp;
-    int max_hp;
-    float invulnerability_timer = 0.0f;
-};
-
-struct Score {
-    int current_score;
-};
-
-struct Weapon {
-    float fire_rate;
-    float fire_timer;
-    int weapon_type;
-    int damage;
-};
-
-struct Projectile {
-    bool is_player_projectile;
-    int damage;
-    float lifetime;
-};
-
-struct Enemy {
-    int enemy_type; // 0=straight, 1=zigzag, 2=boss
-    float pattern_timer;
-    int score_value;
-};
-
-struct Boss {
-    int phase;
-    float phase_timer;
-};
-
-struct Hitbox {
-    float width;
-    float height;
-    float offset_x;
-    float offset_y;
-};
-
-struct NetworkComponent {
-    uint net_id;
-    bool needs_update;
-    std::string entity_type; // "player", "enemy", "projectile", "boss"
-};
-
 // Event structure with timestamp and sequence
 struct ClientEvent {
     uint client_id;
@@ -118,8 +48,8 @@ struct ClientEvent {
 struct EntitySnapshot {
     uint net_id;
     std::string entity_type;
-    Position pos;
-    Velocity vel;
+    component::position pos;
+    component::velocity vel;
     int health;
     int score;
     uint tick;
@@ -147,6 +77,7 @@ class GameLogic {
 
     // Event handling from network thread
     void pushClientEvent(const ClientEvent &evt);
+    void updatePlayerInputState(uint client_id, uint8_t direction);
 
     // Snapshot management
     WorldSnapshot generateSnapshot();
@@ -163,6 +94,8 @@ class GameLogic {
     uint generateNetId();
 
   private:
+    std::unordered_map<uint, std::chrono::steady_clock::time_point> _last_input_time;
+
     std::shared_ptr<registry> _registry;
     std::queue<ClientEvent> _event_queue;
     std::mutex _event_mutex;
@@ -203,43 +136,57 @@ class GameLogic {
     void cleanupDeadEntities();
     entity findEntityByNetId(uint net_id);
 
-    // Systems
-    static void inputSystem(registry &reg, sparse_array<InputState> &inputs,
-                            sparse_array<Velocity> &velocities,
-                            sparse_array<PlayerComponent> &players, float dt);
+};
 
-    static void movementSystem(registry &reg, sparse_array<Position> &positions,
-                               sparse_array<Velocity> &velocities, float dt);
+using namespace render;
+class DummyRenderWindow : public render::IRenderWindow {
+    public:
+        DummyRenderWindow(unsigned int x, unsigned int y) : _x(x), _y(y) {}
+        ~DummyRenderWindow() override = default;
 
-    static void weaponSystem(registry &reg, sparse_array<Weapon> &weapons,
-                             sparse_array<Position> &positions,
-                             sparse_array<InputState> &inputs,
-                             sparse_array<PlayerComponent> &players,
-                             float game_time);
+    private:
+        unsigned int _x;
+        unsigned int _y;
 
-    static void projectileSystem(registry &reg,
-                                 sparse_array<Projectile> &projectiles,
-                                 sparse_array<Position> &positions, float dt);
+    // Window management
+    bool isOpen() const override { return 0;}
+    void close() override {};
+    void clear([[maybe_unused]]const Color &color = Color::Black()) override {};
+    void display() override {};
+    Vector2u getSize() const override {
+            return Vector2u(_x, _y);
+        }
+    void setSize([[maybe_unused]]const Vector2u &size) override {};
+    void setFramerateLimit([[maybe_unused]]unsigned int limit) override {};
+    void setVerticalSyncEnabled([[maybe_unused]]bool enabled) override {};
+    void setTitle([[maybe_unused]]const std::string &title) override {};
 
-    static void collisionSystem(
-        registry &reg, sparse_array<Position> &positions,
-        sparse_array<Hitbox> &hitboxes, sparse_array<Projectile> &projectiles,
-        sparse_array<PlayerComponent> &players, sparse_array<Enemy> &enemies,
-        sparse_array<Health> &healths, sparse_array<Score> &scores,
-        sparse_array<NetworkComponent> &network_comps, float dt);
+    // Event handling
+    bool pollEvent([[maybe_unused]]Event &event) override { return 0;};
 
-    static void healthSystem(registry &reg, sparse_array<Health> &healths,
-                             sparse_array<NetworkComponent> &network_comps,
-                             float dt);
+    // Drawing
+    void draw([[maybe_unused]]ISprite &sprite) override {};
+    void draw([[maybe_unused]]IShape &shape) override {};
+    void draw([[maybe_unused]]IText &text) override {};
+    void draw([[maybe_unused]]ISprite &sprite, [[maybe_unused]]IShader &shader) override {};
+    void draw([[maybe_unused]]IShape &shape, [[maybe_unused]]IShader &shader) override {};
+    void draw([[maybe_unused]]IText &text, [[maybe_unused]]IShader &shader) override {};
 
-    static void enemyAISystem(registry &reg, sparse_array<Enemy> &enemies,
-                              sparse_array<Position> &positions,
-                              sparse_array<Velocity> &velocities, float dt);
+    // View management
+    void setView([[maybe_unused]]IView &view) override {};
+    std::unique_ptr<IView> getDefaultView() const override { return nullptr;};
+    std::unique_ptr<IView> createView() override {return nullptr;};
 
-    static void bossAISystem(registry &reg, sparse_array<Boss> &bosses,
-                             sparse_array<Position> &positions,
-                             sparse_array<Velocity> &velocities,
-                             sparse_array<Health> &healths, float dt);
+    // Factory methods for creating drawable objects
+    std::unique_ptr<ISprite> createSprite() override {return nullptr;};
+    std::unique_ptr<ITexture> createTexture() override {return nullptr;};
+    std::unique_ptr<IShape>
+    createRectangleShape([[maybe_unused]]const Vector2f &size) override {return nullptr;};
+    std::unique_ptr<IShape> createCircleShape([[maybe_unused]]float radius) override {return nullptr;};
+    std::unique_ptr<IFont> createFont() override {return nullptr;};
+    std::unique_ptr<IText> createText() override {return nullptr;};
+    std::unique_ptr<IShader> createShader() override {return nullptr;};
+    std::unique_ptr<IImage> createImage() override {return nullptr;};
 };
 
 #endif /* !GAMELOGIC_COMPLETE_HPP_ */
