@@ -168,6 +168,9 @@ class Game {
     bool _gameOver = false;     ///< Game over state flag
     bool _victory = false;      ///< Victory state flag
     int _currentLevel = 1;      ///< Current level (1, 2, etc.)
+    bool _endlessMode = false;  ///< Endless mode flag
+    int _nextBossType = 1;      ///< Next boss to spawn in endless mode (1 or 2)
+    int _lastBossScore = 0;     ///< Score when last boss was spawned
 
     TickSystem _tickSystem;   ///< Fixed timestep game loop system
     bool _shouldExit = false; ///< Flag to exit the game

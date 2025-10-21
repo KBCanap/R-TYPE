@@ -48,10 +48,14 @@ void position_system(registry &r, sparse_array<component::position> &positions,
         bool is_boss = drawable && (drawable->tag == "boss");
         bool has_components = pos && vel;
 
-        // Only apply bouncing logic if boss has AI with non-zero base_speed
+        // Apply bouncing logic if boss has AI with non-zero base_speed OR has vertical velocity
         bool should_bounce = false;
         if (i < ai_inputs.size() && ai_inputs[i]) {
             should_bounce = (ai_inputs[i]->movement_pattern.base_speed > 0.1f);
+        }
+        // Also enable bounce if boss has vertical velocity (for simple up-down movement)
+        if (!should_bounce && vel && std::abs(vel->vy) > 0.1f) {
+            should_bounce = true;
         }
 
         if (is_boss & has_components & should_bounce) {

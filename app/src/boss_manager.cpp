@@ -20,7 +20,7 @@ std::optional<entity> BossManager::spawnBoss() {
     _registry.add_component<component::position>(
         boss, component::position(boss_x, boss_y));
     _registry.add_component<component::velocity>(
-        boss, component::velocity(0.f, 100.0f));
+        boss, component::velocity(0.f, 150.0f));
     _registry.add_component<component::drawable>(
         boss, component::drawable("assets/sprites/r-typesheet17.gif",
                                   render::IntRect(), 2.0f, "boss"));
@@ -34,10 +34,11 @@ std::optional<entity> BossManager::spawnBoss() {
                                 25.0f, 250.0f, 5.0f, false, 1, false, 3, 0.1f,
                                 render::IntRect(249, 103, 16, 12)));
 
+    // AI for firing only (no movement pattern applied)
     auto boss_ai = _registry.add_component<component::ai_input>(
         boss, component::ai_input(
                   true, 0.5f, component::ai_movement_pattern::straight(0.0f)));
-    boss_ai->movement_pattern.base_speed = 0.0f;
+    boss_ai->movement_pattern.base_speed = 0.0f;  // No AI movement, velocity handles it
 
     auto &boss_anim = _registry.add_component<component::animation>(
         boss, component::animation(0.1f, true));

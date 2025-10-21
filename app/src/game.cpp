@@ -224,14 +224,16 @@ void Game::update(float dt) {
     }
 
     // For level 1 boss: check if it's still alive
-    if (!_gameOver && !_victory && _boss && _currentLevel == 1) {
+    if (!_gameOver && !_victory && _boss && (_currentLevel == 1 || _endlessMode)) {
         auto &boss_pos = positions[*_boss];
         auto &boss_drawable = drawables[*_boss];
 
         if (!boss_pos || !boss_drawable) {
-            _victory = true;
-            _victoryMenu.setButtonText("Next Stage");
-            _victoryMenu.setVisible(true);
+            if (!_endlessMode) {
+                _victory = true;
+                _victoryMenu.setButtonText("Next Stage");
+                _victoryMenu.setVisible(true);
+            }
             _boss.reset();
         }
     }
@@ -275,10 +277,13 @@ void Game::update(float dt) {
         }
 
         if (all_parts_dead) {
-            _victory = true;
-            _victoryMenu.setButtonText("Next Stage");
-            _victoryMenu.setVisible(true);
+            if (!_endlessMode) {
+                _victory = true;
+                _victoryMenu.setButtonText("Next Stage");
+                _victoryMenu.setVisible(true);
+            }
             _bossPhase2 = false;
+            _bossParts.clear();
         }
     }
 
@@ -301,11 +306,32 @@ void Game::update(float dt) {
         _audioManager.playMusic(MusicType::GAME_OVER, false);
     }
 
-    if (!_gameOver && !_victory &&
-        _bossManager.shouldSpawnBoss(_player, _boss)) {
-        // Spawn appropriate boss based on level
-        if (_currentLevel == 1) {
+    // Boss spawning logic
+    bool shouldSpawn = false;
+    if (_endlessMode) {
+        // Endless mode: spawn boss every 100 points, alternating types
+        if (_player && !_boss) {
+            auto &scores = _registry.get_components<component::score>();
+            if (*_player < scores.size() && scores[*_player]) {
+                int currentScore = scores[*_player]->current_score;
+                if (currentScore >= _lastBossScore + 100) {
+                    shouldSpawn = true;
+                    _lastBossScore = currentScore;
+                }
+            }
+        }
+    } else {
+        // Normal mode: boss spawns at 100 points once
+        shouldSpawn = _bossManager.shouldSpawnBoss(_player, _boss);
+    }
+
+    if (!_gameOver && !_victory && shouldSpawn) {
+        // Spawn appropriate boss based on level or endless mode
+        int bossType = _endlessMode ? _nextBossType : _currentLevel;
+
+        if (bossType == 1) {
             _boss = _bossManager.spawnBoss();
+            std::cout << "[Game] Boss Level 1 spawned" << std::endl;
         } else {
             // Level 2: spawn dummy boss entity
             _boss = _bossManager.spawnBossLevel2();
@@ -317,29 +343,34 @@ void Game::update(float dt) {
             _bossManager.spawnBossLevel2Phase2Parts(boss_x, boss_y, _bossParts);
             _bossPhase2 = true;
 
-            std::cout << "[Game] Level 2 boss spawned with 3 parts" << std::endl;
+            std::cout << "[Game] Boss Level 2 spawned with 3 parts" << std::endl;
+        }
+
+        // In endless mode, alternate boss type for next spawn
+        if (_endlessMode) {
+            _nextBossType = (_nextBossType == 1) ? 2 : 1;
         }
     }
 
     // Enemy spawning logic
     if (!_gameOver && !_victory) {
-        if (_boss && _currentLevel == 2) {
-            // Level 2 Boss is present: spawn enemies in waves from boss position
+        if (_boss && (_currentLevel == 2 || (_endlessMode && _bossPhase2))) {
+            // Level 2 Boss (or endless mode with boss 2) is present: spawn enemies in waves from boss position
             _bossWaveTimer += dt;
             if (_bossWaveTimer >= _bossWaveInterval) {
                 _bossWaveTimer = 0.f;
 
-                // Get boss position from central part
+                // Get boss position from any remaining part
                 auto &positions = _registry.get_components<component::position>();
                 float boss_x = 0.0f;
                 float boss_y = 0.0f;
 
-                if (!_bossParts.empty() && _bossParts.size() >= 2) {
-                    // Level 2: use central boss part position (part2)
-                    entity center_part = _bossParts[1]; // part2 is the center
-                    if (center_part < positions.size() && positions[center_part]) {
-                        boss_x = positions[center_part]->x;
-                        boss_y = positions[center_part]->y;
+                if (!_bossParts.empty()) {
+                    // Use the first alive boss part (any part will do for positioning)
+                    entity part = _bossParts[0];
+                    if (part < positions.size() && positions[part]) {
+                        boss_x = positions[part]->x;
+                        boss_y = positions[part]->y;
                     }
                 }
 
@@ -348,7 +379,19 @@ void Game::update(float dt) {
                 float start_y = boss_y - (wave_spacing * (_bossWaveEnemyCount - 1) / 2.0f);
 
                 for (int i = 0; i < _bossWaveEnemyCount; ++i) {
-                    entity enemy = _enemyManager.spawnEnemyLevel2();
+                    entity enemy = _enemyManager.spawnEnemyLevel2(); // Default spawn
+
+                    if (_endlessMode) {
+                        // Endless mode: mix all enemy types
+                        int enemyType = std::rand() % 3;
+                        if (enemyType == 0) {
+                            enemy = _enemyManager.spawnEnemy();
+                        } else if (enemyType == 1) {
+                            enemy = _enemyManager.spawnEnemyLevel2();
+                        } else {
+                            enemy = _enemyManager.spawnEnemyLevel2Spread();
+                        }
+                    }
 
                     // Position enemies starting from boss position in a vertical wave pattern
                     if (enemy < positions.size() && positions[enemy]) {
@@ -364,15 +407,28 @@ void Game::update(float dt) {
             _enemySpawnTimer += dt;
             if (_enemySpawnTimer >= _enemySpawnInterval) {
                 _enemySpawnTimer = 0.f;
-                // Spawn appropriate enemy based on level
-                if (_currentLevel == 1) {
-                    _enemies.push_back(_enemyManager.spawnEnemy());
-                } else {
-                    // Level 2: randomly spawn either normal or spread enemy
-                    if (std::rand() % 3 == 0) { // 33% chance for spread enemy
-                        _enemies.push_back(_enemyManager.spawnEnemyLevel2Spread());
-                    } else {
+
+                if (_endlessMode) {
+                    // Endless mode: spawn all types randomly
+                    int enemyType = std::rand() % 3;
+                    if (enemyType == 0) {
+                        _enemies.push_back(_enemyManager.spawnEnemy());
+                    } else if (enemyType == 1) {
                         _enemies.push_back(_enemyManager.spawnEnemyLevel2());
+                    } else {
+                        _enemies.push_back(_enemyManager.spawnEnemyLevel2Spread());
+                    }
+                } else {
+                    // Spawn appropriate enemy based on level
+                    if (_currentLevel == 1) {
+                        _enemies.push_back(_enemyManager.spawnEnemy());
+                    } else {
+                        // Level 2: randomly spawn either normal or spread enemy
+                        if (std::rand() % 3 == 0) { // 33% chance for spread enemy
+                            _enemies.push_back(_enemyManager.spawnEnemyLevel2Spread());
+                        } else {
+                            _enemies.push_back(_enemyManager.spawnEnemyLevel2());
+                        }
                     }
                 }
             }
@@ -535,7 +591,18 @@ bool Game::isPlayerAlive() const {
 
 void Game::setLevel(int level) {
     _currentLevel = level;
-    std::cout << "[Game] Level set to " << level << std::endl;
+
+    // Check for endless mode
+    if (level == 99) {
+        _endlessMode = true;
+        _currentLevel = 1; // Use level 1 background
+        _nextBossType = 1;
+        _lastBossScore = 0;
+        std::cout << "[Game] ENDLESS MODE activated" << std::endl;
+    } else {
+        _endlessMode = false;
+        std::cout << "[Game] Level set to " << level << std::endl;
+    }
 
     // Reload background for the new level
     if (_background) {
@@ -545,7 +612,7 @@ void Game::setLevel(int level) {
             bg_component->texture = _window.createTexture();
 
             std::string backgroundFile;
-            if (_currentLevel == 1) {
+            if (_currentLevel == 1 || _endlessMode) {
                 backgroundFile = "assets/background.jpg";
             } else {
                 // Level 2+ uses r-typesheet-background.png

@@ -20,7 +20,7 @@ static bool containsPoint(const render::FloatRect &rect,
 LevelSelectionMenu::LevelSelectionMenu(render::IRenderWindow &window,
                                        AudioManager &audioMgr)
     : _window(window), _audioManager(audioMgr), _selectedButton(0) {
-    _buttonLabels = {"LEVEL 1", "LEVEL 2", "BACK"};
+    _buttonLabels = {"LEVEL 1", "LEVEL 2", "ENDLESS MODE", "BACK"};
     initializeMenu();
 }
 
@@ -83,7 +83,8 @@ void LevelSelectionMenu::initializeMenu() {
         auto text = _window.createText();
         text->setFont(*_font);
         text->setString(_buttonLabels[i]);
-        text->setCharacterSize(32);
+        unsigned int fontSize = (i == 2) ? 24 : 32;
+        text->setCharacterSize(fontSize);
         text->setFillColor(TEXT_COLOR);
         render::FloatRect textBounds = text->getLocalBounds();
         text->setPosition(centerX - textBounds.width / 2,
@@ -233,6 +234,8 @@ LevelSelectionResult LevelSelectionMenu::run() {
     case 1:
         return LevelSelectionResult::LEVEL_2;
     case 2:
+        return LevelSelectionResult::ENDLESS;
+    case 3:
     default:
         return LevelSelectionResult::BACK;
     }

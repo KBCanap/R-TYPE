@@ -184,10 +184,20 @@ int main(int argc, char **argv) {
                 LevelSelectionResult levelResult = levelMenu.run();
 
                 if (levelResult == LevelSelectionResult::LEVEL_1 ||
-                    levelResult == LevelSelectionResult::LEVEL_2) {
-                    int selectedLevel = (levelResult == LevelSelectionResult::LEVEL_1) ? 1 : 2;
-                    std::cout << "[Main] Starting SOLO game on Level "
-                              << selectedLevel << "..." << std::endl;
+                    levelResult == LevelSelectionResult::LEVEL_2 ||
+                    levelResult == LevelSelectionResult::ENDLESS) {
+                    int selectedLevel;
+                    if (levelResult == LevelSelectionResult::LEVEL_1) {
+                        selectedLevel = 1;
+                    } else if (levelResult == LevelSelectionResult::LEVEL_2) {
+                        selectedLevel = 2;
+                    } else {
+                        selectedLevel = 99; // Special code for endless mode
+                    }
+
+                    std::cout << "[Main] Starting SOLO game on "
+                              << (selectedLevel == 99 ? "ENDLESS MODE" : "Level " + std::to_string(selectedLevel))
+                              << "..." << std::endl;
 
                     Game game(reg, *window, audioManager, keyBindings);
                     game.setLevel(selectedLevel);

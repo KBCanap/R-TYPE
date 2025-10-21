@@ -11,7 +11,7 @@
 #include <memory>
 #include <vector>
 
-enum class LevelSelectionResult { BACK, LEVEL_1, LEVEL_2 };
+enum class LevelSelectionResult { BACK, LEVEL_1, LEVEL_2, ENDLESS };
 
 class LevelSelectionMenu {
   public:
