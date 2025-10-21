@@ -74,16 +74,6 @@ enum class LobbyStatus : uint8_t {
     CLOSING = 0x03
 };
 
-// Client states
-enum class ClientState {
-    DISCONNECTED,
-    AUTHENTICATING,
-    LOBBY_BROWSER,
-    IN_LOBBY,
-    READY,
-    GAME_STARTING
-};
-
 // Constants
 static constexpr std::size_t HEADER_SIZE = 4;
 static constexpr std::size_t MAX_PLAYERS = 4;
