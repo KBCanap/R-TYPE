@@ -651,6 +651,30 @@ src/player_manager.cpp.s:
 	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/src/player_manager.cpp.s
 .PHONY : src/player_manager.cpp.s
 
+src/powerup_manager.o: src/powerup_manager.cpp.o
+.PHONY : src/powerup_manager.o
+
+# target to build an object file
+src/powerup_manager.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/src/powerup_manager.cpp.o
+.PHONY : src/powerup_manager.cpp.o
+
+src/powerup_manager.i: src/powerup_manager.cpp.i
+.PHONY : src/powerup_manager.i
+
+# target to preprocess a source file
+src/powerup_manager.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/src/powerup_manager.cpp.i
+.PHONY : src/powerup_manager.cpp.i
+
+src/powerup_manager.s: src/powerup_manager.cpp.s
+.PHONY : src/powerup_manager.s
+
+# target to generate assembly for a file
+src/powerup_manager.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/src/powerup_manager.cpp.s
+.PHONY : src/powerup_manager.cpp.s
+
 src/render/RenderFactory.o: src/render/RenderFactory.cpp.o
 .PHONY : src/render/RenderFactory.o
 
@@ -819,6 +843,9 @@ help:
 	@echo "... src/player_manager.o"
 	@echo "... src/player_manager.i"
 	@echo "... src/player_manager.s"
+	@echo "... src/powerup_manager.o"
+	@echo "... src/powerup_manager.i"
+	@echo "... src/powerup_manager.s"
 	@echo "... src/render/RenderFactory.o"
 	@echo "... src/render/RenderFactory.i"
 	@echo "... src/render/RenderFactory.s"

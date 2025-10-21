@@ -165,6 +165,59 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
         }
     }
 
+    // Player-Powerup collision detection
+    for (size_t player_idx = 0; player_idx < std::min(positions.size(), drawables.size()); ++player_idx) {
+        std::optional<component::position> &player_pos = positions[player_idx];
+        std::optional<component::drawable> &player_drawable = drawables[player_idx];
+        std::optional<component::hitbox> &player_hitbox = hitboxes[player_idx];
+
+        bool valid_player = player_pos && player_drawable &&
+                           (player_drawable->tag == "player");
+        if (!valid_player) continue;
+
+        const component::hitbox *phitbox = nullptr;
+        if (player_idx < hitboxes.size() && player_hitbox) {
+            phitbox = &(*player_hitbox);
+        }
+        HitboxDimensions player_box = calculate_target_hitbox(*player_pos, *player_drawable, phitbox);
+
+        for (size_t powerup_idx = 0; powerup_idx < std::min(positions.size(), drawables.size()); ++powerup_idx) {
+            std::optional<component::position> &powerup_pos = positions[powerup_idx];
+            std::optional<component::drawable> &powerup_drawable = drawables[powerup_idx];
+
+            bool valid_powerup = powerup_pos && powerup_drawable &&
+                                (powerup_drawable->tag == "powerup") && (powerup_idx != player_idx);
+            if (!valid_powerup) continue;
+
+            const component::hitbox *pwhitbox = nullptr;
+            if (powerup_idx < hitboxes.size() && hitboxes[powerup_idx]) {
+                pwhitbox = &(*hitboxes[powerup_idx]);
+            }
+            HitboxDimensions powerup_box = calculate_target_hitbox(*powerup_pos, *powerup_drawable, pwhitbox);
+
+            bool collision = check_aabb_collision(
+                player_box.left, player_box.top, player_box.width, player_box.height,
+                powerup_box.left, powerup_box.top, powerup_box.width, powerup_box.height);
+
+            if (collision) {
+                // Add or create shield component with 50 shield points
+                sparse_array<component::shield> &shields = r.get_components<component::shield>();
+                if (player_idx >= shields.size() || !shields[player_idx]) {
+                    r.add_component<component::shield>(entity(player_idx), component::shield(50, 50));
+                } else {
+                    // Add 50 shield points, max 50
+                    shields[player_idx]->current_shield = std::min(
+                        shields[player_idx]->current_shield + 50,
+                        shields[player_idx]->max_shield
+                    );
+                }
+
+                // Destroy powerup
+                entities_to_kill.push_back(powerup_idx);
+            }
+        }
+    }
+
     // Player-Enemy collision detection
     const int COLLISION_DAMAGE = 50;
 

@@ -8,6 +8,7 @@
 #include "key_bindings.hpp"
 #include "network/NetworkCommandHandler.hpp"
 #include "player_manager.hpp"
+#include "powerup_manager.hpp"
 #include "registery.hpp"
 #include "tick_system.hpp"
 #include <memory>
@@ -121,19 +122,23 @@ class Game {
         *_networkManager; ///< Network manager (nullptr for solo)
     bool _isMultiplayer;  ///< Whether game is in multiplayer mode
 
-    PlayerManager _playerManager; ///< Player entity management
-    EnemyManager _enemyManager;   ///< Enemy entity management
-    BossManager _bossManager;     ///< Boss entity management
+    PlayerManager _playerManager;   ///< Player entity management
+    EnemyManager _enemyManager;     ///< Enemy entity management
+    BossManager _bossManager;       ///< Boss entity management
+    PowerupManager _powerupManager; ///< Powerup entity management
 
-    std::optional<entity> _player;     ///< Player entity
-    std::optional<entity> _background; ///< Background entity
-    std::vector<entity> _enemies;      ///< List of enemy entities
-    std::optional<entity> _boss;       ///< Boss entity
+    std::optional<entity> _player;       ///< Player entity
+    std::optional<entity> _playerShield; ///< Player shield entity
+    std::optional<entity> _background;   ///< Background entity
+    std::vector<entity> _enemies;        ///< List of enemy entities
+    std::optional<entity> _boss;         ///< Boss entity
 
-    float _playerSpeed = 300.f;      ///< Player movement speed
-    float _enemySpawnTimer = 0.f;    ///< Timer for enemy spawning
-    float _enemySpawnInterval = 2.f; ///< Interval between enemy spawns
-    float _gameTime = 0.f;           ///< Total game time elapsed
+    float _playerSpeed = 300.f;        ///< Player movement speed
+    float _enemySpawnTimer = 0.f;      ///< Timer for enemy spawning
+    float _enemySpawnInterval = 2.f;   ///< Interval between enemy spawns
+    float _powerupSpawnTimer = 0.f;    ///< Timer for powerup spawning
+    float _powerupSpawnInterval = 10.f; ///< Interval between powerup spawns
+    float _gameTime = 0.f;             ///< Total game time elapsed
 
     float _playerRelativeX = 0.125f; ///< Player relative X position (0.0-1.0)
     float _playerRelativeY = 0.5f;   ///< Player relative Y position (0.0-1.0)

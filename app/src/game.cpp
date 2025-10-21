@@ -26,8 +26,8 @@ Game::Game(registry &reg, render::IRenderWindow &win, AudioManager &audioMgr,
       _keyBindings(keyBindings), _networkManager(netMgr),
       _isMultiplayer(netMgr != nullptr), _playerManager(reg, win),
       _enemyManager(reg, win), _bossManager(reg, win),
-      _gameOverMenu(win, audioMgr), _victoryMenu(win, audioMgr),
-      _tickSystem(60.0) {
+      _powerupManager(reg, win), _gameOverMenu(win, audioMgr),
+      _victoryMenu(win, audioMgr), _tickSystem(60.0) {
 
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
@@ -216,6 +216,11 @@ void Game::update(float dt) {
     auto &healths = _registry.get_components<component::health>();
     systems::health_system(_registry, healths, dt);
 
+    // Update shield visual
+    if (_player) {
+        _playerManager.updateShieldVisual(_player, _playerShield);
+    }
+
     if (!_gameOver && !_victory && _boss) {
         auto &boss_pos = positions[*_boss];
         auto &boss_drawable = drawables[*_boss];
@@ -256,6 +261,18 @@ void Game::update(float dt) {
             _enemySpawnTimer = 0.f;
             entity newEnemy = _enemyManager.spawnEnemy();
             _enemies.push_back(newEnemy);
+        }
+    }
+
+    // Powerup spawning
+    if (!_gameOver && !_victory) {
+        _powerupSpawnTimer += dt;
+        if (_powerupSpawnTimer >= _powerupSpawnInterval) {
+            _powerupSpawnTimer = 0.f;
+            // Spawn shield powerup at random Y position on right side of screen
+            render::Vector2u window_size = _window.getSize();
+            float random_y = static_cast<float>(std::rand() % (window_size.y - 100) + 50);
+            _powerupManager.spawnShieldPowerup(static_cast<float>(window_size.x) - 50.0f, random_y);
         }
     }
 
@@ -326,19 +343,35 @@ void Game::render(float dt) {
 
 void Game::renderPlayerInfo(entity player_entity) {
     auto &healths = _registry.get_components<component::health>();
+    auto &shields = _registry.get_components<component::shield>();
 
     if (player_entity < healths.size() && healths[player_entity]) {
         auto &player_health = healths[player_entity];
 
+        // Display HP
         auto hp_text = _window.createText();
         hp_text->setFont(*_scoreFont);
-        hp_text->setString("HP " + std::to_string(player_health->current_hp) +
-                           "/" + std::to_string(player_health->max_hp));
+        hp_text->setString("HP " + std::to_string(player_health->current_hp) + "/" +
+                           std::to_string(player_health->max_hp));
         hp_text->setCharacterSize(24);
         hp_text->setFillColor(render::Color::White());
         hp_text->setPosition(20, 20);
-
         _window.draw(*hp_text);
+
+        // Display shield if player has shield component
+        if (player_entity < shields.size() && shields[player_entity]) {
+            auto &player_shield = shields[player_entity];
+            if (player_shield->current_shield > 0) {
+                auto sh_text = _window.createText();
+                sh_text->setFont(*_scoreFont);
+                sh_text->setString("Shield " + std::to_string(player_shield->current_shield) +
+                                   "/" + std::to_string(player_shield->max_shield));
+                sh_text->setCharacterSize(24);
+                sh_text->setFillColor(render::Color(100, 150, 255)); // Light blue for shield
+                sh_text->setPosition(20, 50);
+                _window.draw(*sh_text);
+            }
+        }
     }
 }
 
