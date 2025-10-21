@@ -9,6 +9,7 @@
 #include "../include/connection_menu.hpp"
 #include "../include/game.hpp"
 #include "../include/key_bindings.hpp"
+#include "../include/level_selection_menu.hpp"
 #include "../include/lobby_menu.hpp"
 #include "../include/menu.hpp"
 #include "../include/network/NetworkManager.hpp"
@@ -178,12 +179,27 @@ int main(int argc, char **argv) {
             ConnectionMenuResult connResult = connectionMenu.run(connInfo);
 
             if (connResult == ConnectionMenuResult::Solo) {
-                std::cout << "[Main] Starting SOLO game..." << std::endl;
-                Game game(reg, *window, audioManager,
-                          keyBindings); // nullptr = solo
-                game.run();
-                std::cout << "[Main] Solo game ended, returning to main menu..."
-                          << std::endl;
+                // Show level selection menu
+                LevelSelectionMenu levelMenu(*window, audioManager);
+                LevelSelectionResult levelResult = levelMenu.run();
+
+                if (levelResult == LevelSelectionResult::LEVEL_1 ||
+                    levelResult == LevelSelectionResult::LEVEL_2) {
+                    int selectedLevel = (levelResult == LevelSelectionResult::LEVEL_1) ? 1 : 2;
+                    std::cout << "[Main] Starting SOLO game on Level "
+                              << selectedLevel << "..." << std::endl;
+
+                    Game game(reg, *window, audioManager, keyBindings);
+                    game.setLevel(selectedLevel);
+                    game.run();
+                    game.cleanup();
+
+                    std::cout << "[Main] Solo game ended, returning to main menu..."
+                              << std::endl;
+                } else {
+                    std::cout << "[Main] Level selection cancelled, returning to main menu..."
+                              << std::endl;
+                }
             } else if (connResult == ConnectionMenuResult::Multiplayer) {
                 // ✅ CORRECTION : Restaurer les bonnes valeurs après
                 // ConnectionMenu

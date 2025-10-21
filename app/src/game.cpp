@@ -104,6 +104,8 @@ void Game::handleEvents(bool &running, float /*dt*/) {
                     running = false;
                     _shouldExit = true;
                 } else {
+                    // Advance to next level
+                    _currentLevel++;
                     resetGame();
                 }
             } else if (action == MenuAction::QUIT) {
@@ -221,13 +223,62 @@ void Game::update(float dt) {
         _playerManager.updateShieldVisual(_player, _playerShield);
     }
 
-    if (!_gameOver && !_victory && _boss) {
+    // For level 1 boss: check if it's still alive
+    if (!_gameOver && !_victory && _boss && _currentLevel == 1) {
         auto &boss_pos = positions[*_boss];
         auto &boss_drawable = drawables[*_boss];
+
         if (!boss_pos || !boss_drawable) {
             _victory = true;
+            _victoryMenu.setButtonText("Next Stage");
             _victoryMenu.setVisible(true);
             _boss.reset();
+        }
+    }
+
+    // Check if all boss parts are destroyed (phase 2 victory)
+    if (!_gameOver && !_victory && _bossPhase2 && !_bossParts.empty()) {
+        bool all_parts_dead = true;
+        int alive_parts = 0;
+        std::optional<entity> last_part;
+
+        for (auto it = _bossParts.begin(); it != _bossParts.end();) {
+            auto &part_pos = positions[*it];
+            if (part_pos) {
+                all_parts_dead = false;
+                alive_parts++;
+                last_part = *it;
+                ++it;
+            } else {
+                it = _bossParts.erase(it);
+            }
+        }
+
+        // If only one part remains (part3), give it a spread weapon
+        if (alive_parts == 1 && last_part) {
+            auto &weapons = _registry.get_components<component::weapon>();
+            if (*last_part < weapons.size() && !weapons[*last_part]) {
+                // Add spread weapon to the last part
+                _registry.add_component<component::weapon>(
+                    *last_part, component::weapon(0.8f, false, 5, 30.0f,
+                                    component::projectile_pattern::spread(30.0f),
+                                    20.0f, 300.0f, 5.0f, false, 1, false, 1, 0.1f,
+                                    render::IntRect(249, 103, 16, 12)));
+
+                // Enable firing on AI
+                auto &ai_inputs = _registry.get_components<component::ai_input>();
+                if (*last_part < ai_inputs.size() && ai_inputs[*last_part]) {
+                    ai_inputs[*last_part]->fire = true;
+                    ai_inputs[*last_part]->fire_interval = 0.8f;
+                }
+            }
+        }
+
+        if (all_parts_dead) {
+            _victory = true;
+            _victoryMenu.setButtonText("Next Stage");
+            _victoryMenu.setVisible(true);
+            _bossPhase2 = false;
         }
     }
 
@@ -252,15 +303,79 @@ void Game::update(float dt) {
 
     if (!_gameOver && !_victory &&
         _bossManager.shouldSpawnBoss(_player, _boss)) {
-        _boss = _bossManager.spawnBoss();
+        // Spawn appropriate boss based on level
+        if (_currentLevel == 1) {
+            _boss = _bossManager.spawnBoss();
+        } else {
+            // Level 2: spawn dummy boss entity
+            _boss = _bossManager.spawnBossLevel2();
+
+            // Immediately spawn the 3 parts
+            render::Vector2u window_size = _window.getSize();
+            float boss_x = static_cast<float>(window_size.x) - 250.0f;
+            float boss_y = static_cast<float>(window_size.y) / 2.0f;
+            _bossManager.spawnBossLevel2Phase2Parts(boss_x, boss_y, _bossParts);
+            _bossPhase2 = true;
+
+            std::cout << "[Game] Level 2 boss spawned with 3 parts" << std::endl;
+        }
     }
 
-    if (!_gameOver && !_victory && !_boss) {
-        _enemySpawnTimer += dt;
-        if (_enemySpawnTimer >= _enemySpawnInterval) {
-            _enemySpawnTimer = 0.f;
-            entity newEnemy = _enemyManager.spawnEnemy();
-            _enemies.push_back(newEnemy);
+    // Enemy spawning logic
+    if (!_gameOver && !_victory) {
+        if (_boss && _currentLevel == 2) {
+            // Level 2 Boss is present: spawn enemies in waves from boss position
+            _bossWaveTimer += dt;
+            if (_bossWaveTimer >= _bossWaveInterval) {
+                _bossWaveTimer = 0.f;
+
+                // Get boss position from central part
+                auto &positions = _registry.get_components<component::position>();
+                float boss_x = 0.0f;
+                float boss_y = 0.0f;
+
+                if (!_bossParts.empty() && _bossParts.size() >= 2) {
+                    // Level 2: use central boss part position (part2)
+                    entity center_part = _bossParts[1]; // part2 is the center
+                    if (center_part < positions.size() && positions[center_part]) {
+                        boss_x = positions[center_part]->x;
+                        boss_y = positions[center_part]->y;
+                    }
+                }
+
+                // Spawn a wave of enemies from boss position
+                float wave_spacing = 80.0f;
+                float start_y = boss_y - (wave_spacing * (_bossWaveEnemyCount - 1) / 2.0f);
+
+                for (int i = 0; i < _bossWaveEnemyCount; ++i) {
+                    entity enemy = _enemyManager.spawnEnemyLevel2();
+
+                    // Position enemies starting from boss position in a vertical wave pattern
+                    if (enemy < positions.size() && positions[enemy]) {
+                        positions[enemy]->x = boss_x - 50.0f; // Spawn slightly to the left of boss
+                        positions[enemy]->y = start_y + (i * wave_spacing);
+                    }
+
+                    _enemies.push_back(enemy);
+                }
+            }
+        } else if (!_boss) {
+            // No boss: normal enemy spawning
+            _enemySpawnTimer += dt;
+            if (_enemySpawnTimer >= _enemySpawnInterval) {
+                _enemySpawnTimer = 0.f;
+                // Spawn appropriate enemy based on level
+                if (_currentLevel == 1) {
+                    _enemies.push_back(_enemyManager.spawnEnemy());
+                } else {
+                    // Level 2: randomly spawn either normal or spread enemy
+                    if (std::rand() % 3 == 0) { // 33% chance for spread enemy
+                        _enemies.push_back(_enemyManager.spawnEnemyLevel2Spread());
+                    } else {
+                        _enemies.push_back(_enemyManager.spawnEnemyLevel2());
+                    }
+                }
+            }
         }
     }
 
@@ -418,6 +533,79 @@ bool Game::isPlayerAlive() const {
     return _playerManager.isPlayerAlive(_player);
 }
 
+void Game::setLevel(int level) {
+    _currentLevel = level;
+    std::cout << "[Game] Level set to " << level << std::endl;
+
+    // Reload background for the new level
+    if (_background) {
+        auto &backgrounds = _registry.get_components<component::background>();
+        if (_background.value() < backgrounds.size() && backgrounds[*_background]) {
+            auto &bg_component = backgrounds[*_background];
+            bg_component->texture = _window.createTexture();
+
+            std::string backgroundFile;
+            if (_currentLevel == 1) {
+                backgroundFile = "assets/background.jpg";
+            } else {
+                // Level 2+ uses r-typesheet-background.png
+                backgroundFile = "assets/sprites/r-typesheet-background.png";
+            }
+
+            if (!bg_component->texture->loadFromFile(backgroundFile)) {
+                auto fallback_image = _window.createImage();
+                fallback_image->create(800, 600, render::Color(20, 20, 80));
+                bg_component->texture->loadFromImage(*fallback_image);
+            }
+            std::cout << "[Game] Background loaded: " << backgroundFile << std::endl;
+        }
+    }
+}
+
+void Game::cleanup() {
+    std::cout << "[Game] Cleaning up game session..." << std::endl;
+
+    // Kill player
+    if (_player) {
+        _registry.kill_entity(*_player);
+        _player.reset();
+    }
+
+    // Kill player shield if exists
+    if (_playerShield) {
+        _registry.kill_entity(*_playerShield);
+        _playerShield.reset();
+    }
+
+    // Kill background
+    if (_background) {
+        _registry.kill_entity(*_background);
+        _background.reset();
+    }
+
+    // Kill boss
+    if (_boss) {
+        _registry.kill_entity(*_boss);
+        _boss.reset();
+    }
+
+    // Kill all enemies
+    for (const auto &enemy : _enemies) {
+        _registry.kill_entity(enemy);
+    }
+    _enemies.clear();
+
+    // Kill all remaining entities
+    auto &positions = _registry.get_components<component::position>();
+    for (size_t i = 0; i < positions.size(); ++i) {
+        if (positions[i]) {
+            _registry.kill_entity(entity(i));
+        }
+    }
+
+    std::cout << "[Game] Cleanup complete" << std::endl;
+}
+
 void Game::resetGame() {
     _gameOver = false;
     _victory = false;
@@ -425,6 +613,7 @@ void Game::resetGame() {
     _victoryMenu.setVisible(false);
     _gameTime = 0.f;
     _enemySpawnTimer = 0.f;
+    _bossWaveTimer = 0.f;
     _audioManager.playMusic(MusicType::IN_GAME, true);
 
     if (_player) {
@@ -439,6 +628,11 @@ void Game::resetGame() {
         _registry.kill_entity(*_boss);
         _boss.reset();
     }
+    for (const auto &part : _bossParts) {
+        _registry.kill_entity(part);
+    }
+    _bossParts.clear();
+    _bossPhase2 = false;
     for (const auto &enemy : _enemies) {
         _registry.kill_entity(enemy);
     }
@@ -451,11 +645,21 @@ void Game::resetGame() {
         }
     }
 
+    // Load background based on current level
     _background = _registry.spawn_entity();
     auto &bg_component = _registry.add_component<component::background>(
         *_background, component::background(30.f));
     bg_component->texture = _window.createTexture();
-    if (!bg_component->texture->loadFromFile("assets/background.jpg")) {
+
+    std::string backgroundFile;
+    if (_currentLevel == 1) {
+        backgroundFile = "assets/background.jpg";
+    } else {
+        // Level 2+ uses r-typesheet-background.png
+        backgroundFile = "assets/sprites/r-typesheet-background.png";
+    }
+
+    if (!bg_component->texture->loadFromFile(backgroundFile)) {
         auto fallback_image = _window.createImage();
         fallback_image->create(800, 600, render::Color(20, 20, 80));
         bg_component->texture->loadFromImage(*fallback_image);

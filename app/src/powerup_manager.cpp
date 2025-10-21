@@ -34,7 +34,7 @@ entity PowerupManager::spawnShieldPowerup(float x, float y) {
         component::drawable("assets/sprites/r-typesheet2.gif",
                             render::IntRect(159, 34, 19, 17), 2.0f, "powerup"));
 
-    // Add animation component with 12 frames (slower animation: 0.2s per frame)
+    // Add animation component with 12 frames (0.2s per frame)
     auto &anim = _registry.add_component<component::animation>(
         powerup, component::animation(0.2f, true));
 
@@ -68,25 +68,25 @@ entity PowerupManager::spawnSpreadPowerup(float x, float y) {
         powerup, component::velocity(-100.0f, 0.0f));
 
     // Animated sprite from r-typesheet2.gif
-    // Y: 68-91 (height 23px), X: 119-480, 12 frames separated by 2px
-    // First frame width calculation: assume ~28-29px per frame
+    // Y: 68-91 (height 23px), X: 119-480, 6 first frames only
     _registry.add_component<component::drawable>(
         powerup,
         component::drawable("assets/sprites/r-typesheet2.gif",
                             render::IntRect(119, 68, 28, 23), 2.0f, "spread_powerup"));
 
-    // Add animation component with 12 frames
+    // Add animation component with 6 frames (slower animation: 0.15s per frame)
     auto &anim = _registry.add_component<component::animation>(
-        powerup, component::animation(0.1f, true));
+        powerup, component::animation(0.15f, true));
 
-    // Add all 12 frames - each frame is ~28-29px wide with 2px separation
+    // Add first 6 consecutive frames - each frame is ~28px wide with 2px separation
     int frame_height = 23;
     int start_y = 68;
     int start_x = 119;
     int frame_width = 28;
     int separation = 2;
 
-    for (int i = 0; i < 12; ++i) {
+    for (int i = 0; i < 6; ++i) {
+        // Use first 6 consecutive frames
         int x_pos = start_x + i * (frame_width + separation);
         anim->frames.push_back(render::IntRect(x_pos, start_y, frame_width, frame_height));
     }

@@ -24,6 +24,7 @@ set(APP_SOURCES
     src/pause_menu.cpp
     src/connection_menu.cpp
     src/lobby_menu.cpp
+    src/level_selection_menu.cpp
     src/render/RenderFactory.cpp
     src/render/sfml/SFMLRenderWindow.cpp
     src/render/sfml/SFMLRenderAudio.cpp

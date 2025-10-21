@@ -94,6 +94,122 @@ entity EnemyManager::spawnEnemy() {
     return enemy;
 }
 
+entity EnemyManager::spawnEnemyLevel2() {
+    auto enemy = _registry.spawn_entity();
+    render::Vector2u window_size = _window.getSize();
+    float relative_spawn_y = 0.16f + (rand() % 68) / 100.0f;
+    float spawn_y = relative_spawn_y * static_cast<float>(window_size.y);
+    float spawn_x = static_cast<float>(window_size.x);
+
+    _registry.add_component<component::position>(
+        enemy, component::position(spawn_x, spawn_y));
+    _registry.add_component<component::velocity>(enemy,
+                                                 component::velocity(0.f, 0.f));
+
+    // Level 2 enemy sprite from r-typesheet5.gif
+    // Frame 1: x=6, y=6 to x=28, y=29
+    // Frame dimensions: 22x23 pixels
+    // 8 frames with 10px spacing between each frame
+    _registry.add_component<component::drawable>(
+        enemy,
+        component::drawable("assets/sprites/r-typesheet5.gif",
+                            render::IntRect(6, 6, 22, 23), 2.0f, "enemy_level2"));
+
+    // Level 2 enemies fire in wave pattern
+    component::weapon enemy_weapon_config = createEnemyWaveWeapon();
+    _registry.add_component<component::weapon>(enemy,
+                                               std::move(enemy_weapon_config));
+
+    // Standard hitbox for level 2 enemies
+    _registry.add_component<component::hitbox>(
+        enemy, component::hitbox(44.0f, 46.0f, 0.0f, 0.0f));
+
+    _registry.add_component<component::health>(enemy, component::health(25));
+
+    float fire_interval = 1.0f + (rand() % 100) / 100.0f;
+
+    // Level 2 enemies use sine wave movement
+    component::ai_movement_pattern movement_pattern =
+        component::ai_movement_pattern::sine_wave(80.0f, 0.02f, 110.0f);
+
+    _registry.add_component<component::ai_input>(
+        enemy, component::ai_input(true, fire_interval, movement_pattern));
+
+    // Add animation with 8 frames, 10px spacing between each
+    auto &anim = _registry.add_component<component::animation>(
+        enemy, component::animation(0.2f, true));
+
+    int frame_width = 22;
+    int frame_height = 23;
+    int start_x = 6;
+    int start_y = 6;
+    int spacing = 10;
+
+    for (int i = 0; i < 8; ++i) {
+        int x_pos = start_x + i * (frame_width + spacing);
+        anim->frames.push_back(render::IntRect(x_pos, start_y, frame_width, frame_height));
+    }
+
+    return enemy;
+}
+
+entity EnemyManager::spawnEnemyLevel2Spread() {
+    auto enemy = _registry.spawn_entity();
+    render::Vector2u window_size = _window.getSize();
+    float relative_spawn_y = 0.16f + (rand() % 68) / 100.0f;
+    float spawn_y = relative_spawn_y * static_cast<float>(window_size.y);
+    float spawn_x = static_cast<float>(window_size.x);
+
+    _registry.add_component<component::position>(
+        enemy, component::position(spawn_x, spawn_y));
+    _registry.add_component<component::velocity>(enemy,
+                                                 component::velocity(0.f, 0.f));
+
+    // r-typesheet11 sprite: 3 frames, 34x31 pixels each
+    // Frame 1: x=0 to x=34
+    // Frame 2: x=34 to x=66 (width=32)
+    // Frame 3: x=66 to x=99 (width=33)
+    _registry.add_component<component::drawable>(
+        enemy,
+        component::drawable("assets/sprites/r-typesheet11.gif",
+                            render::IntRect(0, 0, 34, 31), 2.0f, "enemy_spread_level2"));
+
+    // Create spread weapon (3 projectiles with 20 degree spread)
+    component::weapon spread_weapon = createEnemySpreadWeapon();
+    _registry.add_component<component::weapon>(enemy, std::move(spread_weapon));
+
+    // Hitbox for r-typesheet11 sprite
+    // Using average width of 33px and height of 31px at 2.0 scale
+    _registry.add_component<component::hitbox>(
+        enemy, component::hitbox(66.0f, 62.0f, 0.0f, 0.0f));
+
+    _registry.add_component<component::health>(enemy, component::health(35));
+
+    float fire_interval = 0.8f + (rand() % 80) / 100.0f;
+
+    // Zigzag movement pattern for more aggressive behavior
+    component::ai_movement_pattern movement_pattern =
+        component::ai_movement_pattern::zigzag(70.0f, 0.018f, 150.0f);
+
+    _registry.add_component<component::ai_input>(
+        enemy, component::ai_input(true, fire_interval, movement_pattern));
+
+    // Add animation with 3 frames
+    // Frame 1: 0-34 (width 34)
+    // Frame 2: 34-66 (width 32)
+    // Frame 3: 66-99 (width 33)
+    // Height: 31 pixels for all frames
+    // Very slow animation: 0.8s per frame
+    auto &anim = _registry.add_component<component::animation>(
+        enemy, component::animation(0.8f, true));
+
+    anim->frames.push_back(render::IntRect(0, 0, 34, 31));
+    anim->frames.push_back(render::IntRect(34, 0, 32, 31));
+    anim->frames.push_back(render::IntRect(66, 0, 33, 31));
+
+    return enemy;
+}
+
 void EnemyManager::updateEnemyPositions(std::vector<entity> &enemies) {
     auto &positions = _registry.get_components<component::position>();
     render::Vector2u window_size = _window.getSize();
@@ -140,5 +256,12 @@ component::weapon EnemyManager::createEnemySpreadWeapon() {
     return component::weapon(0.8f, false, 3, 20.0f,
                              component::projectile_pattern::straight(), 25.0f,
                              180.0f, 5.0f, false, 1, false, 3, 0.1f,
+                             render::IntRect(249, 103, 16, 12));
+}
+
+component::weapon EnemyManager::createEnemyWaveWeapon() {
+    return component::weapon(1.2f, false, 1, 0.0f,
+                             component::projectile_pattern::wave(60.0f, 0.015f), 25.0f,
+                             200.0f, 5.0f, false, 1, false, 3, 0.1f,
                              render::IntRect(249, 103, 16, 12));
 }
