@@ -15,6 +15,7 @@ class PowerupManager {
     PowerupManager(registry &reg, render::IRenderWindow &win);
 
     entity spawnShieldPowerup(float x, float y);
+    entity spawnSpreadPowerup(float x, float y);
 
   private:
     registry &_registry;

@@ -269,10 +269,16 @@ void Game::update(float dt) {
         _powerupSpawnTimer += dt;
         if (_powerupSpawnTimer >= _powerupSpawnInterval) {
             _powerupSpawnTimer = 0.f;
-            // Spawn shield powerup at random Y position on right side of screen
+            // Spawn powerup at random Y position on right side of screen
             render::Vector2u window_size = _window.getSize();
             float random_y = static_cast<float>(std::rand() % (window_size.y - 100) + 50);
-            _powerupManager.spawnShieldPowerup(static_cast<float>(window_size.x) - 50.0f, random_y);
+
+            // Randomly choose between shield and spread powerup
+            if (std::rand() % 2 == 0) {
+                _powerupManager.spawnShieldPowerup(static_cast<float>(window_size.x) - 50.0f, random_y);
+            } else {
+                _powerupManager.spawnSpreadPowerup(static_cast<float>(window_size.x) - 50.0f, random_y);
+            }
         }
     }
 
@@ -346,13 +352,11 @@ void Game::renderPlayerInfo(entity player_entity) {
     auto &shields = _registry.get_components<component::shield>();
 
     if (player_entity < healths.size() && healths[player_entity]) {
-        auto &player_health = healths[player_entity];
-
         // Display HP
         auto hp_text = _window.createText();
         hp_text->setFont(*_scoreFont);
-        hp_text->setString("HP " + std::to_string(player_health->current_hp) + "/" +
-                           std::to_string(player_health->max_hp));
+        hp_text->setString("HP " + std::to_string(healths[player_entity]->current_hp) + "/" +
+                           std::to_string(healths[player_entity]->max_hp));
         hp_text->setCharacterSize(24);
         hp_text->setFillColor(render::Color::White());
         hp_text->setPosition(20, 20);
@@ -360,12 +364,11 @@ void Game::renderPlayerInfo(entity player_entity) {
 
         // Display shield if player has shield component
         if (player_entity < shields.size() && shields[player_entity]) {
-            auto &player_shield = shields[player_entity];
-            if (player_shield->current_shield > 0) {
+            if (shields[player_entity]->current_shield > 0) {
                 auto sh_text = _window.createText();
                 sh_text->setFont(*_scoreFont);
-                sh_text->setString("Shield " + std::to_string(player_shield->current_shield) +
-                                   "/" + std::to_string(player_shield->max_shield));
+                sh_text->setString("Shield " + std::to_string(shields[player_entity]->current_shield) +
+                                   "/" + std::to_string(shields[player_entity]->max_shield));
                 sh_text->setCharacterSize(24);
                 sh_text->setFillColor(render::Color(100, 150, 255)); // Light blue for shield
                 sh_text->setPosition(20, 50);

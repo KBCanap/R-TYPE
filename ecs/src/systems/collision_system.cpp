@@ -216,6 +216,39 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
                 entities_to_kill.push_back(powerup_idx);
             }
         }
+
+        // Check for spread powerup collision
+        for (size_t powerup_idx = 0; powerup_idx < std::min(positions.size(), drawables.size()); ++powerup_idx) {
+            std::optional<component::position> &powerup_pos = positions[powerup_idx];
+            std::optional<component::drawable> &powerup_drawable = drawables[powerup_idx];
+
+            bool valid_spread_powerup = powerup_pos && powerup_drawable &&
+                                        (powerup_drawable->tag == "spread_powerup") && (powerup_idx != player_idx);
+            if (!valid_spread_powerup) continue;
+
+            const component::hitbox *pwhitbox = nullptr;
+            if (powerup_idx < hitboxes.size() && hitboxes[powerup_idx]) {
+                pwhitbox = &(*hitboxes[powerup_idx]);
+            }
+            HitboxDimensions powerup_box = calculate_target_hitbox(*powerup_pos, *powerup_drawable, pwhitbox);
+
+            bool collision = check_aabb_collision(
+                player_box.left, player_box.top, player_box.width, player_box.height,
+                powerup_box.left, powerup_box.top, powerup_box.width, powerup_box.height);
+
+            if (collision) {
+                // Change player weapon to spread
+                sparse_array<component::weapon> &weapons = r.get_components<component::weapon>();
+                if (player_idx < weapons.size() && weapons[player_idx]) {
+                    // Set weapon to spread: 3 projectiles with 15 degree spread
+                    weapons[player_idx]->projectile_count = 3;
+                    weapons[player_idx]->spread_angle = 15.0f;
+                }
+
+                // Destroy powerup
+                entities_to_kill.push_back(powerup_idx);
+            }
+        }
     }
 
     // Player-Enemy collision detection
