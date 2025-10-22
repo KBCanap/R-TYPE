@@ -22,6 +22,7 @@ set(APP_SOURCES
     src/boss_manager.cpp
     src/pause_menu.cpp
     src/connection_menu.cpp
+    src/lobby_browser_menu.cpp
     src/lobby_menu.cpp
     src/render/RenderFactory.cpp
     src/render/sfml/SFMLRenderWindow.cpp
