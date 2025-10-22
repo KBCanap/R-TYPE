@@ -483,6 +483,30 @@ src/systems/input_system.cpp.s:
 	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/input_system.cpp.s
 .PHONY : src/systems/input_system.cpp.s
 
+src/systems/mario_systems.o: src/systems/mario_systems.cpp.o
+.PHONY : src/systems/mario_systems.o
+
+# target to build an object file
+src/systems/mario_systems.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/mario_systems.cpp.o
+.PHONY : src/systems/mario_systems.cpp.o
+
+src/systems/mario_systems.i: src/systems/mario_systems.cpp.i
+.PHONY : src/systems/mario_systems.i
+
+# target to preprocess a source file
+src/systems/mario_systems.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/mario_systems.cpp.i
+.PHONY : src/systems/mario_systems.cpp.i
+
+src/systems/mario_systems.s: src/systems/mario_systems.cpp.s
+.PHONY : src/systems/mario_systems.s
+
+# target to generate assembly for a file
+src/systems/mario_systems.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/mario_systems.cpp.s
+.PHONY : src/systems/mario_systems.cpp.s
+
 src/systems/position_system.o: src/systems/position_system.cpp.o
 .PHONY : src/systems/position_system.o
 
@@ -678,6 +702,9 @@ help:
 	@echo "... src/systems/input_system.o"
 	@echo "... src/systems/input_system.i"
 	@echo "... src/systems/input_system.s"
+	@echo "... src/systems/mario_systems.o"
+	@echo "... src/systems/mario_systems.i"
+	@echo "... src/systems/mario_systems.s"
 	@echo "... src/systems/position_system.o"
 	@echo "... src/systems/position_system.i"
 	@echo "... src/systems/position_system.s"

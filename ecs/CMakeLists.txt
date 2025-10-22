@@ -24,6 +24,7 @@ set(ECS_SOURCES
     src/systems/ai_input_system.cpp
     src/systems/score_system.cpp
     src/systems/health_system.cpp
+    src/systems/mario_systems.cpp
     # Network sources
     src/NetworkSystem.cpp
     src/ANetworkManager.cpp

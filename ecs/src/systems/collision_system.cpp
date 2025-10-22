@@ -167,6 +167,10 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
 
     // Player-Enemy collision detection
     const int COLLISION_DAMAGE = 50;
+    sparse_array<component::velocity> &velocities = r.get_components<component::velocity>();
+    sparse_array<component::gravity> &gravities = r.get_components<component::gravity>();
+    sparse_array<component::enemy_stunned> &stunneds = r.get_components<component::enemy_stunned>();
+    sparse_array<component::dead> &deads = r.get_components<component::dead>();
 
     for (size_t player_idx = 0; player_idx < std::min(positions.size(), drawables.size()); ++player_idx) {
         std::optional<component::position> &player_pos = positions[player_idx];
@@ -176,6 +180,10 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
         bool valid_player = player_pos && player_drawable && player_hitbox &&
                            (player_drawable->tag == "player");
         if (!valid_player) continue;
+
+        // Check if player is already dead (for Mario platformer)
+        bool player_already_dead = (player_idx < deads.size()) && deads[player_idx];
+        if (player_already_dead) continue;
 
         float player_left = player_pos->x + player_hitbox->offset_x;
         float player_top = player_pos->y + player_hitbox->offset_y;
@@ -198,6 +206,75 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
 
             if (!collision) continue;
 
+            // Check for Mario-style platformer mechanics
+            bool has_gravity = (player_idx < gravities.size()) && gravities[player_idx];
+            bool has_velocity = (player_idx < velocities.size()) && velocities[player_idx];
+            bool is_platformer = has_gravity && has_velocity;
+
+            if (is_platformer) {
+                // Mario platformer-style collision
+                std::optional<component::velocity> &player_vel = velocities[player_idx];
+                std::optional<component::velocity> &enemy_vel = velocities[enemy_idx];
+                std::optional<component::enemy_stunned> &enemy_stunned = stunneds[enemy_idx];
+
+                // Check if enemy is already stunned
+                if (enemy_stunned && enemy_stunned->stunned) {
+                    // Collision with stunned enemy - apply knockback
+                    float player_center_x = player_pos->x + player_hitbox->width / 2.0f;
+                    float enemy_center_x = enemy_pos->x + enemy_hitbox->width / 2.0f;
+                    float knockback_dir = (enemy_center_x > player_center_x) ? 1.0f : -1.0f;
+
+                    enemy_stunned->knockback_velocity = knockback_dir * 600.0f;
+                    if (player_vel) player_vel->vx = -knockback_dir * 100.0f;
+                } else {
+                    // Check if player is stomping (falling onto enemy from above)
+                    float player_bottom = player_top + player_hitbox->height;
+                    float stomp_threshold = enemy_top + enemy_hitbox->height * 0.5f;
+
+                    // Player must be falling (vy > 0) and their bottom must be near enemy's top
+                    bool is_stomping = player_vel && player_vel->vy > 0.0f &&
+                                      player_bottom >= enemy_top &&
+                                      player_bottom <= stomp_threshold;
+
+                    if (is_stomping) {
+                        // Stomp! - stun the enemy
+                        // Component should already exist from spawn, just modify it
+                        if (enemy_stunned) {
+                            enemy_stunned->stunned = true;
+                            enemy_stunned->knockback_velocity = 0.0f;
+                        }
+
+                        // Stop enemy movement
+                        if (enemy_vel) {
+                            enemy_vel->vx = 0.0f;
+                            enemy_vel->vy = 0.0f;
+                        }
+
+                        // Bounce player up
+                        if (player_vel) {
+                            player_vel->vy = -500.0f;
+                        }
+                    } else {
+                        // Side collision - Mario dies
+                        // Check if already dead
+                        bool already_dead = (player_idx < deads.size()) && deads[player_idx];
+
+                        if (!already_dead) {
+                            r.add_component<component::dead>(
+                                entity(player_idx), component::dead(0.0f, -800.0f));
+
+                            // Apply death jump
+                            if (player_vel) {
+                                player_vel->vy = -800.0f;
+                                player_vel->vx = 0.0f;
+                            }
+                        }
+                    }
+                }
+                break; // Exit enemy loop after handling platformer collision
+            }
+
+            // Default R-Type collision logic
             bool player_has_health = (player_idx < healths.size()) && healths[player_idx];
             if (player_has_health) {
                 healths[player_idx]->pending_damage += COLLISION_DAMAGE;
