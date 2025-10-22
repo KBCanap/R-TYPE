@@ -13,10 +13,13 @@ struct network_entity {
     uint8_t owner_player_id;
     bool is_local;
     float last_update_time;
+    std::string entity_type;
+    bool synced;
 
-    network_entity(uint32_t net_id = 0, uint8_t owner = 0, bool local = false)
+    network_entity(uint32_t net_id = 0, uint8_t owner = 0, bool local = false,
+                   const std::string& type = "unknown")
         : network_id(net_id), owner_player_id(owner), is_local(local),
-          last_update_time(0.0f) {}
+          last_update_time(0.0f), entity_type(type) {}
 };
 
 /**

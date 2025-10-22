@@ -53,6 +53,7 @@ struct EntitySnapshot {
     int health;
     int score;
     uint tick;
+    bool synced;
 };
 
 struct WorldSnapshot {
@@ -82,7 +83,7 @@ class GameLogic {
     // Snapshot management
     WorldSnapshot generateSnapshot();
     std::vector<EntitySnapshot> getDeltaSnapshot(uint last_acked_tick);
-    void markEntitiesSynced();
+    void markEntitiesSynced(const std::vector<uint32_t> &net_ids) ;
 
     // Player management
     entity createPlayer(uint client_id, uint net_id, float x, float y);
@@ -92,6 +93,8 @@ class GameLogic {
     // Getters
     uint getCurrentTick() const { return _current_tick; }
     uint generateNetId();
+
+    bool isEntitySynced(uint net_id);
 
   private:
     std::unordered_map<uint, std::chrono::steady_clock::time_point> _last_input_time;

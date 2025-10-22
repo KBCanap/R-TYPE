@@ -55,9 +55,6 @@ void position_system(registry &r, sparse_array<component::position> &positions,
             pos->x += vel->vx * dt_mult;
             pos->y += vel->vy * dt_mult;
         }
-                std::cout << "x= " << pos->x
-                << "y= " << pos->y
-                << "\n";
     }
 }
 

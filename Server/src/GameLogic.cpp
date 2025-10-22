@@ -54,7 +54,6 @@ void GameLogic::updatePlayerInputState(uint client_id, uint8_t direction) {
     auto it = _client_to_entity.find(client_id);
     if (it == _client_to_entity.end())
         return;
-
     auto &inputs = _registry->get_components<component::input>();
     _last_input_time[client_id] = std::chrono::steady_clock::now();
     component::input &i = inputs[it->second].value();
@@ -62,6 +61,7 @@ void GameLogic::updatePlayerInputState(uint client_id, uint8_t direction) {
     i.down = direction & 0x02;
     i.left = direction & 0x04;
     i.right = direction & 0x08;
+    i.fire = direction & 0x10;
 }
 
 void GameLogic::update(float deltaTime) {
@@ -110,14 +110,23 @@ void GameLogic::update(float deltaTime) {
             _enemy_spawn_timer += FIXED_TIMESTEP;
             if (_enemy_spawn_timer >= _enemy_spawn_interval) {
                 _enemy_spawn_timer = 0.0f;
-                //spawnEnemy();
+                spawnEnemy();
             }
         }
 
         cleanupDeadEntities();
 
-        const auto now = std::chrono::steady_clock::now();
-        const auto timeout = std::chrono::milliseconds(50); // adjust as needed
+        accumulator -= FIXED_TIMESTEP;
+    }
+
+    if (debug_timer >= DEBUG_INTERVAL) {
+        debug_timer = 0.0f;
+        printEntityPositions();
+    }
+
+    _last_update = std::chrono::steady_clock::now();
+    const auto now = std::chrono::steady_clock::now();
+    const auto timeout = std::chrono::milliseconds(1); // adjust as needed
 
         for (const auto &[client_id, entity] : _client_to_entity) {
             if (_last_input_time.count(client_id) &&
@@ -130,20 +139,10 @@ void GameLogic::update(float deltaTime) {
                     i.down = false;
                     i.left = false;
                     i.right = false;
-
-                    std::cout << "[GameLogic] Input timeout — reset movement for client " << client_id << std::endl;
+                    i.fire = false;
                 }
             }
         }
-        accumulator -= FIXED_TIMESTEP;
-    }
-
-    if (debug_timer >= DEBUG_INTERVAL) {
-        debug_timer = 0.0f;
-        printEntityPositions();
-    }
-
-    _last_update = std::chrono::steady_clock::now();
 }
 
 void GameLogic::printEntityPositions() {
@@ -158,8 +157,8 @@ void GameLogic::printEntityPositions() {
         auto pos_opt = positions[i];
         if (net_opt && pos_opt) {
             std::cout << "[ENTITY] NET_ID=" << std::dec << net_opt.value().network_id
-                      << " Type=" << net_opt.value().owner_player_id
-                      << " Pos=(" << std::fixed << std::setprecision(3)
+                      << " Type= \"" << net_opt.value().entity_type
+                      << "\" Pos=(" << std::fixed << std::setprecision(3)
                       << pos_opt.value().x << ", " << pos_opt.value().y << ")"
                       << std::endl;
             total_entities++;
@@ -172,8 +171,10 @@ void GameLogic::printEntityPositions() {
 
 void GameLogic::pushClientEvent(const ClientEvent &evt) {
     std::lock_guard<std::mutex> lock(_event_mutex);
+    std::cout << "[EVENT QUEUE] Pushing event type=" << evt.action << " for client " << evt.client_id << std::endl;
     _event_queue.push(evt);
 }
+
 
 void GameLogic::processEvents() {
     std::queue<ClientEvent> local_queue;
@@ -182,11 +183,16 @@ void GameLogic::processEvents() {
         std::swap(local_queue, _event_queue);
     }
 
+    std::cout << "[EVENT QUEUE] Processing " << local_queue.size() << " events" << std::endl;
+
     while (!local_queue.empty()) {
+        std::cout << "[EVENT QUEUE] Handling event type=" << local_queue.front().action
+                  << " for client " << local_queue.front().client_id << std::endl;
         handleEvent(local_queue.front());
         local_queue.pop();
     }
 }
+
 
 void GameLogic::handleEvent(const ClientEvent &evt) {
     auto it = _client_to_entity.find(evt.client_id);
@@ -216,6 +222,9 @@ void GameLogic::handlePlayerAction(entity player, InputEvent action) {
         case KEY_SHOOT_RELEASE: i.fire = false; break;
         default: break;
     }
+    std::cout << "[INPUT] Setting fire=" << (action == KEY_SHOOT_PRESS ? "true" : "false")
+          << " for entity " << player << std::endl;
+
 }
 
 entity GameLogic::createPlayer(uint client_id, uint net_id, float x, float y) {
@@ -230,7 +239,7 @@ entity GameLogic::createPlayer(uint client_id, uint net_id, float x, float y) {
     _registry->add_component(player, score{0});
     _registry->add_component(player, weapon{});
     _registry->add_component(player, hitbox{32.0f, 32.0f, 0.0f, 0.0f});
-    _registry->add_component(player, network_entity{net_id, true, false});
+    _registry->add_component(player, network_entity{net_id, static_cast<uint8_t>(client_id), false, "player"});
 
     _client_to_entity.emplace(client_id, player);
     return player;
@@ -264,12 +273,11 @@ void GameLogic::spawnEnemy() {
 
     float spawn_y = y_dist(_rng);
 
-    _registry->add_component(enemy, position{10.95f, spawn_y});
+    _registry->add_component(enemy, position{0.95f, spawn_y});
     _registry->add_component(enemy, velocity{-0.01f, 0.0f});
     _registry->add_component(enemy, health{30});
     _registry->add_component(enemy, hitbox{40.0f, 40.0f, 0.0f, 0.0f});
-    _registry->add_component(enemy,
-                             network_entity{generateNetId(), true, false});
+    _registry->add_component(enemy, network_entity{generateNetId(), 0, false, "enemy"});
 
     _enemies.push_back(enemy);
 }
@@ -285,8 +293,7 @@ void GameLogic::spawnBoss() {
     _registry->add_component(_boss, component::velocity{0.0f, 0.0f});
     _registry->add_component(_boss, health{1000});
     _registry->add_component(_boss, hitbox{120.0f, 120.0f, 0.0f, 0.0f});
-    _registry->add_component(_boss,
-                             network_entity{generateNetId(), true, false});
+    _registry->add_component(_boss, network_entity{generateNetId(), 0, false, "boss"});
 
     _boss_spawned = true;
 
@@ -348,7 +355,7 @@ WorldSnapshot GameLogic::generateSnapshot() {
         if (pos_opt && vel_opt) {
             EntitySnapshot entity_snap;
             entity_snap.net_id = net_opt.value().network_id;
-            //entity_snap.entity_type = net_opt.value().entity_type;
+            entity_snap.entity_type = net_opt.value().entity_type;
             entity_snap.pos = pos_opt.value();
             entity_snap.vel = vel_opt.value();
             entity_snap.health =
@@ -356,7 +363,6 @@ WorldSnapshot GameLogic::generateSnapshot() {
             entity_snap.score =
                 scores[ent] ? scores[ent].value().current_score : 0;
             entity_snap.tick = _current_tick;
-
             snapshot.entities.push_back(entity_snap);
         }
     }
@@ -415,15 +421,17 @@ std::vector<EntitySnapshot> GameLogic::getDeltaSnapshot(uint last_acked_tick) {
     return delta;
 }
 
-void GameLogic::markEntitiesSynced() {
+void GameLogic::markEntitiesSynced(const std::vector<uint32_t> &net_ids) {
     auto &network_comps = _registry->get_components<component::network_entity>();
-    for (size_t i = 0; i < network_comps.size(); ++i) {
-        auto net_opt = network_comps[i];
-        if (net_opt) {
-            net_opt.value().last_update_time = false;
+    for (uint32_t net_id : net_ids) {
+        entity ent = findEntityByNetId(net_id);
+        if (ent != entity(static_cast<size_t>(-1)) &&
+            ent < network_comps.size() && network_comps[ent]) {
+            network_comps[ent]->synced = true;
         }
     }
 }
+
 
 entity GameLogic::findEntityByNetId(uint net_id) {
     auto &network_comps = _registry->get_components<component::network_entity>();
@@ -434,4 +442,15 @@ entity GameLogic::findEntityByNetId(uint net_id) {
         }
     }
     return entity(static_cast<size_t>(-1));
+}
+
+bool GameLogic::isEntitySynced(uint net_id) {
+    auto ent = findEntityByNetId(net_id);
+    if (ent == entity(static_cast<size_t>(-1))) return false;
+
+    auto &network_comps = _registry->get_components<component::network_entity>();
+    if (ent < network_comps.size() && network_comps[ent]) {
+        return network_comps[ent]->synced;
+    }
+    return false;
 }

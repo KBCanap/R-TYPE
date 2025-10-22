@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** R-TYPE
 ** File description:
-** Fixed GameServerLoop Implementation
+** GameServerLoop Implementation
 */
 
 #include "GameServerLoop.hpp"
@@ -161,7 +161,7 @@ void GameServerLoop::processMessages() {
                 std::vector<Entity> entities;
 
                 for (const auto &snap : snapshot.entities) {
-                    EntityType type = EntityType::PLAYER;
+                    EntityType type = EntityType::ENEMY;
 
                     if (snap.entity_type == "player") {
                         type = EntityType::PLAYER;
@@ -169,6 +169,8 @@ void GameServerLoop::processMessages() {
                         type = EntityType::ENEMY;
                     } else if (snap.entity_type == "projectile") {
                         type = EntityType::PROJECTILE;
+                    } else if (snap.entity_type == "boss") {
+                        type = EntityType::ENEMY;
                     }
 
                     entities.push_back({snap.net_id, type,
@@ -187,11 +189,6 @@ void GameServerLoop::processMessages() {
         } else if (parsed.type == PLAYER_INPUT && parsed.data.size() >= 2) {
             uint8_t event_type = parsed.data[0];
             uint8_t direction = parsed.data[1];
-            std::cout << "[GameServerLoop] Received PLAYER_INPUT from client " << msg.client_id
-                << " | Event Type: 0x" << std::hex << static_cast<int>(event_type)
-                << " | Direction: 0x" << std::hex << static_cast<int>(direction)
-                << " | Sequence #: " << std::dec << parsed.sequence_num << std::endl;
-
 
             if (event_type == 0x01) {
                 _game_logic->updatePlayerInputState(msg.client_id, direction);
@@ -220,7 +217,6 @@ void GameServerLoop::broadcastEntityUpdates() {
     }
 
     auto deltas = _game_logic->getDeltaSnapshot(0);
-
     if (deltas.empty()) {
         return;
     }
@@ -228,11 +224,9 @@ void GameServerLoop::broadcastEntityUpdates() {
     static int update_counter = 0;
     update_counter++;
 
-    if (update_counter % 60 ==
-        0) { // Print every 60 updates (~1 second at 60Hz)
+    if (update_counter % 60 == 0) {
         std::cout << "\n[BROADCAST] Sending " << deltas.size()
                   << " entity updates:" << std::endl;
-
         for (const auto &snap : deltas) {
             std::cout << "  NET_ID=" << snap.net_id
                       << " Type=" << snap.entity_type << " Pos=(" << std::fixed
@@ -242,10 +236,11 @@ void GameServerLoop::broadcastEntityUpdates() {
         }
     }
 
-    std::vector<Entity> entities;
+    std::vector<Entity> update_entities;
+    std::vector<uint32_t> newly_synced_ids;
+
     for (const auto &snap : deltas) {
         EntityType type = EntityType::ENEMY;
-
         if (snap.entity_type == "player") {
             type = EntityType::PLAYER;
         } else if (snap.entity_type == "enemy") {
@@ -256,17 +251,25 @@ void GameServerLoop::broadcastEntityUpdates() {
             type = EntityType::ENEMY;
         }
 
-        entities.push_back({snap.net_id, type,
-                            static_cast<uint32_t>(snap.health), snap.pos.x,
-                            snap.pos.y});
+        Entity entity = {snap.net_id, type,
+                         static_cast<uint32_t>(snap.health),
+                         snap.pos.x, snap.pos.y};
+
+        if (!_game_logic->isEntitySynced(snap.net_id)) {
+            std::string create_msg = _protocol.createEntityCreate(entity, _sequence_num++);
+            for (uint32_t client_id : clients) {
+                _udp_server->sendToClient(client_id, create_msg);
+            }
+            newly_synced_ids.push_back(snap.net_id);
+        }
+
+        update_entities.push_back(entity);
     }
 
-    std::string update_msg =
-        _protocol.createEntityUpdate(entities, _sequence_num++);
-
+    std::string update_msg = _protocol.createEntityUpdate(update_entities, _sequence_num++);
     for (uint32_t client_id : clients) {
         _udp_server->sendToClient(client_id, update_msg);
     }
 
-    _game_logic->markEntitiesSynced();
+    _game_logic->markEntitiesSynced(newly_synced_ids);
 }
