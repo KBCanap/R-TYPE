@@ -15,6 +15,9 @@ class BossManager {
     BossManager(registry &reg, render::IRenderWindow &win);
 
     std::optional<entity> spawnBoss();
+    std::optional<entity> spawnBossLevel2();
+    void spawnBossLevel2Phase2Parts(float boss_x, float boss_y,
+                                      std::vector<entity> &boss_parts);
     bool shouldSpawnBoss(const std::optional<entity> &player,
                          const std::optional<entity> &boss) const;
 

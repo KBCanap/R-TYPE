@@ -20,9 +20,11 @@ set(APP_SOURCES
     src/player_manager.cpp
     src/enemy_manager.cpp
     src/boss_manager.cpp
+    src/powerup_manager.cpp
     src/pause_menu.cpp
     src/connection_menu.cpp
     src/lobby_menu.cpp
+    src/level_selection_menu.cpp
     src/render/RenderFactory.cpp
     src/render/sfml/SFMLRenderWindow.cpp
     src/render/sfml/SFMLRenderAudio.cpp

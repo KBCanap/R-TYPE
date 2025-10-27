@@ -507,6 +507,30 @@ src/keybindings_menu.cpp.s:
 	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/src/keybindings_menu.cpp.s
 .PHONY : src/keybindings_menu.cpp.s
 
+src/level_selection_menu.o: src/level_selection_menu.cpp.o
+.PHONY : src/level_selection_menu.o
+
+# target to build an object file
+src/level_selection_menu.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/src/level_selection_menu.cpp.o
+.PHONY : src/level_selection_menu.cpp.o
+
+src/level_selection_menu.i: src/level_selection_menu.cpp.i
+.PHONY : src/level_selection_menu.i
+
+# target to preprocess a source file
+src/level_selection_menu.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/src/level_selection_menu.cpp.i
+.PHONY : src/level_selection_menu.cpp.i
+
+src/level_selection_menu.s: src/level_selection_menu.cpp.s
+.PHONY : src/level_selection_menu.s
+
+# target to generate assembly for a file
+src/level_selection_menu.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/src/level_selection_menu.cpp.s
+.PHONY : src/level_selection_menu.cpp.s
+
 src/lobby_menu.o: src/lobby_menu.cpp.o
 .PHONY : src/lobby_menu.o
 
@@ -650,6 +674,30 @@ src/player_manager.s: src/player_manager.cpp.s
 src/player_manager.cpp.s:
 	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/src/player_manager.cpp.s
 .PHONY : src/player_manager.cpp.s
+
+src/powerup_manager.o: src/powerup_manager.cpp.o
+.PHONY : src/powerup_manager.o
+
+# target to build an object file
+src/powerup_manager.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/src/powerup_manager.cpp.o
+.PHONY : src/powerup_manager.cpp.o
+
+src/powerup_manager.i: src/powerup_manager.cpp.i
+.PHONY : src/powerup_manager.i
+
+# target to preprocess a source file
+src/powerup_manager.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/src/powerup_manager.cpp.i
+.PHONY : src/powerup_manager.cpp.i
+
+src/powerup_manager.s: src/powerup_manager.cpp.s
+.PHONY : src/powerup_manager.s
+
+# target to generate assembly for a file
+src/powerup_manager.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/src/powerup_manager.cpp.s
+.PHONY : src/powerup_manager.cpp.s
 
 src/render/RenderFactory.o: src/render/RenderFactory.cpp.o
 .PHONY : src/render/RenderFactory.o
@@ -801,6 +849,9 @@ help:
 	@echo "... src/keybindings_menu.o"
 	@echo "... src/keybindings_menu.i"
 	@echo "... src/keybindings_menu.s"
+	@echo "... src/level_selection_menu.o"
+	@echo "... src/level_selection_menu.i"
+	@echo "... src/level_selection_menu.s"
 	@echo "... src/lobby_menu.o"
 	@echo "... src/lobby_menu.i"
 	@echo "... src/lobby_menu.s"
@@ -819,6 +870,9 @@ help:
 	@echo "... src/player_manager.o"
 	@echo "... src/player_manager.i"
 	@echo "... src/player_manager.s"
+	@echo "... src/powerup_manager.o"
+	@echo "... src/powerup_manager.i"
+	@echo "... src/powerup_manager.s"
 	@echo "... src/render/RenderFactory.o"
 	@echo "... src/render/RenderFactory.i"
 	@echo "... src/render/RenderFactory.s"

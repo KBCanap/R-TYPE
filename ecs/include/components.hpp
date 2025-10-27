@@ -299,4 +299,12 @@ struct health {
     health(int hp = 100) : current_hp(hp), max_hp(hp), pending_damage(0) {}
 };
 
+struct shield {
+    int current_shield;
+    int max_shield;
+
+    shield(int shield_points = 0, int max = 50)
+        : current_shield(shield_points), max_shield(max) {}
+};
+
 } // namespace component
