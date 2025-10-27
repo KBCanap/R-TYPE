@@ -11,9 +11,23 @@
 
 namespace systems {
 
+// ===============================
+// STRUCTURES AND BASIC HELPERS
+// ===============================
+
 struct HitboxDimensions {
     float width, height, left, top;
 };
+
+static bool is_valid_player(const std::optional<component::position> &pos,
+                           const std::optional<component::drawable> &drawable) {
+    return pos && drawable && (drawable->tag == "player");
+}
+
+static const component::hitbox* get_hitbox_ptr(size_t idx, 
+                                              sparse_array<component::hitbox> &hitboxes) {
+    return (idx < hitboxes.size() && hitboxes[idx]) ? &(*hitboxes[idx]) : nullptr;
+}
 
 static HitboxDimensions calculate_target_hitbox(
     const component::position &pos,
@@ -40,6 +54,36 @@ static bool check_aabb_collision(float left1, float top1, float width1, float he
            (top1 < top2 + height2) && (top1 + height1 > top2);
 }
 
+// ===============================
+// POWERUP HELPERS
+// ===============================
+
+static void handle_shield_powerup_collision(registry &r, size_t player_idx) {
+    sparse_array<component::shield> &shields = r.get_components<component::shield>();
+    
+    if (player_idx >= shields.size() || !shields[player_idx]) {
+        r.add_component<component::shield>(entity(player_idx), component::shield(50, 50));
+    } else {
+        shields[player_idx]->current_shield = std::min(
+            shields[player_idx]->current_shield + 50,
+            shields[player_idx]->max_shield
+        );
+    }
+}
+
+static void handle_spread_powerup_collision(registry &r, size_t player_idx) {
+    sparse_array<component::weapon> &weapons = r.get_components<component::weapon>();
+    
+    if (player_idx < weapons.size() && weapons[player_idx]) {
+        weapons[player_idx]->projectile_count = 3;
+        weapons[player_idx]->spread_angle = 15.0f;
+    }
+}
+
+// ===============================
+// DAMAGE HELPERS
+// ===============================
+
 static void award_enemy_kill_score(sparse_array<component::score> &scores,
                                     sparse_array<component::drawable> &drawables,
                                     int points) {
@@ -55,6 +99,28 @@ static void award_enemy_kill_score(sparse_array<component::score> &scores,
         break;
     }
 }
+
+static void handle_entity_damage(size_t entity_idx, int damage,
+                                sparse_array<component::health> &healths,
+                                sparse_array<component::position> &positions,
+                                std::vector<size_t> &entities_to_kill,
+                                std::vector<std::pair<float, float>> &explosion_positions) {
+    
+    bool has_health = (entity_idx < healths.size()) && healths[entity_idx];
+    
+    if (has_health) {
+        healths[entity_idx]->pending_damage += damage;
+    } else {
+        entities_to_kill.push_back(entity_idx);
+        if (entity_idx < positions.size() && positions[entity_idx]) {
+            explosion_positions.push_back({positions[entity_idx]->x, positions[entity_idx]->y});
+        }
+    }
+}
+
+// ===============================
+// SPECIALIZED COLLISION LOGIC
+// ===============================
 
 static void handle_projectile_hit(
     size_t target_idx, const component::position &target_pos,
@@ -89,6 +155,45 @@ static void handle_projectile_hit(
         award_enemy_kill_score(scores, drawables, 5);
     }
 }
+
+static bool process_powerup_collision(registry &r, size_t player_idx, size_t powerup_idx,
+                                     const HitboxDimensions &player_box,
+                                     sparse_array<component::position> &positions,
+                                     sparse_array<component::drawable> &drawables,
+                                     sparse_array<component::hitbox> &hitboxes,
+                                     const std::string &powerup_tag,
+                                     std::vector<size_t> &entities_to_kill) {
+    
+    std::optional<component::position> &powerup_pos = positions[powerup_idx];
+    std::optional<component::drawable> &powerup_drawable = drawables[powerup_idx];
+
+    if (!powerup_pos || !powerup_drawable || powerup_drawable->tag != powerup_tag || powerup_idx == player_idx) {
+        return false;
+    }
+
+    const component::hitbox *pwhitbox = get_hitbox_ptr(powerup_idx, hitboxes);
+    HitboxDimensions powerup_box = calculate_target_hitbox(*powerup_pos, *powerup_drawable, pwhitbox);
+
+    bool collision = check_aabb_collision(
+        player_box.left, player_box.top, player_box.width, player_box.height,
+        powerup_box.left, powerup_box.top, powerup_box.width, powerup_box.height);
+
+    if (collision) {
+        if (powerup_tag == "powerup") {
+            handle_shield_powerup_collision(r, player_idx);
+        } else if (powerup_tag == "spread_powerup") {
+            handle_spread_powerup_collision(r, player_idx);
+        }
+        entities_to_kill.push_back(powerup_idx);
+        return true;
+    }
+    
+    return false;
+}
+
+// ===============================
+// MAIN COLLISION PROCESSORS
+// ===============================
 
 static bool process_projectile_collision(
     size_t proj_idx, size_t target_idx,
@@ -138,22 +243,96 @@ static bool process_projectile_collision(
     return !projectile->piercing;
 }
 
+static void process_player_powerup_collisions(registry &r, size_t player_idx,
+                                            const HitboxDimensions &player_box,
+                                            sparse_array<component::position> &positions,
+                                            sparse_array<component::drawable> &drawables,
+                                            sparse_array<component::hitbox> &hitboxes,
+                                            std::vector<size_t> &entities_to_kill) {
+    
+    size_t max_entities = std::min(positions.size(), drawables.size());
+    
+    for (size_t powerup_idx = 0; powerup_idx < max_entities; ++powerup_idx) {
+        // Shield powerup
+        process_powerup_collision(r, player_idx, powerup_idx, player_box, positions, 
+                                 drawables, hitboxes, "powerup", entities_to_kill);
+        
+        // Spread powerup
+        process_powerup_collision(r, player_idx, powerup_idx, player_box, positions, 
+                                 drawables, hitboxes, "spread_powerup", entities_to_kill);
+    }
+}
+
+static void process_player_enemy_collisions(sparse_array<component::position> &positions,
+                                           sparse_array<component::drawable> &drawables,
+                                           sparse_array<component::hitbox> &hitboxes,
+                                           sparse_array<component::health> &healths,
+                                           std::vector<size_t> &entities_to_kill,
+                                           std::vector<std::pair<float, float>> &explosion_positions) {
+    
+    const int COLLISION_DAMAGE = 50;
+    size_t max_entities = std::min(positions.size(), drawables.size());
+
+    for (size_t player_idx = 0; player_idx < max_entities; ++player_idx) {
+        std::optional<component::position> &player_pos = positions[player_idx];
+        std::optional<component::drawable> &player_drawable = drawables[player_idx];
+        std::optional<component::hitbox> &player_hitbox = hitboxes[player_idx];
+
+        if (!is_valid_player(player_pos, player_drawable) || !player_hitbox) continue;
+
+        float player_left = player_pos->x + player_hitbox->offset_x;
+        float player_top = player_pos->y + player_hitbox->offset_y;
+
+        for (size_t enemy_idx = 0; enemy_idx < max_entities; ++enemy_idx) {
+            if (enemy_idx == player_idx) continue;
+            
+            std::optional<component::position> &enemy_pos = positions[enemy_idx];
+            std::optional<component::drawable> &enemy_drawable = drawables[enemy_idx];
+            std::optional<component::hitbox> &enemy_hitbox = hitboxes[enemy_idx];
+
+            if (!enemy_pos || !enemy_drawable || !enemy_hitbox || !is_enemy_tag(enemy_drawable->tag)) continue;
+
+            float enemy_left = enemy_pos->x + enemy_hitbox->offset_x;
+            float enemy_top = enemy_pos->y + enemy_hitbox->offset_y;
+
+            bool collision = check_aabb_collision(
+                player_left, player_top, player_hitbox->width, player_hitbox->height,
+                enemy_left, enemy_top, enemy_hitbox->width, enemy_hitbox->height);
+
+            if (collision) {
+                handle_entity_damage(player_idx, COLLISION_DAMAGE, healths, positions, 
+                                    entities_to_kill, explosion_positions);
+                handle_entity_damage(enemy_idx, COLLISION_DAMAGE, healths, positions, 
+                                    entities_to_kill, explosion_positions);
+                break;
+            }
+        }
+    }
+}
+
+// ===============================
+// MAIN SYSTEM
+// ===============================
+
 void collision_system(registry &r, sparse_array<component::position> &positions,
                       sparse_array<component::drawable> &drawables,
                       sparse_array<component::projectile> &projectiles,
                       sparse_array<component::hitbox> &hitboxes) {
+    
     std::vector<size_t> entities_to_kill;
     std::vector<std::pair<float, float>> explosion_positions;
     sparse_array<component::score> &scores = r.get_components<component::score>();
     sparse_array<component::health> &healths = r.get_components<component::health>();
 
+    // Process projectile collisions
     for (size_t proj_idx = 0; proj_idx < projectiles.size(); ++proj_idx) {
         std::optional<component::projectile> &projectile = projectiles[proj_idx];
         std::optional<component::position> &proj_pos = positions[proj_idx];
 
         if (!projectile || !proj_pos) continue;
 
-        for (size_t target_idx = 0; target_idx < std::min(positions.size(), drawables.size()); ++target_idx) {
+        size_t max_targets = std::min(positions.size(), drawables.size());
+        for (size_t target_idx = 0; target_idx < max_targets; ++target_idx) {
             bool should_break = process_projectile_collision(
                 proj_idx, target_idx, positions, drawables, projectiles, hitboxes,
                 healths, scores, entities_to_kill, explosion_positions);
@@ -165,145 +344,26 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
         }
     }
 
-    // Player-Powerup collision detection
-    for (size_t player_idx = 0; player_idx < std::min(positions.size(), drawables.size()); ++player_idx) {
+    // Process player-powerup collisions
+    size_t max_entities = std::min(positions.size(), drawables.size());
+    for (size_t player_idx = 0; player_idx < max_entities; ++player_idx) {
         std::optional<component::position> &player_pos = positions[player_idx];
         std::optional<component::drawable> &player_drawable = drawables[player_idx];
-        std::optional<component::hitbox> &player_hitbox = hitboxes[player_idx];
 
-        bool valid_player = player_pos && player_drawable &&
-                           (player_drawable->tag == "player");
-        if (!valid_player) continue;
+        if (!is_valid_player(player_pos, player_drawable)) continue;
 
-        const component::hitbox *phitbox = nullptr;
-        if (player_idx < hitboxes.size() && player_hitbox) {
-            phitbox = &(*player_hitbox);
-        }
+        const component::hitbox *phitbox = get_hitbox_ptr(player_idx, hitboxes);
         HitboxDimensions player_box = calculate_target_hitbox(*player_pos, *player_drawable, phitbox);
 
-        for (size_t powerup_idx = 0; powerup_idx < std::min(positions.size(), drawables.size()); ++powerup_idx) {
-            std::optional<component::position> &powerup_pos = positions[powerup_idx];
-            std::optional<component::drawable> &powerup_drawable = drawables[powerup_idx];
-
-            bool valid_powerup = powerup_pos && powerup_drawable &&
-                                (powerup_drawable->tag == "powerup") && (powerup_idx != player_idx);
-            if (!valid_powerup) continue;
-
-            const component::hitbox *pwhitbox = nullptr;
-            if (powerup_idx < hitboxes.size() && hitboxes[powerup_idx]) {
-                pwhitbox = &(*hitboxes[powerup_idx]);
-            }
-            HitboxDimensions powerup_box = calculate_target_hitbox(*powerup_pos, *powerup_drawable, pwhitbox);
-
-            bool collision = check_aabb_collision(
-                player_box.left, player_box.top, player_box.width, player_box.height,
-                powerup_box.left, powerup_box.top, powerup_box.width, powerup_box.height);
-
-            if (collision) {
-                // Add or create shield component with 50 shield points
-                sparse_array<component::shield> &shields = r.get_components<component::shield>();
-                if (player_idx >= shields.size() || !shields[player_idx]) {
-                    r.add_component<component::shield>(entity(player_idx), component::shield(50, 50));
-                } else {
-                    // Add 50 shield points, max 50
-                    shields[player_idx]->current_shield = std::min(
-                        shields[player_idx]->current_shield + 50,
-                        shields[player_idx]->max_shield
-                    );
-                }
-
-                // Destroy powerup
-                entities_to_kill.push_back(powerup_idx);
-            }
-        }
-
-        // Check for spread powerup collision
-        for (size_t powerup_idx = 0; powerup_idx < std::min(positions.size(), drawables.size()); ++powerup_idx) {
-            std::optional<component::position> &powerup_pos = positions[powerup_idx];
-            std::optional<component::drawable> &powerup_drawable = drawables[powerup_idx];
-
-            bool valid_spread_powerup = powerup_pos && powerup_drawable &&
-                                        (powerup_drawable->tag == "spread_powerup") && (powerup_idx != player_idx);
-            if (!valid_spread_powerup) continue;
-
-            const component::hitbox *pwhitbox = nullptr;
-            if (powerup_idx < hitboxes.size() && hitboxes[powerup_idx]) {
-                pwhitbox = &(*hitboxes[powerup_idx]);
-            }
-            HitboxDimensions powerup_box = calculate_target_hitbox(*powerup_pos, *powerup_drawable, pwhitbox);
-
-            bool collision = check_aabb_collision(
-                player_box.left, player_box.top, player_box.width, player_box.height,
-                powerup_box.left, powerup_box.top, powerup_box.width, powerup_box.height);
-
-            if (collision) {
-                // Change player weapon to spread
-                sparse_array<component::weapon> &weapons = r.get_components<component::weapon>();
-                if (player_idx < weapons.size() && weapons[player_idx]) {
-                    // Set weapon to spread: 3 projectiles with 15 degree spread
-                    weapons[player_idx]->projectile_count = 3;
-                    weapons[player_idx]->spread_angle = 15.0f;
-                }
-
-                // Destroy powerup
-                entities_to_kill.push_back(powerup_idx);
-            }
-        }
+        process_player_powerup_collisions(r, player_idx, player_box, positions, 
+                                         drawables, hitboxes, entities_to_kill);
     }
 
-    // Player-Enemy collision detection
-    const int COLLISION_DAMAGE = 50;
+    // Process player-enemy collisions
+    process_player_enemy_collisions(positions, drawables, hitboxes, healths, 
+                                   entities_to_kill, explosion_positions);
 
-    for (size_t player_idx = 0; player_idx < std::min(positions.size(), drawables.size()); ++player_idx) {
-        std::optional<component::position> &player_pos = positions[player_idx];
-        std::optional<component::drawable> &player_drawable = drawables[player_idx];
-        std::optional<component::hitbox> &player_hitbox = hitboxes[player_idx];
-
-        bool valid_player = player_pos && player_drawable && player_hitbox &&
-                           (player_drawable->tag == "player");
-        if (!valid_player) continue;
-
-        float player_left = player_pos->x + player_hitbox->offset_x;
-        float player_top = player_pos->y + player_hitbox->offset_y;
-
-        for (size_t enemy_idx = 0; enemy_idx < std::min(positions.size(), drawables.size()); ++enemy_idx) {
-            std::optional<component::position> &enemy_pos = positions[enemy_idx];
-            std::optional<component::drawable> &enemy_drawable = drawables[enemy_idx];
-            std::optional<component::hitbox> &enemy_hitbox = hitboxes[enemy_idx];
-
-            bool valid_enemy = enemy_pos && enemy_drawable && enemy_hitbox &&
-                              is_enemy_tag(enemy_drawable->tag) && (enemy_idx != player_idx);
-            if (!valid_enemy) continue;
-
-            float enemy_left = enemy_pos->x + enemy_hitbox->offset_x;
-            float enemy_top = enemy_pos->y + enemy_hitbox->offset_y;
-
-            bool collision = check_aabb_collision(
-                player_left, player_top, player_hitbox->width, player_hitbox->height,
-                enemy_left, enemy_top, enemy_hitbox->width, enemy_hitbox->height);
-
-            if (!collision) continue;
-
-            bool player_has_health = (player_idx < healths.size()) && healths[player_idx];
-            if (player_has_health) {
-                healths[player_idx]->pending_damage += COLLISION_DAMAGE;
-            } else {
-                entities_to_kill.push_back(player_idx);
-                explosion_positions.push_back({player_pos->x, player_pos->y});
-            }
-
-            bool enemy_has_health = (enemy_idx < healths.size()) && healths[enemy_idx];
-            if (enemy_has_health) {
-                healths[enemy_idx]->pending_damage += COLLISION_DAMAGE;
-            } else {
-                entities_to_kill.push_back(enemy_idx);
-                explosion_positions.push_back({enemy_pos->x, enemy_pos->y});
-            }
-
-            break;
-        }
-    }
-
+    // Cleanup and effects
     std::sort(entities_to_kill.begin(), entities_to_kill.end());
     entities_to_kill.erase(
         std::unique(entities_to_kill.begin(), entities_to_kill.end()),
