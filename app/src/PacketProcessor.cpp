@@ -129,50 +129,32 @@ PacketProcessor::parseEntityCreate(const std::vector<uint8_t> &data) {
     EntityData entity;
 
     if (data.size() < 17) {
-        std::cerr << "[PacketProcessor] ENTITY_CREATE data too small: "
-                  << data.size() << " (expected 17)" << std::endl;
         return entity;
     }
 
     size_t offset = 0;
 
-    // NET_ID (4 bytes)
-    entity.net_id = (static_cast<uint32_t>(data[offset]) << 24) |
-                    (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                    (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                    static_cast<uint32_t>(data[offset + 3]);
+    uint32_t net_id_network;
+    std::memcpy(&net_id_network, &data[offset], 4);
+    entity.net_id = ntohl(net_id_network);
     offset += 4;
 
-    // ENTITY_TYPE (1 byte)
     entity.entity_type = static_cast<EntityType>(data[offset]);
     offset += 1;
 
-    // HEALTH (4 bytes) - CHANGEMENT ICI pour compatibilit� serveur
-    entity.health = (static_cast<uint32_t>(data[offset]) << 24) |
-                    (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                    (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                    static_cast<uint32_t>(data[offset + 3]);
+    uint32_t health_network;
+    std::memcpy(&health_network, &data[offset], 4);
+    entity.health = ntohl(health_network);
     offset += 4;
 
-    // POSITION_X (4 bytes)
-    uint32_t pos_x_raw = (static_cast<uint32_t>(data[offset]) << 24) |
-                         (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                         (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                         static_cast<uint32_t>(data[offset + 3]);
-    entity.position_x = networkToFloat(pos_x_raw);
+    uint32_t pos_x_network;
+    std::memcpy(&pos_x_network, &data[offset], 4);
+    entity.position_x = networkToFloat(pos_x_network);
     offset += 4;
 
-    // POSITION_Y (4 bytes)
-    uint32_t pos_y_raw = (static_cast<uint32_t>(data[offset]) << 24) |
-                         (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                         (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                         static_cast<uint32_t>(data[offset + 3]);
-    entity.position_y = networkToFloat(pos_y_raw);
-
-    std::cout << "[PacketProcessor] Parsed entity - NET_ID: " << entity.net_id
-              << " Type: " << static_cast<int>(entity.entity_type)
-              << " Health: " << entity.health << " Pos: (" << entity.position_x
-              << ", " << entity.position_y << ")" << std::endl;
+    uint32_t pos_y_network;
+    std::memcpy(&pos_y_network, &data[offset], 4);
+    entity.position_y = networkToFloat(pos_y_network);
 
     return entity;
 }
@@ -191,30 +173,24 @@ PacketProcessor::parseEntityUpdate(const std::vector<uint8_t> &data) {
         size_t offset = i * 16;
         EntityUpdateData update;
 
-        update.net_id = (static_cast<uint32_t>(data[offset]) << 24) |
-                        (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                        (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                        static_cast<uint32_t>(data[offset + 3]);
+        uint32_t net_id_network;
+        std::memcpy(&net_id_network, &data[offset], 4);
+        update.net_id = ntohl(net_id_network);
         offset += 4;
 
-        update.health = (static_cast<uint32_t>(data[offset]) << 24) |
-                        (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                        (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                        static_cast<uint32_t>(data[offset + 3]);
+        uint32_t health_network;
+        std::memcpy(&health_network, &data[offset], 4);
+        update.health = ntohl(health_network);
         offset += 4;
 
-        uint32_t pos_x_raw = (static_cast<uint32_t>(data[offset]) << 24) |
-                             (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                             (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                             static_cast<uint32_t>(data[offset + 3]);
-        update.position_x = networkToFloat(pos_x_raw);
+        uint32_t pos_x_network;
+        std::memcpy(&pos_x_network, &data[offset], 4);
+        update.position_x = networkToFloat(pos_x_network);
         offset += 4;
 
-        uint32_t pos_y_raw = (static_cast<uint32_t>(data[offset]) << 24) |
-                             (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                             (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                             static_cast<uint32_t>(data[offset + 3]);
-        update.position_y = networkToFloat(pos_y_raw);
+        uint32_t pos_y_network;
+        std::memcpy(&pos_y_network, &data[offset], 4);
+        update.position_y = networkToFloat(pos_y_network);
 
         updates.push_back(update);
     }
