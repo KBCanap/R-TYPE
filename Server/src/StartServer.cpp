@@ -185,9 +185,8 @@ void StartServer::handleConnect(uint32_t client_id, const std::vector<uint8_t> &
     }
 
     std::cout << "[Client " << client_id << "] Connected as '" << username << "'" << std::endl;
-    
-    // Send acknowledgment (player_id is assigned when joining a lobby)
-    std::string response = _protocol.createConnectAck(0);
+
+    std::string response = _protocol.createConnectAck(client_id);
     sendToClient(client_id, response);
 }
 
@@ -586,7 +585,5 @@ void StartServer::sendError(uint32_t client_id, ProtocolError error) {
 }
 
 uint32_t StartServer::getServerIp() const {
-    // For now, return localhost (127.0.0.1)
-    // In production, this should detect the actual server IP
     return htonl(INADDR_LOOPBACK);
 }
