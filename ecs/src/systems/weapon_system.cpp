@@ -6,6 +6,7 @@
 */
 
 #include "../../include/systems.hpp"
+#include <algorithm>
 
 namespace systems {
 

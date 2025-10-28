@@ -8,6 +8,7 @@
 #include "../../include/systems.hpp"
 #include "../include/render/IRenderWindow.hpp"
 #include <vector>
+#include <algorithm>
 
 namespace systems {
 
