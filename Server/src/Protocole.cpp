@@ -6,10 +6,16 @@
 */
 
 #include "Protocole.hpp"
-#include <arpa/inet.h>
 #include <cstring>
 #include <iostream>
-#include <unistd.h>
+
+#ifdef _WIN32
+    #include <winsock2.h>
+    #pragma comment(lib, "ws2_32.lib")
+#else
+    #include <arpa/inet.h>
+    #include <unistd.h>
+#endif
 
 Protocol::Protocol() {}
 
@@ -95,7 +101,14 @@ std::string Protocol::createMessage(MessageType type,
 
     message.push_back(static_cast<uint8_t>(type));
 
-    uint32_t length = data.size();
+    size_t data_size = data.size();
+    if (data_size > UINT32_MAX) {
+        std::cerr << "Error: Data size too large for protocol (max " 
+                  << UINT32_MAX << " bytes)" << std::endl;
+        return "";
+    }
+    
+    uint32_t length = static_cast<uint32_t>(data_size);
     message.push_back(static_cast<uint8_t>((length >> 16) & 0xFF));
     message.push_back(static_cast<uint8_t>((length >> 8) & 0xFF));
     message.push_back(static_cast<uint8_t>(length & 0xFF));

@@ -139,7 +139,7 @@ void GameServerLoop::processMessages() {
         if (parsed.type == CLIENT_PING) {
             if (_game_logic->getPlayerEntity(msg.client_id) ==
                 entity(static_cast<size_t>(-1))) {
-                uint net_id = _game_logic->generateNetId();
+                uint32_t net_id = _game_logic->generateNetId();
 
                 // Use normalized coordinates (0.0-1.0)
                 float spawn_x = 0.1f + (0.15f * (msg.client_id % 4));

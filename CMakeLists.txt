@@ -6,9 +6,30 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
+# ==== Output directories configuration ====
+# For single-config generators (Unix Makefiles, Ninja)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+
+# For multi-config generators (Visual Studio, Xcode)
+foreach(CONFIG Debug Release RelWithDebInfo MinSizeRel)
+    string(TOUPPER ${CONFIG} CONFIG_UPPER)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} ${CMAKE_SOURCE_DIR}/bin/${CONFIG})
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${CONFIG_UPPER} ${CMAKE_SOURCE_DIR}/lib/${CONFIG})
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${CONFIG_UPPER} ${CMAKE_SOURCE_DIR}/lib/${CONFIG})
+endforeach()
 
 include(cmake/CPM.cmake)
+
+# ==== Platform-specific settings ====
+if(WIN32)
+    # Windows specific settings
+    add_compile_definitions(_WIN32_WINNT=0x0601)  # Windows 7+
+    if(MSVC)
+        add_compile_options(/utf-8)  # Ensure UTF-8 source files are handled properly
+    endif()
+endif()
 
 # ==== Asio ====
 CPMFindPackage(
@@ -97,7 +118,7 @@ else()
         endif()
     endif()
 
-    # Show install help if missing - VOTRE GUIDE PRÉSERVÉ
+    # Show install help if missing
     if(MISSING_LIBS)
         message(WARNING "Some system libraries required by SFML are missing:")
         foreach(lib IN LISTS MISSING_LIBS)
@@ -144,6 +165,9 @@ function(setup_target_warnings target)
     if (UNIX)
         find_package(Threads REQUIRED)
         target_link_libraries(${target} PRIVATE Threads::Threads)
+    elseif(WIN32)
+        # Windows threading is built-in, but we might need ws2_32 for sockets
+        target_link_libraries(${target} PRIVATE ws2_32 wsock32)
     endif()
 
     if (WARNINGS_AS_ERRORS)
@@ -194,19 +218,16 @@ target_compile_definitions(r-type_server PRIVATE
   $<$<CONFIG:Debug>:RTYPE_DEBUG>
 )
 
-# Client is now handled by the app module
-
 # ==== Unit tests (optional) ====
 if(RTYPE_BUILD_TESTS)
   enable_testing()
   
-  # Catch2 avec logique complète : système → cache → installation
   CPMFindPackage(
     NAME Catch2
     VERSION 3.5.3
     GITHUB_REPOSITORY catchorg/Catch2
     GIT_TAG v3.5.3
-      FIND_PACKAGE_ARGUMENTS "CONFIG QUIET"
+    FIND_PACKAGE_ARGUMENTS "CONFIG QUIET"
     OPTIONS
       "CATCH_INSTALL_DOCS OFF"
       "CATCH_INSTALL_EXTRAS ON"
@@ -226,15 +247,12 @@ if(RTYPE_BUILD_TESTS)
     list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/extras)
   endif()
 
-  # Add your tests here
   add_subdirectory(tests)
   
   message(STATUS "Unit tests enabled")
 endif()
 
-# ==== Optimizations by configuration (fixed for multi-config) ====
-# Avoid CMAKE_BUILD_TYPE here and use generator expressions:
-# Release: -O3 -DNDEBUG only
+# ==== Optimizations by configuration ====
 target_compile_options(r-type_server PRIVATE
   $<$<CONFIG:Release>:-O3 -DNDEBUG>
 )
@@ -251,8 +269,6 @@ install(TARGETS r-type_app r-type_server
 set(CPACK_PACKAGE_NAME "R-Type")
 set(CPACK_PACKAGE_VERSION "1.0.0")
 set(CPACK_PACKAGE_DESCRIPTION "R-Type multiplayer game")
-
-# Linux-specific configuration
 set(CPACK_GENERATOR "TGZ;DEB")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libgcc-s1, libstdc++6")
 

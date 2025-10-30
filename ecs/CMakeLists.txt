@@ -29,21 +29,34 @@ set(ECS_SOURCES
     src/ANetworkManager.cpp
 )
 
-# Création de la bibliothèque partagée
-add_library(ecs SHARED ${ECS_SOURCES})
-
-# Configuration des répertoires d'inclusion
-target_include_directories(ecs PUBLIC include)
-
-# Lier avec ASIO pour les types dans les headers network
-if(TARGET asio_interface)
-    target_link_libraries(ecs PUBLIC asio_interface)
+# Sur Windows, utilisez STATIC pour éviter les problèmes de DLL
+# Sur Linux/Mac, SHARED fonctionne bien
+if(WIN32)
+    add_library(ecs STATIC ${ECS_SOURCES})
+    # Pour les bibliothèques statiques sur Windows avec MSVC
+    if(MSVC)
+        set_target_properties(ecs PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib/$<CONFIG>
+            ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/lib/Debug
+            ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/lib/Release
+        )
+    endif()
+else()
+    add_library(ecs SHARED ${ECS_SOURCES})
+    set_target_properties(ecs PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+    )
 endif()
 
-# Installation
-install(TARGETS ecs
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
+# Configuration des répertoires d'inclusion
+target_include_directories(ecs PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
 
-install(DIRECTORY include/ DESTINATION include/ecs)
+# Lier avec ASIO pour les types dans les headers network
+# PRIVATE car asio n'est pas exposé dans l'API publique d'ECS
+if(TARGET asio_interface)
+    target_link_libraries(ecs PRIVATE asio_interface)
+endif()

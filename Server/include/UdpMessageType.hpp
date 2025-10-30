@@ -9,6 +9,18 @@
 #define UDPMESSAGETYPE_HPP_
 
 #include <cstdint>
+#include <cstddef>
+
+// Cross-platform packed struct support
+#ifdef _MSC_VER
+    #define PACK_START __pragma(pack(push, 1))
+    #define PACK_END __pragma(pack(pop))
+    #define PACKED
+#else
+    #define PACK_START
+    #define PACK_END
+    #define PACKED __attribute__((packed))
+#endif
 
 // UDP Message types
 enum UdpMessageType : uint8_t {
@@ -48,31 +60,39 @@ static constexpr std::size_t ENTITY_UPDATE_SIZE = 16;
 static constexpr std::size_t ENTITY_DESTROY_SIZE = 4;
 
 // UDP Header structure
+PACK_START
 struct UdpHeader {
     uint8_t msg_type;
     uint8_t data_length[3];
     uint32_t sequence_num;
-} __attribute__((packed));
+} PACKED;
+PACK_END
 
 // Entity data structures
+PACK_START
 struct EntityCreateData {
     uint32_t net_id;
     EntityType entity_type;
     uint32_t health;
     float position_x;
     float position_y;
-} __attribute__((packed));
+} PACKED;
+PACK_END
 
+PACK_START
 struct EntityUpdateData {
     uint32_t net_id;
     uint32_t health;
     float position_x;
     float position_y;
-} __attribute__((packed));
+} PACKED;
+PACK_END
 
+PACK_START
 struct PlayerInputData {
     EventType event_type;
     Direction direction;
-} __attribute__((packed));
+} PACKED;
+PACK_END
 
 #endif /* !UDPMESSAGETYPE_HPP_ */

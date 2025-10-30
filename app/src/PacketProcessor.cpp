@@ -6,9 +6,19 @@
 */
 
 #include "../include/network/PacketProcessor.hpp"
-#include <arpa/inet.h>
 #include <cstring>
-#include <iostream> // Pour std::cerr et std::cout
+#include <iostream>
+
+// Cross-platform network byte order conversion
+#ifdef _WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#pragma comment(lib, "ws2_32.lib")
+#undef ERROR
+#else
+#include <arpa/inet.h>
+#endif
 
 namespace network {
 

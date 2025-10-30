@@ -39,14 +39,12 @@ add_executable(r-type_app ${APP_SOURCES})
 
 # Configuration des répertoires d'inclusion
 target_include_directories(r-type_app PRIVATE
-    include
-    ../ecs/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/ecs/include
 )
 
-# Lier avec les bibliothèques nécessaires
-target_link_libraries(r-type_app PRIVATE
-    ecs
-)
+# Lier avec la bibliothèque ECS
+target_link_libraries(r-type_app PRIVATE ecs)
 
 # Lier avec ASIO pour le NetworkManager
 if(TARGET asio_interface)
@@ -54,7 +52,9 @@ if(TARGET asio_interface)
 endif()
 
 # Lier avec SFML
-if(sfml-graphics_FOUND)
+if(TARGET sfml_interface)
+    target_link_libraries(r-type_app PRIVATE sfml_interface)
+elseif(TARGET sfml-graphics)
     target_link_libraries(r-type_app PRIVATE
         sfml-graphics
         sfml-window
@@ -63,12 +63,16 @@ if(sfml-graphics_FOUND)
         sfml-network
     )
 else()
-    # Utiliser pkg-config
-    target_link_libraries(r-type_app PRIVATE
-        ${SFML_LIBRARIES}
-    )
-    target_include_directories(r-type_app PRIVATE ${SFML_INCLUDE_DIRS})
-    target_compile_options(r-type_app PRIVATE ${SFML_CFLAGS_OTHER})
+    # Fallback pour pkg-config
+    find_package(PkgConfig)
+    if(PKG_CONFIG_FOUND)
+        pkg_check_modules(SFML sfml-all)
+        if(SFML_FOUND)
+            target_link_libraries(r-type_app PRIVATE ${SFML_LIBRARIES})
+            target_include_directories(r-type_app PRIVATE ${SFML_INCLUDE_DIRS})
+            target_compile_options(r-type_app PRIVATE ${SFML_CFLAGS_OTHER})
+        endif()
+    endif()
 endif()
 
 # Fonction de configuration des warnings (définie dans le CMakeLists principal)
@@ -87,3 +91,12 @@ target_compile_definitions(r-type_app PRIVATE
 target_compile_options(r-type_app PRIVATE
     $<$<CONFIG:Release>:-O3 -DNDEBUG>
 )
+
+# Sur Windows avec multi-config, s'assurer que les output directories sont corrects
+if(WIN32 AND MSVC)
+    set_target_properties(r-type_app PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin/Debug
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin/Release
+    )
+endif()

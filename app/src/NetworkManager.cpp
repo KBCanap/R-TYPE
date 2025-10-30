@@ -1,5 +1,13 @@
-﻿#include "../include/network/NetworkManager.hpp"
+﻿// Platform-specific includes must come first on Windows
+#ifdef _WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#undef ERROR
+#endif
+
 #include "../include/network/ASIOSocket.hpp"
+#include "../include/network/NetworkManager.hpp"
 #include <cstring>
 #include <iostream>
 
@@ -86,14 +94,14 @@ void NetworkManager::handlePlayerAssignment(const UDPPacket &packet) {
         player_assigned_ = true;
     }
 
-    updateState(ConnectionState::IN_GAME);
+    updateState(network::ConnectionState::IN_GAME);
 }
 
 void NetworkManager::initializeUDPSocket() {
     resetConnectionState();
     ANetworkManager::initializeUDPSocket();
 
-    if (getConnectionState() == ConnectionState::ERROR) {
+    if (getConnectionState() == network::ConnectionState::ERROR) {
         return;
     }
 
@@ -108,7 +116,7 @@ void NetworkManager::initializeUDPSocket() {
         ping_start_time_ = last_ping_time_;
         ping_retry_count_ = 0;
     } else {
-        updateState(ConnectionState::ERROR);
+        updateState(network::ConnectionState::ERROR);
     }
 }
 
@@ -118,7 +126,7 @@ void NetworkManager::update(float dt) {
     auto state = getConnectionState();
     auto now = std::chrono::steady_clock::now();
 
-    if (state == ConnectionState::GAME_STARTING && udp_ping_sent_) {
+    if (state == network::ConnectionState::GAME_STARTING && udp_ping_sent_) {
         bool is_assigned;
         {
             std::lock_guard<std::mutex> lock(player_mutex_);
@@ -134,7 +142,7 @@ void NetworkManager::update(float dt) {
                                  .count();
 
         if (total_elapsed >= PING_TOTAL_TIMEOUT_S) {
-            updateState(ConnectionState::ERROR);
+            updateState(network::ConnectionState::ERROR);
             disconnect();
             return;
         }
@@ -154,7 +162,7 @@ void NetworkManager::update(float dt) {
                     ping_retry_count_++;
                     last_ping_time_ = now;
                 } else {
-                    updateState(ConnectionState::ERROR);
+                    updateState(network::ConnectionState::ERROR);
                     disconnect();
                 }
             }

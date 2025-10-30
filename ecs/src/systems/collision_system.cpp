@@ -164,6 +164,11 @@ static bool process_powerup_collision(registry &r, size_t player_idx, size_t pow
                                      const std::string &powerup_tag,
                                      std::vector<size_t> &entities_to_kill) {
     
+    // Vérifications de sécurité pour les indices
+    if (powerup_idx >= positions.size() || powerup_idx >= drawables.size()) {
+        return false;
+    }
+    
     std::optional<component::position> &powerup_pos = positions[powerup_idx];
     std::optional<component::drawable> &powerup_drawable = drawables[powerup_idx];
 
@@ -206,14 +211,21 @@ static bool process_projectile_collision(
     std::vector<size_t> &entities_to_kill,
     std::vector<std::pair<float, float>> &explosion_positions) {
 
+    // Vérifications de sécurité pour les indices
+    if (target_idx >= positions.size() || target_idx >= drawables.size() ||
+        proj_idx >= positions.size() || proj_idx >= projectiles.size()) {
+        return false;
+    }
+
     std::optional<component::position> &target_pos = positions[target_idx];
     std::optional<component::drawable> &target_drawable = drawables[target_idx];
     std::optional<component::projectile> &projectile = projectiles[proj_idx];
     std::optional<component::position> &proj_pos = positions[proj_idx];
 
     bool valid_target = target_pos && target_drawable &&
-                       (target_idx != proj_idx) && !projectiles[target_idx];
-    if (!valid_target) return false;
+                       (target_idx != proj_idx) && 
+                       (target_idx >= projectiles.size() || !projectiles[target_idx]);
+    if (!valid_target || !projectile || !proj_pos) return false;
 
     const float proj_width = 13.0f;
     const float proj_height = 8.0f;
@@ -274,6 +286,11 @@ static void process_player_enemy_collisions(sparse_array<component::position> &p
     size_t max_entities = std::min(positions.size(), drawables.size());
 
     for (size_t player_idx = 0; player_idx < max_entities; ++player_idx) {
+        // Vérifications de sécurité
+        if (player_idx >= positions.size() || player_idx >= drawables.size() || player_idx >= hitboxes.size()) {
+            continue;
+        }
+        
         std::optional<component::position> &player_pos = positions[player_idx];
         std::optional<component::drawable> &player_drawable = drawables[player_idx];
         std::optional<component::hitbox> &player_hitbox = hitboxes[player_idx];
@@ -285,6 +302,11 @@ static void process_player_enemy_collisions(sparse_array<component::position> &p
 
         for (size_t enemy_idx = 0; enemy_idx < max_entities; ++enemy_idx) {
             if (enemy_idx == player_idx) continue;
+            
+            // Vérifications de sécurité pour l'ennemi
+            if (enemy_idx >= positions.size() || enemy_idx >= drawables.size() || enemy_idx >= hitboxes.size()) {
+                continue;
+            }
             
             std::optional<component::position> &enemy_pos = positions[enemy_idx];
             std::optional<component::drawable> &enemy_drawable = drawables[enemy_idx];
@@ -326,6 +348,8 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
 
     // Process projectile collisions
     for (size_t proj_idx = 0; proj_idx < projectiles.size(); ++proj_idx) {
+        if (proj_idx >= positions.size()) break;
+        
         std::optional<component::projectile> &projectile = projectiles[proj_idx];
         std::optional<component::position> &proj_pos = positions[proj_idx];
 

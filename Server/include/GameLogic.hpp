@@ -10,12 +10,13 @@
 
 #include "../../ecs/include/registery.hpp"
 #include <chrono>
+#include <cstdint>  // Required for uint32_t
 #include <deque>
 #include <memory>
 #include <mutex>
 #include <queue>
 #include <random>
-#include <sys/types.h>
+#include <thread>      // Required for std::this_thread
 #include <unordered_map>
 #include <vector>
 
@@ -54,7 +55,7 @@ struct InputState {
 };
 
 struct PlayerComponent {
-    uint client_id;
+    uint32_t client_id;   // Changed from uint to uint32_t
     bool is_active;
     float respawn_timer = 0.0f;
 };
@@ -101,32 +102,32 @@ struct Hitbox {
 };
 
 struct NetworkComponent {
-    uint net_id;
+    uint32_t net_id;   // Changed from uint to uint32_t
     bool needs_update;
     std::string entity_type; // "player", "enemy", "projectile", "boss"
 };
 
 // Event structure with timestamp and sequence
 struct ClientEvent {
-    uint client_id;
+    uint32_t client_id;   // Changed from uint to uint32_t
     InputEvent action;
-    uint sequence_number;
+    uint32_t sequence_number;   // Changed from uint to uint32_t
     std::chrono::steady_clock::time_point timestamp;
 };
 
 // Entity state snapshot for network sync
 struct EntitySnapshot {
-    uint net_id;
+    uint32_t net_id;   // Changed from uint to uint32_t
     std::string entity_type;
     Position pos;
     Velocity vel;
     int health;
     int score;
-    uint tick;
+    uint32_t tick;   // Changed from uint to uint32_t
 };
 
 struct WorldSnapshot {
-    uint tick;
+    uint32_t tick;   // Changed from uint to uint32_t
     std::chrono::steady_clock::time_point timestamp;
     std::vector<EntitySnapshot> entities;
 };
@@ -150,27 +151,27 @@ class GameLogic {
 
     // Snapshot management
     WorldSnapshot generateSnapshot();
-    std::vector<EntitySnapshot> getDeltaSnapshot(uint last_acked_tick);
+    std::vector<EntitySnapshot> getDeltaSnapshot(uint32_t last_acked_tick);
     void markEntitiesSynced();
 
     // Player management
-    entity createPlayer(uint client_id, uint net_id, float x, float y);
-    void removePlayer(uint client_id);
-    entity getPlayerEntity(uint client_id);
+    entity createPlayer(uint32_t client_id, uint32_t net_id, float x, float y);
+    void removePlayer(uint32_t client_id);
+    entity getPlayerEntity(uint32_t client_id);
 
     // Getters
-    uint getCurrentTick() const { return _current_tick; }
-    uint generateNetId();
+    uint32_t getCurrentTick() const { return _current_tick; }
+    uint32_t generateNetId();
 
   private:
     std::shared_ptr<registry> _registry;
     std::queue<ClientEvent> _event_queue;
     std::mutex _event_mutex;
-    std::unordered_map<uint, entity> _client_to_entity;
+    std::unordered_map<uint32_t, entity> _client_to_entity;
     bool _running;
 
     // Game tick tracking for sync
-    uint _current_tick;
+    uint32_t _current_tick;
     std::chrono::steady_clock::time_point _last_update;
 
     // Snapshot history
@@ -189,7 +190,7 @@ class GameLogic {
 
     // Random number generation
     std::mt19937 _rng;
-    uint _next_net_id;
+    uint32_t _next_net_id;
 
     // Logic methods
     void processEvents();
@@ -201,7 +202,7 @@ class GameLogic {
     void spawnEnemy();
     void spawnBoss();
     void cleanupDeadEntities();
-    entity findEntityByNetId(uint net_id);
+    entity findEntityByNetId(uint32_t net_id);
 
     // Systems
     static void inputSystem(registry &reg, sparse_array<InputState> &inputs,

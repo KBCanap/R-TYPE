@@ -7,6 +7,11 @@
 
 #include "StartServer.hpp"
 #include <iostream>
+#ifdef _WIN32
+    #include <signal.h>
+#else
+    #include <csignal>
+#endif
 
 StartServer *StartServer::_instance = nullptr;
 
@@ -32,8 +37,13 @@ StartServer::~StartServer() {
 }
 
 void StartServer::setupSignalHandlers() {
+#ifdef _WIN32
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
+#else
+    std::signal(SIGINT, signalHandler);
+    std::signal(SIGTERM, signalHandler);
+#endif
 }
 
 void StartServer::signalHandler(int signal) {

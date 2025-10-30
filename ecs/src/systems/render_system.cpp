@@ -12,6 +12,25 @@
 
 namespace systems {
 
+// Helper for windows securised access to std::optional
+template<typename T>
+inline bool safe_optional_check(const std::optional<T>& opt) {
+#ifdef _WIN32
+    return opt.has_value();
+#else
+    return static_cast<bool>(opt);
+#endif
+}
+
+template<typename T>
+inline T* safe_optional_ptr(std::optional<T>& opt) {
+#ifdef _WIN32
+    return opt.has_value() ? &(*opt) : nullptr;
+#else
+    return opt ? &(*opt) : nullptr;
+#endif
+}
+
 static void draw_sprite_with_shader(render::IRenderWindow &window,
                                      render::ISprite &sprite,
                                      render::IShader *shader) {
@@ -92,11 +111,15 @@ static void setup_sprite_texture_rect(render::ISprite &sprite,
                                        const component::drawable &draw,
                                        const sparse_array<component::animation> &animations,
                                        size_t entity_idx) {
-    bool has_animation = (entity_idx < animations.size()) && animations[entity_idx] &&
+    bool has_animation = (entity_idx < animations.size()) && 
+                        animations[entity_idx].has_value() &&
                         !animations[entity_idx]->frames.empty();
 
     if (has_animation) {
-        sprite.setTextureRect(animations[entity_idx]->frames[animations[entity_idx]->current_frame]);
+        const auto &anim = animations[entity_idx];
+        if (anim.has_value() && anim->current_frame < anim->frames.size()) {
+            sprite.setTextureRect(anim->frames[anim->current_frame]);
+        }
         return;
     }
 
@@ -140,15 +163,18 @@ void render_system(registry &r, sparse_array<component::position> &positions,
     Settings &settings = Settings::getInstance();
     render::IShader *colorblindShader = settings.getColorblindShader(window);
 
+    // Render backgrounds
     for (size_t i = 0; i < backgrounds.size(); ++i) {
-        std::optional<component::background> &bg = backgrounds[i];
-        if (!bg) continue;
-        render_background(*bg, window, colorblindShader, dt);
+        if (safe_optional_check(backgrounds[i])) {
+            render_background(*backgrounds[i], window, colorblindShader, dt);
+        }
     }
 
-    for (size_t i = 0; i < std::min(animations.size(), drawables.size()); ++i) {
-        std::optional<component::animation> &anim = animations[i];
-        std::optional<component::drawable> &drawable = drawables[i];
+    // Process animations
+    size_t max_anim_entities = std::min(animations.size(), drawables.size());
+    for (size_t i = 0; i < max_anim_entities; ++i) {
+        auto* anim = safe_optional_ptr(animations[i]);
+        auto* drawable = safe_optional_ptr(drawables[i]);
 
         if (!anim || !drawable || !anim->playing || anim->frames.empty()) continue;
 
@@ -180,9 +206,11 @@ void render_system(registry &r, sparse_array<component::position> &positions,
         anim->current_frame = static_cast<size_t>(next_frame);
     }
 
-    for (size_t i = 0; i < std::min(positions.size(), drawables.size()); ++i) {
-        std::optional<component::position> &pos = positions[i];
-        std::optional<component::drawable> &draw = drawables[i];
+    // Render entities
+    size_t max_entities = std::min(positions.size(), drawables.size());
+    for (size_t i = 0; i < max_entities; ++i) {
+        auto* pos = safe_optional_ptr(positions[i]);
+        auto* draw = safe_optional_ptr(drawables[i]);
 
         if (!pos || !draw) continue;
 

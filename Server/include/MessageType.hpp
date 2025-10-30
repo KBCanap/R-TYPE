@@ -9,6 +9,18 @@
 #define MESSAGETYPES_HPP_
 
 #include <cstdint>
+#include <cstddef>
+
+// Cross-platform packed struct support
+#ifdef _MSC_VER
+    #define PACK_START __pragma(pack(push, 1))
+    #define PACK_END __pragma(pack(pop))
+    #define PACKED
+#else
+    #define PACK_START
+    #define PACK_END
+    #define PACKED __attribute__((packed))
+#endif
 
 // Message types
 enum class MessageType : uint8_t {
@@ -39,9 +51,11 @@ static constexpr std::size_t MAX_PLAYERS = 4;
 static constexpr std::size_t MIN_PORT = 1024;
 static constexpr std::size_t MAX_PORT = 65535;
 
+PACK_START
 struct TCPHeader {
     uint8_t msg_type;
     uint8_t data_length[3];
-} __attribute__((packed)); // Assure qu'il n'y a pas de padding
+} PACKED;
+PACK_END
 
 #endif /* !MESSAGETYPES_HPP_ */

@@ -7,6 +7,7 @@
 
 #include "GameServerLoop.hpp"
 #include "StartServer.hpp"
+#include <cctype>
 #include <cstring>
 #include <iostream>
 #include <map>

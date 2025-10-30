@@ -227,7 +227,7 @@ void GameLogic::handlePlayerAction(entity player, InputEvent action) {
     }
 }
 
-entity GameLogic::createPlayer(uint client_id, uint net_id, float x, float y) {
+entity GameLogic::createPlayer(uint32_t client_id, uint32_t net_id, float x, float y) {
     entity player = _registry->spawn_entity();
 
     _registry->add_component(player, Position{x, y});
@@ -248,7 +248,7 @@ entity GameLogic::createPlayer(uint client_id, uint net_id, float x, float y) {
     return player;
 }
 
-void GameLogic::removePlayer(uint client_id) {
+void GameLogic::removePlayer(uint32_t client_id) {
     auto it = _client_to_entity.find(client_id);
     if (it != _client_to_entity.end()) {
         _registry->kill_entity(it->second);
@@ -258,14 +258,14 @@ void GameLogic::removePlayer(uint client_id) {
     }
 }
 
-entity GameLogic::getPlayerEntity(uint client_id) {
+entity GameLogic::getPlayerEntity(uint32_t client_id) {
     auto it = _client_to_entity.find(client_id);
     if (it != _client_to_entity.end())
         return it->second;
     return entity(static_cast<size_t>(-1));
 }
 
-uint GameLogic::generateNetId() { return _next_net_id++; }
+uint32_t GameLogic::generateNetId() { return _next_net_id++; }
 
 void GameLogic::spawnEnemy() {
     entity enemy = _registry->spawn_entity();
@@ -383,7 +383,7 @@ WorldSnapshot GameLogic::generateSnapshot() {
     return snapshot;
 }
 
-std::vector<EntitySnapshot> GameLogic::getDeltaSnapshot(uint last_acked_tick) {
+std::vector<EntitySnapshot> GameLogic::getDeltaSnapshot(uint32_t last_acked_tick) {
     auto acked_snapshot =
         std::find_if(_snapshot_history.begin(), _snapshot_history.end(),
                      [last_acked_tick](const WorldSnapshot &s) {
@@ -395,7 +395,7 @@ std::vector<EntitySnapshot> GameLogic::getDeltaSnapshot(uint last_acked_tick) {
         return current.entities;
     }
 
-    std::unordered_map<uint, EntitySnapshot> old_entities;
+    std::unordered_map<uint32_t, EntitySnapshot> old_entities;
     for (const auto &entity : acked_snapshot->entities) {
         old_entities[entity.net_id] = entity;
     }
@@ -439,7 +439,7 @@ void GameLogic::markEntitiesSynced() {
     }
 }
 
-entity GameLogic::findEntityByNetId(uint net_id) {
+entity GameLogic::findEntityByNetId(uint32_t net_id) {
     auto &network_comps = _registry->get_components<NetworkComponent>();
     for (size_t i = 0; i < network_comps.size(); ++i) {
         auto net_opt = network_comps[i];

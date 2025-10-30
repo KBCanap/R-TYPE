@@ -58,7 +58,7 @@ void position_system(registry &r, sparse_array<component::position> &positions,
             should_bounce = true;
         }
 
-        if (is_boss & has_components & should_bounce) {
+        if (is_boss && has_components && should_bounce) {
             // Check bounds and reverse velocity if needed
             if (pos->y <= min_y && vel->vy < 0) {
                 std::cout << "[PositionSystem] Boss hit top, bouncing down. y=" << pos->y << " vy=" << vel->vy << std::endl;

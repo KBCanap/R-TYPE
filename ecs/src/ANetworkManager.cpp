@@ -5,6 +5,14 @@
 ** ANetworkManager
 */
 
+// Platform-specific includes must come first on Windows
+#ifdef _WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#undef ERROR
+#endif
+
 #include "../include/network/ANetworkManager.hpp"
 #include <iostream>
 
@@ -98,7 +106,6 @@ void ANetworkManager::startReadTCPHeader() {
                 std::vector<uint8_t> complete_msg = tcp_header_buffer_;
                 processCompleteTCPMessage(complete_msg);
 
-                // ✅ CORRECTION : Utiliser l'interface abstraite
                 io_context_->post([this]() { startReadTCPHeader(); });
             } else {
                 readTCPPayload(msg_type, data_length);

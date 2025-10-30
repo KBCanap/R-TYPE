@@ -16,6 +16,7 @@
 #include "components.hpp"
 #include "registery.hpp"
 #include "render/RenderFactory.hpp"
+#include <cctype>
 #include <cstring>
 #include <iostream>
 #include <memory>

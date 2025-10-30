@@ -48,9 +48,11 @@ void control_system(registry &r,
                 *target = is_active ? value : *target;
             }
 
-            if (i < animations.size() && animations[i] &&
-                i < drawables.size() && drawables[i] &&
-                drawables[i]->tag == "player") {
+            bool has_anim = (i < animations.size()) && animations[i];
+            bool has_drawable = (i < drawables.size()) && drawables[i];
+            bool is_player = has_drawable && (drawables[i]->tag == "player");
+
+            if (has_anim && is_player) {
                 std::optional<component::animation> &anim = animations[i];
 
                 struct AnimationState {
