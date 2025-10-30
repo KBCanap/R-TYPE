@@ -315,28 +315,292 @@ src/registery.cpp.s:
 	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/registery.cpp.s
 .PHONY : src/registery.cpp.s
 
-src/systems.o: src/systems.cpp.o
-.PHONY : src/systems.o
+src/systems/ai_input_system.o: src/systems/ai_input_system.cpp.o
+.PHONY : src/systems/ai_input_system.o
+
+# target to build an object file
+src/systems/ai_input_system.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/ai_input_system.cpp.o
+.PHONY : src/systems/ai_input_system.cpp.o
+
+src/systems/ai_input_system.i: src/systems/ai_input_system.cpp.i
+.PHONY : src/systems/ai_input_system.i
+
+# target to preprocess a source file
+src/systems/ai_input_system.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/ai_input_system.cpp.i
+.PHONY : src/systems/ai_input_system.cpp.i
+
+src/systems/ai_input_system.s: src/systems/ai_input_system.cpp.s
+.PHONY : src/systems/ai_input_system.s
+
+# target to generate assembly for a file
+src/systems/ai_input_system.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/ai_input_system.cpp.s
+.PHONY : src/systems/ai_input_system.cpp.s
+
+src/systems/audio_system.o: src/systems/audio_system.cpp.o
+.PHONY : src/systems/audio_system.o
+
+# target to build an object file
+src/systems/audio_system.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/audio_system.cpp.o
+.PHONY : src/systems/audio_system.cpp.o
+
+src/systems/audio_system.i: src/systems/audio_system.cpp.i
+.PHONY : src/systems/audio_system.i
+
+# target to preprocess a source file
+src/systems/audio_system.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/audio_system.cpp.i
+.PHONY : src/systems/audio_system.cpp.i
+
+src/systems/audio_system.s: src/systems/audio_system.cpp.s
+.PHONY : src/systems/audio_system.s
+
+# target to generate assembly for a file
+src/systems/audio_system.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/audio_system.cpp.s
+.PHONY : src/systems/audio_system.cpp.s
+
+src/systems/collision_system.o: src/systems/collision_system.cpp.o
+.PHONY : src/systems/collision_system.o
+
+# target to build an object file
+src/systems/collision_system.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/collision_system.cpp.o
+.PHONY : src/systems/collision_system.cpp.o
+
+src/systems/collision_system.i: src/systems/collision_system.cpp.i
+.PHONY : src/systems/collision_system.i
+
+# target to preprocess a source file
+src/systems/collision_system.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/collision_system.cpp.i
+.PHONY : src/systems/collision_system.cpp.i
+
+src/systems/collision_system.s: src/systems/collision_system.cpp.s
+.PHONY : src/systems/collision_system.s
+
+# target to generate assembly for a file
+src/systems/collision_system.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/collision_system.cpp.s
+.PHONY : src/systems/collision_system.cpp.s
+
+src/systems/common.o: src/systems/common.cpp.o
+.PHONY : src/systems/common.o
+
+# target to build an object file
+src/systems/common.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/common.cpp.o
+.PHONY : src/systems/common.cpp.o
+
+src/systems/common.i: src/systems/common.cpp.i
+.PHONY : src/systems/common.i
+
+# target to preprocess a source file
+src/systems/common.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/common.cpp.i
+.PHONY : src/systems/common.cpp.i
+
+src/systems/common.s: src/systems/common.cpp.s
+.PHONY : src/systems/common.s
+
+# target to generate assembly for a file
+src/systems/common.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/common.cpp.s
+.PHONY : src/systems/common.cpp.s
+
+src/systems/control_system.o: src/systems/control_system.cpp.o
+.PHONY : src/systems/control_system.o
+
+# target to build an object file
+src/systems/control_system.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/control_system.cpp.o
+.PHONY : src/systems/control_system.cpp.o
+
+src/systems/control_system.i: src/systems/control_system.cpp.i
+.PHONY : src/systems/control_system.i
+
+# target to preprocess a source file
+src/systems/control_system.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/control_system.cpp.i
+.PHONY : src/systems/control_system.cpp.i
+
+src/systems/control_system.s: src/systems/control_system.cpp.s
+.PHONY : src/systems/control_system.s
+
+# target to generate assembly for a file
+src/systems/control_system.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/control_system.cpp.s
+.PHONY : src/systems/control_system.cpp.s
+
+src/systems/health_system.o: src/systems/health_system.cpp.o
+.PHONY : src/systems/health_system.o
+
+# target to build an object file
+src/systems/health_system.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/health_system.cpp.o
+.PHONY : src/systems/health_system.cpp.o
+
+src/systems/health_system.i: src/systems/health_system.cpp.i
+.PHONY : src/systems/health_system.i
+
+# target to preprocess a source file
+src/systems/health_system.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/health_system.cpp.i
+.PHONY : src/systems/health_system.cpp.i
+
+src/systems/health_system.s: src/systems/health_system.cpp.s
+.PHONY : src/systems/health_system.s
+
+# target to generate assembly for a file
+src/systems/health_system.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/health_system.cpp.s
+.PHONY : src/systems/health_system.cpp.s
+
+src/systems/input_system.o: src/systems/input_system.cpp.o
+.PHONY : src/systems/input_system.o
+
+# target to build an object file
+src/systems/input_system.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/input_system.cpp.o
+.PHONY : src/systems/input_system.cpp.o
+
+src/systems/input_system.i: src/systems/input_system.cpp.i
+.PHONY : src/systems/input_system.i
+
+# target to preprocess a source file
+src/systems/input_system.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/input_system.cpp.i
+.PHONY : src/systems/input_system.cpp.i
+
+src/systems/input_system.s: src/systems/input_system.cpp.s
+.PHONY : src/systems/input_system.s
+
+# target to generate assembly for a file
+src/systems/input_system.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/input_system.cpp.s
+.PHONY : src/systems/input_system.cpp.s
+
+src/systems/position_system.o: src/systems/position_system.cpp.o
+.PHONY : src/systems/position_system.o
+
+# target to build an object file
+src/systems/position_system.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/position_system.cpp.o
+.PHONY : src/systems/position_system.cpp.o
+
+src/systems/position_system.i: src/systems/position_system.cpp.i
+.PHONY : src/systems/position_system.i
+
+# target to preprocess a source file
+src/systems/position_system.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/position_system.cpp.i
+.PHONY : src/systems/position_system.cpp.i
+
+src/systems/position_system.s: src/systems/position_system.cpp.s
+.PHONY : src/systems/position_system.s
+
+# target to generate assembly for a file
+src/systems/position_system.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/position_system.cpp.s
+.PHONY : src/systems/position_system.cpp.s
+
+src/systems/projectile_system.o: src/systems/projectile_system.cpp.o
+.PHONY : src/systems/projectile_system.o
+
+# target to build an object file
+src/systems/projectile_system.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/projectile_system.cpp.o
+.PHONY : src/systems/projectile_system.cpp.o
+
+src/systems/projectile_system.i: src/systems/projectile_system.cpp.i
+.PHONY : src/systems/projectile_system.i
+
+# target to preprocess a source file
+src/systems/projectile_system.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/projectile_system.cpp.i
+.PHONY : src/systems/projectile_system.cpp.i
+
+src/systems/projectile_system.s: src/systems/projectile_system.cpp.s
+.PHONY : src/systems/projectile_system.s
+
+# target to generate assembly for a file
+src/systems/projectile_system.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/projectile_system.cpp.s
+.PHONY : src/systems/projectile_system.cpp.s
+
+src/systems/render_system.o: src/systems/render_system.cpp.o
+.PHONY : src/systems/render_system.o
+
+# target to build an object file
+src/systems/render_system.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/render_system.cpp.o
+.PHONY : src/systems/render_system.cpp.o
+
+src/systems/render_system.i: src/systems/render_system.cpp.i
+.PHONY : src/systems/render_system.i
+
+# target to preprocess a source file
+src/systems/render_system.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/render_system.cpp.i
+.PHONY : src/systems/render_system.cpp.i
+
+src/systems/render_system.s: src/systems/render_system.cpp.s
+.PHONY : src/systems/render_system.s
+
+# target to generate assembly for a file
+src/systems/render_system.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/render_system.cpp.s
+.PHONY : src/systems/render_system.cpp.s
+
+src/systems/score_system.o: src/systems/score_system.cpp.o
+.PHONY : src/systems/score_system.o
+
+# target to build an object file
+src/systems/score_system.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/score_system.cpp.o
+.PHONY : src/systems/score_system.cpp.o
+
+src/systems/score_system.i: src/systems/score_system.cpp.i
+.PHONY : src/systems/score_system.i
+
+# target to preprocess a source file
+src/systems/score_system.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/score_system.cpp.i
+.PHONY : src/systems/score_system.cpp.i
+
+src/systems/score_system.s: src/systems/score_system.cpp.s
+.PHONY : src/systems/score_system.s
+
+# target to generate assembly for a file
+src/systems/score_system.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/score_system.cpp.s
+.PHONY : src/systems/score_system.cpp.s
+
+src/systems/weapon_system.o: src/systems/weapon_system.cpp.o
+.PHONY : src/systems/weapon_system.o
 
 # target to build an object file
 src/systems.cpp.o:
-	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems.cpp.o
+	cd /home/dylanadghar/delivery/tek_3/r-type/test/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems.cpp.o
 .PHONY : src/systems.cpp.o
 
-src/systems.i: src/systems.cpp.i
-.PHONY : src/systems.i
+src/systems/weapon_system.i: src/systems/weapon_system.cpp.i
+.PHONY : src/systems/weapon_system.i
 
 # target to preprocess a source file
 src/systems.cpp.i:
-	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems.cpp.i
+	cd /home/dylanadghar/delivery/tek_3/r-type/test/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems.cpp.i
 .PHONY : src/systems.cpp.i
 
-src/systems.s: src/systems.cpp.s
-.PHONY : src/systems.s
+src/systems/weapon_system.s: src/systems/weapon_system.cpp.s
+.PHONY : src/systems/weapon_system.s
 
 # target to generate assembly for a file
 src/systems.cpp.s:
-	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems.cpp.s
+	cd /home/dylanadghar/delivery/tek_3/r-type/test/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems.cpp.s
 .PHONY : src/systems.cpp.s
 
 src/weapon.o: src/weapon.cpp.o
@@ -393,9 +657,42 @@ help:
 	@echo "... src/registery.o"
 	@echo "... src/registery.i"
 	@echo "... src/registery.s"
-	@echo "... src/systems.o"
-	@echo "... src/systems.i"
-	@echo "... src/systems.s"
+	@echo "... src/systems/ai_input_system.o"
+	@echo "... src/systems/ai_input_system.i"
+	@echo "... src/systems/ai_input_system.s"
+	@echo "... src/systems/audio_system.o"
+	@echo "... src/systems/audio_system.i"
+	@echo "... src/systems/audio_system.s"
+	@echo "... src/systems/collision_system.o"
+	@echo "... src/systems/collision_system.i"
+	@echo "... src/systems/collision_system.s"
+	@echo "... src/systems/common.o"
+	@echo "... src/systems/common.i"
+	@echo "... src/systems/common.s"
+	@echo "... src/systems/control_system.o"
+	@echo "... src/systems/control_system.i"
+	@echo "... src/systems/control_system.s"
+	@echo "... src/systems/health_system.o"
+	@echo "... src/systems/health_system.i"
+	@echo "... src/systems/health_system.s"
+	@echo "... src/systems/input_system.o"
+	@echo "... src/systems/input_system.i"
+	@echo "... src/systems/input_system.s"
+	@echo "... src/systems/position_system.o"
+	@echo "... src/systems/position_system.i"
+	@echo "... src/systems/position_system.s"
+	@echo "... src/systems/projectile_system.o"
+	@echo "... src/systems/projectile_system.i"
+	@echo "... src/systems/projectile_system.s"
+	@echo "... src/systems/render_system.o"
+	@echo "... src/systems/render_system.i"
+	@echo "... src/systems/render_system.s"
+	@echo "... src/systems/score_system.o"
+	@echo "... src/systems/score_system.i"
+	@echo "... src/systems/score_system.s"
+	@echo "... src/systems/weapon_system.o"
+	@echo "... src/systems/weapon_system.i"
+	@echo "... src/systems/weapon_system.s"
 	@echo "... src/weapon.o"
 	@echo "... src/weapon.i"
 	@echo "... src/weapon.s"

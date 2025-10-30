@@ -1,86 +1,111 @@
 {
-    "version": 6,
+    "version": 5,
     "cmakeMinimumRequired": {
         "major": 3,
-        "minor": 20
+        "minor": 20,
+        "patch": 0
     },
-
-    "vendor": { "info": "R-TYPE presets" },
-
+    "include": [],
     "configurePresets": [
         {
             "name": "linux-config-dev",
-            "displayName": "Linux Configure (Debug + Tests, Makefiles)",
+            "displayName": "Linux - Debug",
             "generator": "Unix Makefiles",
             "binaryDir": "${sourceDir}/build/dev",
             "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build/dev/bin",
-                "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
+                "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}",
+                "CMAKE_LIBRARY_OUTPUT_DIRECTORY": "${sourceDir}/lib",
+                "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
                 "RTYPE_BUILD_TESTS": "ON",
                 "RTYPE_WERROR": "OFF"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Linux"
             }
         },
         {
             "name": "linux-config-release",
-            "displayName": "Linux Configure (Release, Makefiles)",
+            "displayName": "Linux - Release",
             "generator": "Unix Makefiles",
-            "binaryDir": "${sourceDir}/build/linux",
+            "binaryDir": "${sourceDir}/build/release",
             "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build/linux/bin",
-                "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Linux"
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}",
+                "CMAKE_LIBRARY_OUTPUT_DIRECTORY": "${sourceDir}/lib",
+                "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
+                "RTYPE_BUILD_TESTS": "OFF",
+                "RTYPE_WERROR": "OFF"
             }
+        },
+        {
+            "name": "windows-config-dev",
+            "displayName": "Windows - Debug",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x64",
+            "binaryDir": "${sourceDir}/build/windows-dev",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}",
+                "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
+                "CMAKE_PREFIX_PATH": "C:/vcpkg/installed/x64-windows"
+            },
+            "toolchainFile": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        },
+        {
+            "name": "windows-config-release",
+            "displayName": "Windows - Release",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x64",
+            "binaryDir": "${sourceDir}/build/windows-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}",
+                "CMAKE_LIBRARY_OUTPUT_DIRECTORY": "${sourceDir}/lib",
+                "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
+                "RTYPE_BUILD_TESTS": "OFF",
+                "RTYPE_WERROR": "OFF"
+            },
+            "toolchainFile": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
         }
     ],
-
     "buildPresets": [
         {
             "name": "linux-build-dev",
-            "displayName": "Linux Build Dev (Debug + Tests)",
             "configurePreset": "linux-config-dev",
+            "displayName": "Build Linux Debug",
+            "jobs": 8,
+            "targets": [],
             "configuration": "Debug"
         },
         {
             "name": "linux-build-release",
-            "displayName": "Linux Build Release",
             "configurePreset": "linux-config-release",
+            "displayName": "Build Linux Release",
+            "jobs": 8,
+            "targets": [],
             "configuration": "Release"
-        }
-    ],
-
-    "testPresets": [
+        },
         {
-            "name": "linux-test-dev",
-            "displayName": "Linux Tests (Debug, Dev)",
-            "configurePreset": "linux-config-dev",
+            "name": "windows-build-dev",
+            "configurePreset": "windows-config-dev",
+            "displayName": "Build Windows Debug",
             "configuration": "Debug",
-            "output": {
-                "outputOnFailure": true,
-                "verbosity": "verbose"
-            }
-        }
-    ],
-
-    "packagePresets": [
+            "targets": [],
+            "jobs": 8
+        },
         {
-            "name": "linux-package-release",
-            "displayName": "Linux Package (Release)",
-            "configurePreset": "linux-config-release",
-            "generators": [ "TGZ", "DEB" ]
+            "name": "windows-build-release",
+            "configurePreset": "windows-config-release",
+            "displayName": "Build Windows Release",
+            "configuration": "Release",
+            "targets": [],
+            "jobs": 8
         }
     ]
 }
+
