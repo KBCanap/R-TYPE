@@ -105,23 +105,14 @@ int main(int ac, char **av) {
         return (ac == 1 || (ac == 2 && std::strcmp("-h", av[1]) == 0)) ? 0 : 84;
     }
 
-    std::cout << "\n╔═══════════════════════════════════════════╗" << std::endl;
-    std::cout << "║       R-TYPE LOBBY SERVER v1.0            ║" << std::endl;
-    std::cout << "╚═══════════════════════════════════════════╝" << std::endl;
     std::cout << "\nConfiguration:" << std::endl;
     std::cout << "  TCP Port (Lobby):  " << config.tcp_port << std::endl;
     std::cout << "  UDP Port (Base):   " << config.base_udp_port << std::endl;
-    std::cout << "\nServer Features:" << std::endl;
-    std::cout << "  ✓ Multi-lobby support" << std::endl;
-    std::cout << "  ✓ Multi-instance game management (fork)" << std::endl;
-    std::cout << "  ✓ Dynamic UDP port allocation" << std::endl;
-    std::cout << "  ✓ 2-4 players per game" << std::endl;
     std::cout << "\nPress Ctrl+C to stop the server\n" << std::endl;
 
     try {
         StartServer server(config.tcp_port, config.base_udp_port);
         
-        // Run the lobby server (infinite loop until SIGINT/SIGTERM)
         server.run();
         
         std::cout << "\nServer stopped gracefully." << std::endl;

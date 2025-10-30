@@ -50,10 +50,6 @@ StartServer::~StartServer() {
     _instance = nullptr;
 }
 
-// ============================================================================
-// SIGNAL HANDLING
-// ============================================================================
-
 void StartServer::setupSignalHandlers() {
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
@@ -81,10 +77,6 @@ void StartServer::stop() {
     _running = false;
 }
 
-// ============================================================================
-// MAIN LOOP
-// ============================================================================
-
 void StartServer::run() {
     lobbyLoop();
 }
@@ -109,10 +101,6 @@ void StartServer::lobbyLoop() {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
-
-// ============================================================================
-// MESSAGE PROCESSING
-// ============================================================================
 
 void StartServer::processMessage(const ClientMessage &message) {
     std::cout << "[Client " << message.client_id << "] Received message" << std::endl;
@@ -161,10 +149,6 @@ void StartServer::processMessage(const ClientMessage &message) {
     }
 }
 
-// ============================================================================
-// CONNECTION HANDLING
-// ============================================================================
-
 void StartServer::handleConnect(uint32_t client_id, const std::vector<uint8_t> &data) {
     std::cout << "[Client " << client_id << "] Processing CONNECT" << std::endl;
 
@@ -189,10 +173,6 @@ void StartServer::handleConnect(uint32_t client_id, const std::vector<uint8_t> &
     std::string response = _protocol.createConnectAck(client_id);
     sendToClient(client_id, response);
 }
-
-// ============================================================================
-// LOBBY NAVIGATION
-// ============================================================================
 
 void StartServer::handleLobbyListRequest(uint32_t client_id) {
     std::cout << "[Client " << client_id << "] Requesting lobby list" << std::endl;
@@ -226,9 +206,6 @@ void StartServer::handleLobbyInfoRequest(uint32_t client_id, const std::vector<u
     sendToClient(client_id, response);
 }
 
-// ============================================================================
-// LOBBY MANAGEMENT
-// ============================================================================
 
 void StartServer::handleCreateLobby(uint32_t client_id, const std::vector<uint8_t> &data) {
     std::cout << "[Client " << client_id << "] Creating lobby" << std::endl;
@@ -372,10 +349,6 @@ void StartServer::handleLeaveLobby(uint32_t client_id) {
     }
 }
 
-// ============================================================================
-// GAME FLOW
-// ============================================================================
-
 void StartServer::handleReady(uint32_t client_id) {
     std::cout << "[Client " << client_id << "] Setting ready" << std::endl;
 
@@ -401,10 +374,6 @@ void StartServer::handleReady(uint32_t client_id) {
         startGameInstance(lobby_id);
     }
 }
-
-// ============================================================================
-// GAME INSTANCE MANAGEMENT
-// ============================================================================
 
 bool StartServer::startGameInstance(uint16_t lobby_id) {
     auto lobby = _game_session.getLobby(lobby_id);
@@ -535,10 +504,6 @@ void StartServer::cleanupFinishedGames() {
     }
 }
 
-// ============================================================================
-// BROADCASTING
-// ============================================================================
-
 void StartServer::broadcastToLobby(uint16_t lobby_id, const std::string &message,
                                     std::optional<ClientId> exclude) {
     auto lobby = _game_session.getLobby(lobby_id);
@@ -554,10 +519,6 @@ void StartServer::broadcastToLobby(uint16_t lobby_id, const std::string &message
     }
 }
 
-// ============================================================================
-// CLIENT MANAGEMENT
-// ============================================================================
-
 void StartServer::handleClientDisconnect(uint32_t client_id) {
     std::cout << "[Client " << client_id << "] Disconnected" << std::endl;
     
@@ -570,10 +531,6 @@ void StartServer::handleClientDisconnect(uint32_t client_id) {
     // Remove from session
     _game_session.removeClient(client_id);
 }
-
-// ============================================================================
-// UTILITIES
-// ============================================================================
 
 bool StartServer::sendToClient(uint32_t client_id, const std::string &message) {
     return _tcp_server->sendToClient(client_id, message);
