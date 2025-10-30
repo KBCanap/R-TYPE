@@ -46,6 +46,9 @@ target_include_directories(r-type_app PRIVATE
 # Lier avec les bibliothèques nécessaires
 target_link_libraries(r-type_app PRIVATE
     ecs
+    sfml_interface
+    lua
+    sol2
 )
 
 # Lier avec ASIO pour le NetworkManager

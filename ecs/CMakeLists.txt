@@ -1,11 +1,16 @@
 cmake_minimum_required(VERSION 3.16)
 project(ECS VERSION 1.0.0 LANGUAGES CXX)
 
-# Configuration C++
+# ==== C++ Configuration ====
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Fichiers sources ECS
+# ==== CPM ====
+include(${CMAKE_SOURCE_DIR}/cmake/CPM.cmake)
+
+include(${CMAKE_SOURCE_DIR}/cmake/CPM.cmake)
+
+# ==== ECS Sources ====
 set(ECS_SOURCES
     src/registery.cpp
     src/projectile_pattern.cpp
@@ -29,21 +34,22 @@ set(ECS_SOURCES
     src/ANetworkManager.cpp
 )
 
-# Création de la bibliothèque partagée
 add_library(ecs SHARED ${ECS_SOURCES})
 
-# Configuration des répertoires d'inclusion
+# ==== Includes ====
 target_include_directories(ecs PUBLIC include)
 
-# Lier avec ASIO pour les types dans les headers network
+# ==== Link Dependencies ====
+target_link_libraries(ecs PUBLIC lua sol2)
+
+# Link ASIO if available
 if(TARGET asio_interface)
     target_link_libraries(ecs PUBLIC asio_interface)
 endif()
 
-# Installation
+# ==== Installation ====
 install(TARGETS ecs
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )
-
 install(DIRECTORY include/ DESTINATION include/ecs)
