@@ -227,7 +227,7 @@ int main(int argc, char **argv) {
                                   << static_cast<int>(playerId) << std::endl;
                         std::cout << "[Main] UDP Port: " << udpPort << std::endl;
 
-                        if (lobbyResult == LobbyResult::StartGame) {
+                        if (lobbyResult == LobbyResult::GameStarting) {
                             std::cout << "[Main] 🎮 Starting MULTIPLAYER game..."
                                       << std::endl;
 

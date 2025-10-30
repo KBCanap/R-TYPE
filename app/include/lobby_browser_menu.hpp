@@ -17,6 +17,7 @@
 enum class LobbyBrowserResult {
     JoinedLobby,  // Successfully joined a lobby, proceed to LobbyMenu
     Disconnect,   // User wants to disconnect
+    BackToMenu,   // User wants to go back without disconnecting
     Error         // An error occurred
 };
 
@@ -43,6 +44,11 @@ class LobbyBrowserMenu {
     void requestLobbyList();
     void createLobby();
     void joinLobby(uint16_t lobby_id);
+    
+    // Dialog for creating lobby
+    void showCreateLobbyDialog();
+    void updateCreateLobbyDialog();
+    void renderCreateLobbyDialog();
 
     render::IRenderWindow &_window;
     AudioManager &_audioManager;
@@ -55,6 +61,7 @@ class LobbyBrowserMenu {
 
     // UI elements
     std::unique_ptr<render::IText> _titleText;
+    std::unique_ptr<render::IText> _statusText;
 
     // Buttons
     std::unique_ptr<render::IShape> _createLobbyButton;
@@ -75,6 +82,32 @@ class LobbyBrowserMenu {
 
     bool _waitingForJoinAck;
     bool _joinedSuccessfully;
+    bool _showCreateDialog;
+    
+    // Create lobby dialog
+    std::string _newLobbyName;
+    int _newLobbyMaxPlayers;
+    bool _isTypingLobbyName;
+    
+    // Dialog UI elements
+    std::unique_ptr<render::IShape> _dialogBackground;
+    std::unique_ptr<render::IText> _dialogTitle;
+    std::unique_ptr<render::IText> _lobbyNameLabel;
+    std::unique_ptr<render::IShape> _lobbyNameInputBox;
+    std::unique_ptr<render::IText> _lobbyNameInputText;
+    std::unique_ptr<render::IText> _maxPlayersLabel;
+    std::unique_ptr<render::IText> _maxPlayersText;
+    std::unique_ptr<render::IShape> _decreasePlayersButton;
+    std::unique_ptr<render::IText> _decreasePlayersButtonText;
+    std::unique_ptr<render::IShape> _increasePlayersButton;
+    std::unique_ptr<render::IText> _increasePlayersButtonText;
+    std::unique_ptr<render::IShape> _confirmButton;
+    std::unique_ptr<render::IText> _confirmButtonText;
+    std::unique_ptr<render::IShape> _cancelButton;
+    std::unique_ptr<render::IText> _cancelButtonText;
+
+    std::string _errorMessage;
+    std::chrono::steady_clock::time_point _errorMessageTime;
 
     render::Vector2u _windowSize;
     render::Vector2u _baseWindowSize;
