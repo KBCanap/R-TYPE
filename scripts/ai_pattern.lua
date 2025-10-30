@@ -3,7 +3,7 @@ function apply_pattern()
     local vy = 0.0
 
     if pattern_type == "straight" then
-        vy = 0.1
+        vy = 0.0
 
     elseif pattern_type == "wave" then
         vy = amplitude * math.sin(frequency * pos_x + phase_offset)

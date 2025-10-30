@@ -15,7 +15,6 @@ namespace component {
 void ai_movement_pattern::apply_pattern(float &vx, float &vy, float pos_x,
                                         float pos_y, float dt) {
 
-    std::cout << "[ECS] ai_movement: lua scripts test\n";
     pattern_time += dt;
 
     static sol::state lua;
