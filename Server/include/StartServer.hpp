@@ -12,7 +12,6 @@
 #include "Protocole.hpp"
 #include "TcpServer.hpp"
 #include <atomic>
-#include <csignal>
 #include <cstdint>
 #include <memory>
 #include <string>
