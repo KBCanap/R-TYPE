@@ -23,6 +23,7 @@ set(APP_SOURCES
     src/powerup_manager.cpp
     src/pause_menu.cpp
     src/connection_menu.cpp
+    src/lobby_browser_menu.cpp
     src/lobby_menu.cpp
     src/level_selection_menu.cpp
     src/render/RenderFactory.cpp

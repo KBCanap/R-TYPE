@@ -11,8 +11,9 @@
 
 ConnectionMenu::ConnectionMenu(render::IRenderWindow &win,
                                AudioManager &audioMgr)
-    : _window(win), _audioManager(audioMgr), _serverHost("127.0.0.1"),
-      _serverPort("8080"), _bgScrollSpeed(100.f) {
+    : _window(win), _audioManager(audioMgr), _username(""),
+      _isTypingUsername(false), _serverHost("127.0.0.1"), _serverPort("8080"),
+      _bgScrollSpeed(100.f) {
     _baseWindowSize = _window.getSize();
     _windowSize = _baseWindowSize;
 
@@ -99,6 +100,27 @@ void ConnectionMenu::createUI() {
     _backButtonText->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
 
+    // Username input field
+    _usernameLabel = _window.createText();
+    _usernameLabel->setFont(*_font);
+    _usernameLabel->setString("Username:");
+    _usernameLabel->setCharacterSize(24);
+    _usernameLabel->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
+
+    _usernameInputBox = _window.createRectangleShape(render::Vector2f(400, 50));
+    _usernameInputBox->setFillColor(render::Color(40, 40, 40));
+    _usernameInputBox->setOutlineColor(
+        settings.applyColorblindFilter(render::Color::White()));
+    _usernameInputBox->setOutlineThickness(2);
+
+    _usernameInputText = _window.createText();
+    _usernameInputText->setFont(*_font);
+    _usernameInputText->setString("");
+    _usernameInputText->setCharacterSize(22);
+    _usernameInputText->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
+
     updateButtonScale();
 }
 
@@ -114,21 +136,27 @@ void ConnectionMenu::updateButtonScale() {
     _instructionText->setPosition(centerX - instrBounds.width / 2,
                                   centerY - 180);
 
-    _soloButton->setPosition(centerX - 200, centerY - 80);
+    // Username label and input box
+    _usernameLabel->setPosition(centerX - 200, centerY - 140);
+    _usernameInputBox->setPosition(centerX - 200, centerY - 105);
+    _usernameInputText->setPosition(centerX - 190, centerY - 95);
+
+    // Buttons
+    _soloButton->setPosition(centerX - 200, centerY - 30);
     render::FloatRect soloBtnBounds = _soloButtonText->getLocalBounds();
     _soloButtonText->setPosition(centerX - soloBtnBounds.width / 2,
-                                 centerY - 60);
+                                 centerY - 10);
 
-    _multiplayerButton->setPosition(centerX - 200, centerY + 20);
+    _multiplayerButton->setPosition(centerX - 200, centerY + 70);
     render::FloatRect multiplayerBtnBounds =
         _multiplayerButtonText->getLocalBounds();
     _multiplayerButtonText->setPosition(
-        centerX - multiplayerBtnBounds.width / 2, centerY + 40);
+        centerX - multiplayerBtnBounds.width / 2, centerY + 90);
 
-    _backButton->setPosition(centerX - 200, centerY + 120);
+    _backButton->setPosition(centerX - 200, centerY + 170);
     render::FloatRect backBtnBounds = _backButtonText->getLocalBounds();
     _backButtonText->setPosition(centerX - backBtnBounds.width / 2,
-                                 centerY + 140);
+                                 centerY + 190);
 
     float scaleX = static_cast<float>(_windowSize.x) / _bgTexture->getSize().x;
     float scaleY = static_cast<float>(_windowSize.y) / _bgTexture->getSize().y;
@@ -146,6 +174,10 @@ void ConnectionMenu::render() {
 
     _window.draw(*_titleText);
     _window.draw(*_instructionText);
+
+    _window.draw(*_usernameLabel);
+    _window.draw(*_usernameInputBox);
+    _window.draw(*_usernameInputText);
 
     _window.draw(*_soloButton);
     _window.draw(*_soloButtonText);
@@ -201,26 +233,40 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo &outConnectionInfo) {
                     float centerX = _windowSize.x / 2.0f;
                     float centerY = _windowSize.y / 2.0f;
 
+                    // Check if username input box is clicked
                     if (mouseX >= centerX - 200 && mouseX <= centerX + 200 &&
-                        mouseY >= centerY - 80 && mouseY <= centerY - 10) {
+                        mouseY >= centerY - 105 && mouseY <= centerY - 55) {
+                        _isTypingUsername = true;
+                        _usernameInputBox->setOutlineThickness(3);
+                    } else {
+                        _isTypingUsername = false;
+                        _usernameInputBox->setOutlineThickness(2);
+                    }
+
+                    if (mouseX >= centerX - 200 && mouseX <= centerX + 200 &&
+                        mouseY >= centerY - 30 && mouseY <= centerY + 40) {
                         return ConnectionMenuResult::Solo;
                     }
 
                     if (mouseX >= centerX - 200 && mouseX <= centerX + 200 &&
-                        mouseY >= centerY + 20 && mouseY <= centerY + 90) {
+                        mouseY >= centerY + 70 && mouseY <= centerY + 140) {
 
-                        // ✅ CORRECTION : NE PAS modifier outConnectionInfo
-                        // Les valeurs sont déjà correctes depuis main.cpp
+                        // Set username in ConnectionInfo
+                        if (!_username.empty()) {
+                            outConnectionInfo.username = _username;
+                        } else {
+                            outConnectionInfo.username = "Player";
+                        }
+
                         std::cout
-                            << "[ConnectionMenu] Multiplayer selected with: "
-                            << outConnectionInfo.serverHost << ":"
-                            << outConnectionInfo.serverPort << std::endl;
+                            << "[ConnectionMenu] Multiplayer selected with username: "
+                            << outConnectionInfo.username << std::endl;
 
                         return ConnectionMenuResult::Multiplayer;
                     }
 
                     if (mouseX >= centerX - 200 && mouseX <= centerX + 200 &&
-                        mouseY >= centerY + 120 && mouseY <= centerY + 190) {
+                        mouseY >= centerY + 170 && mouseY <= centerY + 240) {
                         return ConnectionMenuResult::Back;
                     }
                 }
@@ -246,6 +292,33 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo &outConnectionInfo) {
             }
 
             if (event.type == render::EventType::KeyPressed) {
+                // Handle username input
+                if (_isTypingUsername) {
+                    if (event.key.code == render::Key::Backspace && !_username.empty()) {
+                        _username.pop_back();
+                        _usernameInputText->setString(_username);
+                    } else if (event.key.code == render::Key::Enter) {
+                        _isTypingUsername = false;
+                        _usernameInputBox->setOutlineThickness(2);
+                    } else if (event.key.code >= render::Key::A && event.key.code <= render::Key::Z) {
+                        if (_username.length() < 20) {
+                            char c = 'A' + (static_cast<int>(event.key.code) - static_cast<int>(render::Key::A));
+                            _username += c;
+                            _usernameInputText->setString(_username);
+                        }
+                    } else if (event.key.code >= render::Key::Num0 && event.key.code <= render::Key::Num9) {
+                        if (_username.length() < 20) {
+                            char c = '0' + (static_cast<int>(event.key.code) - static_cast<int>(render::Key::Num0));
+                            _username += c;
+                            _usernameInputText->setString(_username);
+                        }
+                    } else if (event.key.code == render::Key::Space && _username.length() < 20) {
+                        _username += ' ';
+                        _usernameInputText->setString(_username);
+                    }
+                    continue;
+                }
+
                 if (event.key.code == render::Key::Escape) {
                     return ConnectionMenuResult::Back;
                 }
@@ -260,11 +333,15 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo &outConnectionInfo) {
                     return ConnectionMenuResult::Solo;
                 }
                 if (event.key.code == render::Key::Num2) {
-                    // ✅ CORRECTION : NE PAS modifier outConnectionInfo
+                    // Set username in ConnectionInfo
+                    if (!_username.empty()) {
+                        outConnectionInfo.username = _username;
+                    } else {
+                        outConnectionInfo.username = "Player";
+                    }
                     std::cout
-                        << "[ConnectionMenu] Multiplayer selected (key) with: "
-                        << outConnectionInfo.serverHost << ":"
-                        << outConnectionInfo.serverPort << std::endl;
+                        << "[ConnectionMenu] Multiplayer selected (key) with username: "
+                        << outConnectionInfo.username << std::endl;
                     return ConnectionMenuResult::Multiplayer;
                 }
                 if (event.key.code == render::Key::Num3) {
@@ -275,11 +352,15 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo &outConnectionInfo) {
                     if (selectedButton == 0) {
                         return ConnectionMenuResult::Solo;
                     } else if (selectedButton == 1) {
-                        // ✅ CORRECTION : NE PAS modifier outConnectionInfo
+                        // Set username in ConnectionInfo
+                        if (!_username.empty()) {
+                            outConnectionInfo.username = _username;
+                        } else {
+                            outConnectionInfo.username = "Player";
+                        }
                         std::cout << "[ConnectionMenu] Multiplayer selected "
-                                     "(enter) with: "
-                                  << outConnectionInfo.serverHost << ":"
-                                  << outConnectionInfo.serverPort << std::endl;
+                                     "(enter) with username: "
+                                  << outConnectionInfo.username << std::endl;
                         return ConnectionMenuResult::Multiplayer;
                     } else {
                         return ConnectionMenuResult::Back;

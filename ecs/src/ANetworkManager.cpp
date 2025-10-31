@@ -20,7 +20,8 @@ ANetworkManager::ANetworkManager(std::unique_ptr<IIOContext> io_context)
 ANetworkManager::~ANetworkManager() { disconnect(); }
 
 ConnectionResult ANetworkManager::connectTCP(const std::string &host,
-                                             uint16_t port) {
+                                             uint16_t port,
+                                             const std::string &username) {
     ConnectionResult result;
     result.success = false;
     result.player_id = 0;
@@ -53,8 +54,30 @@ ConnectionResult ANetworkManager::connectTCP(const std::string &host,
 
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
-    std::cout << "Sending TCP_CONNECT..." << std::endl;
-    std::vector<uint8_t> connect_msg = {0x01, 0x00, 0x00, 0x00};
+    // Build TCP_CONNECT message with username according to RFC
+    // Format: [MSG_TYPE(1)] [DATA_LENGTH(3)] [USERNAME_LENGTH(2)] [USERNAME(N)]
+    std::string actual_username = username.empty() ? "Player" : username;
+    if (actual_username.length() > 60) {
+        actual_username = actual_username.substr(0, 60);
+    }
+
+    uint16_t username_length = static_cast<uint16_t>(actual_username.length());
+    uint32_t data_length = 2 + username_length; // 2 bytes for length + username
+
+    std::vector<uint8_t> connect_msg;
+    connect_msg.push_back(0x01); // MSG_TYPE: TCP_CONNECT
+    connect_msg.push_back(static_cast<uint8_t>((data_length >> 16) & 0xFF)); // DATA_LENGTH[0]
+    connect_msg.push_back(static_cast<uint8_t>((data_length >> 8) & 0xFF));  // DATA_LENGTH[1]
+    connect_msg.push_back(static_cast<uint8_t>(data_length & 0xFF));         // DATA_LENGTH[2]
+    connect_msg.push_back(static_cast<uint8_t>((username_length >> 8) & 0xFF)); // USERNAME_LENGTH[0]
+    connect_msg.push_back(static_cast<uint8_t>(username_length & 0xFF));        // USERNAME_LENGTH[1]
+
+    // Add username bytes
+    for (char c : actual_username) {
+        connect_msg.push_back(static_cast<uint8_t>(c));
+    }
+
+    std::cout << "Sending TCP_CONNECT with username: " << actual_username << std::endl;
     if (!sendRawTCP(connect_msg)) {
         result.error_message = "Failed to send TCP_CONNECT";
         disconnect();

@@ -9,6 +9,7 @@
 #include "../include/connection_menu.hpp"
 #include "../include/game.hpp"
 #include "../include/key_bindings.hpp"
+#include "../include/lobby_browser_menu.hpp"
 #include "../include/level_selection_menu.hpp"
 #include "../include/lobby_menu.hpp"
 #include "../include/menu.hpp"
@@ -174,6 +175,7 @@ int main(int argc, char **argv) {
             ConnectionInfo connInfo;
             connInfo.serverHost = config.server_ip;
             connInfo.serverPort = config.server_port;
+            connInfo.username = ""; // Will be set by ConnectionMenu
 
             ConnectionMenu connectionMenu(*window, audioManager);
             ConnectionMenuResult connResult = connectionMenu.run(connInfo);
@@ -211,6 +213,15 @@ int main(int argc, char **argv) {
                               << std::endl;
                 }
             } else if (connResult == ConnectionMenuResult::Multiplayer) {
+                // Use username from ConnectionMenu (or default if empty)
+                std::string username = connInfo.username.empty()
+                    ? "Player" + std::to_string(rand() % 10000)
+                    : connInfo.username;
+
+                std::cout << "[Main] Connecting to: "
+                          << connInfo.serverHost << ":" << connInfo.serverPort
+                          << " as " << username << std::endl;
+
                 connInfo.serverHost = config.server_ip;   // Force la bonne IP
                 connInfo.serverPort = config.server_port; // Force le bon port
 
@@ -218,27 +229,50 @@ int main(int argc, char **argv) {
                     std::make_unique<network::NetworkManager>();
 
                 auto connectionResult = networkManager->connectTCP(
-                    connInfo.serverHost, connInfo.serverPort);
+                    connInfo.serverHost, connInfo.serverPort, username);
 
                 if (connectionResult.success) {
-                    
-                    // Show lobby menu
-                    LobbyMenu lobbyMenu(*window, audioManager, *networkManager);
-                    LobbyResult lobbyResult = lobbyMenu.run();
+                    std::cout << "[Main] TCP connection successful!"
+                              << std::endl;
 
-                    uint8_t playerId = networkManager->getPlayerID();
-                    uint16_t udpPort = networkManager->getUDPPort();
+                    // Show lobby browser menu
+                    LobbyBrowserMenu lobbyBrowserMenu(*window, audioManager,
+                                                      *networkManager);
+                    LobbyBrowserResult browserResult = lobbyBrowserMenu.run();
 
+                    if (browserResult == LobbyBrowserResult::JoinedLobby) {
+                        std::cout << "[Main] Joined lobby, entering lobby menu..."
+                                  << std::endl;
 
-                    if (lobbyResult == LobbyResult::StartGame) {
+                        // Show lobby menu (waiting room)
+                        LobbyMenu lobbyMenu(*window, audioManager,
+                                            *networkManager);
+                        LobbyResult lobbyResult = lobbyMenu.run();
 
-                        // Launch multiplayer game with network manager
-                        Game game(reg, *window, audioManager, keyBindings,
-                                  networkManager.get());
-                        game.run();
+                        uint8_t playerId = networkManager->getPlayerID();
+                        uint16_t udpPort = networkManager->getUDPPort();
 
+                        std::cout << "[Main] Player ID: "
+                                  << static_cast<int>(playerId) << std::endl;
+                        std::cout << "[Main] UDP Port: " << udpPort << std::endl;
+
+                        if (lobbyResult == LobbyResult::GameStarting) {
+                            std::cout << "[Main] 🎮 Starting MULTIPLAYER game..."
+                                      << std::endl;
+
+                            // Launch multiplayer game with network manager
+                            Game game(reg, *window, audioManager, keyBindings,
+                                      networkManager.get());
+                            game.run();
+
+                            std::cout
+                                << "[Main] Game ended, returning to main menu..."
+                                << std::endl;
+                        } else {
+                            std::cout << "[Main] Lobby exited" << std::endl;
+                        }
                     } else {
-                        std::cout << "[Main] Lobby exited" << std::endl;
+                        std::cout << "[Main] Lobby browser exited" << std::endl;
                     }
 
                     // Disconnect gracefully

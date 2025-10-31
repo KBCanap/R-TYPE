@@ -583,25 +583,25 @@ src/systems/weapon_system.o: src/systems/weapon_system.cpp.o
 .PHONY : src/systems/weapon_system.o
 
 # target to build an object file
-src/systems/weapon_system.cpp.o:
-	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/weapon_system.cpp.o
-.PHONY : src/systems/weapon_system.cpp.o
+src/systems.cpp.o:
+	cd /home/dylanadghar/delivery/tek_3/r-type/test/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems.cpp.o
+.PHONY : src/systems.cpp.o
 
 src/systems/weapon_system.i: src/systems/weapon_system.cpp.i
 .PHONY : src/systems/weapon_system.i
 
 # target to preprocess a source file
-src/systems/weapon_system.cpp.i:
-	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/weapon_system.cpp.i
-.PHONY : src/systems/weapon_system.cpp.i
+src/systems.cpp.i:
+	cd /home/dylanadghar/delivery/tek_3/r-type/test/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems.cpp.i
+.PHONY : src/systems.cpp.i
 
 src/systems/weapon_system.s: src/systems/weapon_system.cpp.s
 .PHONY : src/systems/weapon_system.s
 
 # target to generate assembly for a file
-src/systems/weapon_system.cpp.s:
-	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/weapon_system.cpp.s
-.PHONY : src/systems/weapon_system.cpp.s
+src/systems.cpp.s:
+	cd /home/dylanadghar/delivery/tek_3/r-type/test/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems.cpp.s
+.PHONY : src/systems.cpp.s
 
 src/weapon.o: src/weapon.cpp.o
 .PHONY : src/weapon.o
