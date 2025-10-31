@@ -65,13 +65,13 @@ else()
       sfml-graphics sfml-window sfml-system sfml-audio sfml-network
     )
     target_include_directories(sfml_interface INTERFACE ${SFML_SOURCE_DIR}/include)
-    
+
     if(SFML_ADDED)
         message(STATUS "Downloaded SFML and compiling from source")
     else()
         message(STATUS "Using cached SFML from ${CPM_SOURCE_CACHE}")
     endif()
-    
+
     # ==== System dependency check pour compilation SFML ====
     include(CheckIncludeFileCXX)
     set(MISSING_LIBS "")
@@ -155,6 +155,29 @@ function(setup_target_warnings target)
     endif()
 endfunction()
 
+# ==== Lua ====
+find_path(LUA_INCLUDE_DIR lua.h PATHS /usr/include /usr/local/include)
+find_library(LUA_LIBRARY lua PATHS /usr/lib /usr/lib64 /usr/local/lib)
+
+if(NOT LUA_INCLUDE_DIR OR NOT LUA_LIBRARY)
+    message(FATAL_ERROR "Lua not found. Please install lua and lua-devel.")
+endif()
+
+add_library(lua STATIC IMPORTED GLOBAL)
+set_target_properties(lua PROPERTIES
+  IMPORTED_LOCATION ${LUA_LIBRARY}
+  INTERFACE_INCLUDE_DIRECTORIES ${LUA_INCLUDE_DIR}
+)
+
+# ==== Sol2 ====
+CPMFindPackage(
+  NAME sol2
+  VERSION 3.3.0
+  GITHUB_REPOSITORY ThePhD/sol2
+  GIT_TAG v3.3.0
+  OPTIONS "SOL2_EXAMPLES OFF"
+)
+
 # ==== Subprojects ====
 # ECS Library
 add_subdirectory(ecs)
@@ -189,7 +212,7 @@ target_link_libraries(r-type_server PRIVATE
 
 # Warning and debug configuration
 setup_target_warnings(r-type_server)
-target_compile_definitions(r-type_server PRIVATE 
+target_compile_definitions(r-type_server PRIVATE
   $<$<CONFIG:Debug>:DEBUG>
   $<$<CONFIG:Debug>:RTYPE_DEBUG>
 )
@@ -199,7 +222,7 @@ target_compile_definitions(r-type_server PRIVATE
 # ==== Unit tests (optional) ====
 if(RTYPE_BUILD_TESTS)
   enable_testing()
-  
+
   # Catch2 avec logique complète : système → cache → installation
   CPMFindPackage(
     NAME Catch2
@@ -221,14 +244,14 @@ if(RTYPE_BUILD_TESTS)
       message(STATUS "Using cached Catch2 from ${CPM_SOURCE_CACHE}")
     endif()
   endif()
-  
+
   if(Catch2_ADDED)
     list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/extras)
   endif()
 
   # Add your tests here
   add_subdirectory(tests)
-  
+
   message(STATUS "Unit tests enabled")
 endif()
 
