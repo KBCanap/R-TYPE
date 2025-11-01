@@ -220,26 +220,8 @@ MenuAction VictoryMenu::handleEvents(const render::Event &event) {
     if (!_visible)
         return MenuAction::NONE;
 
-    if (event.type == render::EventType::KeyPressed) {
-        switch (event.key.code) {
-        case render::Key::Up:
-            _selectedButton = (_selectedButton - 1 + 2) % 2;
-            updateButtonColors();
-            break;
-        case render::Key::Down:
-            _selectedButton = (_selectedButton + 1) % 2;
-            updateButtonColors();
-            break;
-        case render::Key::Enter:
-        case render::Key::Space:
-            return (_selectedButton == 0) ? MenuAction::REPLAY
-                                          : MenuAction::QUIT;
-        case render::Key::Escape:
-            return MenuAction::QUIT;
-        default:
-            break;
-        }
-    } else if (event.type == render::EventType::MouseButtonPressed &&
+    // Keyboard input disabled - only mouse input allowed
+    if (event.type == render::EventType::MouseButtonPressed &&
                event.mouseButton.button == render::Mouse::Left) {
         render::Vector2f mousePos(static_cast<float>(event.mouseButton.x),
                                   static_cast<float>(event.mouseButton.y));
@@ -306,3 +288,22 @@ void VictoryMenu::updateButtonColors() {
 }
 
 void VictoryMenu::onWindowResize() { initializeMenu(); }
+
+void VictoryMenu::setButtonText(const std::string &text) {
+    if (_replayText) {
+        _replayText->setString(text);
+
+        // Use smaller font size for "Next Stage"
+        if (text == "Next Stage") {
+            _replayText->setCharacterSize(18);
+        } else {
+            _replayText->setCharacterSize(18);
+        }
+
+        render::Vector2u window_size = _window.getSize();
+        render::FloatRect text_bounds = _replayText->getLocalBounds();
+        float y_offset = (text == "Next Stage") ? -10.0f : 20.0f;
+        _replayText->setPosition((window_size.x - text_bounds.width) / 2.0f,
+                                  window_size.y / 2.0f + y_offset);
+    }
+}

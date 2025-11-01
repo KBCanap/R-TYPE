@@ -47,8 +47,22 @@ static void render_background(component::background &bg,
         bg.offset_x += static_cast<float>(window_size.x);
     }
 
-    float scale_x = static_cast<float>(window_size.x) / texture_size.x;
-    float scale_y = static_cast<float>(window_size.y) / texture_size.y;
+    // Calculate scale to maintain aspect ratio
+    // For very wide textures (like level 2), scale by height only
+    float scale_x, scale_y;
+
+    float texture_ratio = static_cast<float>(texture_size.x) / texture_size.y;
+    float window_ratio = static_cast<float>(window_size.x) / window_size.y;
+
+    if (texture_ratio > window_ratio * 2.0f) {
+        // Very wide texture (like spritesheet) - scale by height and maintain aspect ratio
+        scale_y = static_cast<float>(window_size.y) / texture_size.y;
+        scale_x = scale_y;
+    } else {
+        // Normal texture - scale to fill window
+        scale_x = static_cast<float>(window_size.x) / texture_size.x;
+        scale_y = static_cast<float>(window_size.y) / texture_size.y;
+    }
 
     std::unique_ptr<render::ISprite> sprite1 = window.createSprite();
     sprite1->setTexture(*bg.texture);

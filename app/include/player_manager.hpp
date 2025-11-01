@@ -26,6 +26,8 @@ class PlayerManager {
     void changePlayerWeaponToBurst(const std::optional<entity> &player);
     void changePlayerWeaponToSpread(const std::optional<entity> &player);
 
+    void updateShieldVisual(const std::optional<entity> &player, std::optional<entity> &shield_entity);
+
     float getRelativeX(float relativeX) const;
     float getRelativeY(float relativeY) const;
 

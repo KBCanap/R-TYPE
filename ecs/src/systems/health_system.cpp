@@ -51,14 +51,26 @@ void health_system(registry &r, sparse_array<component::health> &healths,
     sparse_array<component::position> &positions = r.get_components<component::position>();
     sparse_array<component::drawable> &drawables = r.get_components<component::drawable>();
     sparse_array<component::score> &scores = r.get_components<component::score>();
+    sparse_array<component::shield> &shields = r.get_components<component::shield>();
 
     for (size_t i = 0; i < healths.size(); ++i) {
         std::optional<component::health> &health = healths[i];
         if (!health) continue;
 
-        health->current_hp -= health->pending_damage;
+        int damage = health->pending_damage;
         health->pending_damage = 0;
-        health->current_hp = std::max(0, std::min(health->current_hp, health->max_hp));
+
+        // Apply damage to shield first, then to health
+        if (i < shields.size() && shields[i]) {
+            int shield_damage = std::min(damage, shields[i]->current_shield);
+            shields[i]->current_shield -= shield_damage;
+            shields[i]->current_shield = std::max(0, shields[i]->current_shield);
+            damage -= shield_damage;
+        }
+
+        // Apply remaining damage to health
+        health->current_hp -= damage;
+        health->current_hp = std::max(0, health->current_hp);
 
         if (health->current_hp > 0) continue;
 

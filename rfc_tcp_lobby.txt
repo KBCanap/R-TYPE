@@ -1,0 +1,267 @@
+Network Working Group                                         D. Adghar
+Request for Comments: XXXX                                  P-E. Henry
+Category: Standards Track                                   A. Harkati
+ISSN: 2070-1721                                         E. Layle-eveno
+                                                               Epitech
+                                                          September 2025
+
+
+                            R-Type TCP Protocol
+
+Abstract
+
+   This document defines the R-Type TCP Connection Protocol, which
+   handles the initial connection phase between R-Type clients and
+   server before switching to User Datagram Protocol (UDP) for real-
+   time gameplay. This protocol now includes an extended lobby system
+   for session management, matchmaking, and multi-instance game
+   orchestration. The protocol supports up to 4 players per lobby
+   and introduces new message types for lobby creation, joining,
+   listing, and player management.
+
+Table of Contents
+
+   1.  Introduction ...................................................2
+   2.  Protocol Architecture .........................................3
+   3.  Message Format ................................................4
+   4.  Message Specifications ........................................5
+     4.1.  TCP_CONNECT ...............................................5
+     4.2.  TCP_CONNECT_ACK ...........................................5
+     4.3.  LOBBY_LIST_REQUEST ........................................6
+     4.4.  LOBBY_LIST_RESPONSE .......................................6
+     4.5.  CREATE_LOBBY ..............................................7
+     4.6.  CREATE_LOBBY_ACK ..........................................7
+     4.7.  JOIN_LOBBY ................................................8
+     4.8.  JOIN_LOBBY_ACK ............................................8
+     4.9.  LEAVE_LOBBY / LEAVE_LOBBY_ACK .............................9
+     4.10. PLAYER_JOINED / PLAYER_LEFT ...............................9
+     4.11. TCP_READY / TCP_GAME_START ................................10
+     4.12. TCP_ERROR .................................................11
+   5.  Data Structures ...............................................12
+     5.1.  PlayerInfo ................................................12
+     5.2.  LobbyInfo .................................................13
+   6.  Connection State Machine ......................................14
+   7.  Example Communication Flows ...................................16
+   Appendix A.  Message Format Examples ..............................20
+   Authors' Addresses ................................................21
+
+
+1.  Introduction
+
+   The R-Type TCP Protocol defines the initial connection phase between
+   R-Type game clients and server infrastructure. This version extends
+   the base specification to support lobby-based session management.
+
+   A new Lobby Server component orchestrates multiple game instances,
+   allowing players to browse, create, and join lobbies before
+   transitioning to gameplay.
+
+   This addition enables matchmaking, multi-room hosting, and advanced
+   session tracking, while maintaining full backward compatibility with
+   the original R-Type protocol (messages 0x01-0x05, 0xFF).
+
+1.1.  Key Requirements
+
+   All multi-byte integers MUST use Network Byte Order (Big Endian)
+   as specified in [RFC1700]. The protocol supports a maximum of 4
+   players per lobby. New lobby-related messages extend the TCP phase
+   while the UDP gameplay layer remains unchanged.
+
+1.2.  Conventions Used in This Document
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174].
+
+
+2.  Protocol Architecture
+
+   The R-Type TCP Protocol operates in a client-server architecture with
+   an intermediary Lobby Server.
+
+      Client 1 ----\
+      Client 2 ----+---- TCP Lobby Server ---- Game Server 1 (UDP)
+      Client 3 ----+---- TCP Lobby Server ---- Game Server 2 (UDP)
+      Client 4 ----/
+
+   The Lobby Server manages player authentication, lobby states, and
+   matchmaking. Once a lobby is full and all players are ready, the
+   Lobby Server assigns a game instance (UDP server) and transmits
+   connection details via TCP_GAME_START.
+
+3.  Message Format
+
+   All TCP messages utilize a fixed header format:
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |   MSG_TYPE    |                   DATA_LENGTH                 |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                              DATA                             |
+   |                         (variable length)                     |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   MSG_TYPE (1 byte):  Message type identifier
+   DATA_LENGTH (3 bytes):  Length of DATA field in bytes
+   DATA (variable):  Message payload, format depends on MSG_TYPE
+
+4.  Message Specifications
+
+4.1.  TCP_CONNECT (Client to Server)
+   MSG_TYPE: 0x01
+   Payload includes USERNAME_LENGTH (2 bytes) and USERNAME (UTF-8, 60 bytes max).
+
+4.2.  TCP_CONNECT_ACK (Server to Client)
+   MSG_TYPE: 0x02
+   Payload: PLAYER_ID (1 byte)
+
+4.3.  LOBBY_LIST_REQUEST (Client → Server)
+   MSG_TYPE: 0x10
+   Requests current lobby list.
+
+4.4.  LOBBY_LIST_RESPONSE (Server → Client)
+   MSG_TYPE: 0x11
+   Payload:
+     LOBBY_COUNT (2 bytes)
+     [LobbyInfo] * LOBBY_COUNT
+
+4.5.  CREATE_LOBBY (Client → Server)
+   MSG_TYPE: 0x14
+   Payload: MAX_PLAYERS (1 byte), LOBBY_NAME_LENGTH (2 bytes), LOBBY_NAME (32 bytes)
+
+4.6.  CREATE_LOBBY_ACK (Server → Client)
+   MSG_TYPE: 0x15
+   Payload: LOBBY_ID (2 bytes)
+
+4.7.  JOIN_LOBBY (Client → Server)
+   MSG_TYPE: 0x16
+   Payload: LOBBY_ID (2 bytes)
+
+4.8.  JOIN_LOBBY_ACK (Server → Client)
+   MSG_TYPE: 0x17
+   Payload:
+     LOBBY_ID (2 bytes)
+     YOUR_PLAYER_ID (1 byte)
+     PLAYER_COUNT (2 bytes)
+     [PlayerInfo] * PLAYER_COUNT
+
+4.9.  LEAVE_LOBBY / LEAVE_LOBBY_ACK
+   MSG_TYPE: 0x19 / 0x1A
+   Leave or acknowledge leaving a lobby.
+
+4.10. PLAYER_JOINED / PLAYER_LEFT
+   MSG_TYPE: 0x1B / 0x1C
+   PLAYER_JOINED contains PlayerInfo.
+   PLAYER_LEFT includes PLAYER_ID (1 byte).
+
+4.11. TCP_READY / TCP_GAME_START
+   TCP_READY (0x04): Player indicates readiness.
+   TCP_GAME_START (0x05): Sent by server with UDP_PORT (2 bytes),
+   SERVER_ID (2 bytes), SERVER_IP (4 bytes).
+
+4.12. TCP_ERROR (Server → Client)
+   MSG_TYPE: 0xFF
+   Payload: ERROR_CODE (1 byte)
+   ERROR_CODE values:
+     0x01 Lobby full
+     0x02 Lobby not found
+     0x03 Game already started
+     0x04 Invalid username
+     0x05 Protocol violation
+     0x06 Unexpected message
+     0x07 Timeout
+     0x08 Internal server error
+     0x09 Player not in lobby
+     0x0A Already in a lobby
+
+5.  Data Structures
+
+5.1.  PlayerInfo
+
+   Structure size: 66 bytes
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |     PLAYER_ID      |       READY            | USERNAME_LENGTH |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                USERNAME (60 bytes max)                        |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+5.2.  LobbyInfo
+
+   Structure: Variable size
+   Contains LOBBY_ID (2), PLAYER_COUNT (1), MAX_PLAYERS (1),
+   LOBBY_NAME_LENGTH (2), LOBBY_NAME (32), STATUS (1).
+
+   STATUS values:
+     0x00 Waiting
+     0x01 Ready
+     0x02 In Game
+
+6.  Connection State Machine
+
+6.1. Client States
+
+   [DISCONNECTED] --TCP_CONNECT--> [AUTHENTICATING]
+                                       |
+                               TCP_CONNECT_ACK
+                                       v
+                                [LOBBY_BROWSER]
+                                       |
+            CREATE_LOBBY / JOIN_LOBBY_ACK --> [IN_LOBBY]
+                                       |
+                                  TCP_READY
+                                       v
+                                   [READY]
+                                       |
+                              TCP_GAME_START
+                                       v
+                                 [GAME_STARTING]
+
+6.2. Server States
+
+   [NO_CLIENT] --CONNECT--> [CONNECTED] --READY--> [READY_STATE]
+   [READY_STATE] --> All Ready --> [GAME_STARTING]
+
+7.  Example Communication Flows
+
+7.1.  Create and Join Lobby
+
+   Client 1                Lobby Server           Game Server
+      |-- TCP_CONNECT -->  |                       |
+      |<- TCP_CONNECT_ACK -|                       |
+      |-- CREATE_LOBBY --> |                       |
+      |<- CREATE_LOBBY_ACK-|                       |
+      |                    |<-- JOIN_LOBBY (C2)    |
+      |<- PLAYER_JOINED ---|                       |
+      |-- TCP_READY ------>|                       |
+      |<-------------------|-- TCP_GAME_START ----->|
+
+Appendix A.  Message Examples
+
+   CREATE_LOBBY (2 players, name "Room42"):
+      14 00 00 23 02 00 06 52 6F 6F 6D 34 32 00
+   JOIN_LOBBY (Lobby ID = 42):
+      16 00 00 02 00 2A
+   TCP_GAME_START (UDP port 8080):
+      05 00 00 08 1F 90 00 01 C0 A8 00 64
+
+Authors' Addresses
+
+   Dylan Adghar
+   Epitech
+   Email: dylan.adghar@epitech.eu
+
+   Pierre-etienne Henry
+   Epitech
+   Email: pierre-etienne.henry@epitech.eu
+
+   Ariles Harkati
+   Epitech
+   Email: ariles.harkati@epitech.eu
+
+   Ewen Layle-eveno
+   Epitech
+   Email: ewen.layle-eveno@epitech.eu

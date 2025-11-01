@@ -56,6 +56,7 @@ class VictoryMenu {
     void setVisible(bool visible);
     bool isVisible() const;
     void onWindowResize();
+    void setButtonText(const std::string &text);
 
   private:
     void initializeMenu();

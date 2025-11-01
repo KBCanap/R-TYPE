@@ -11,7 +11,7 @@
 namespace systems {
 
 static const char *ENEMY_TAGS[] = {"enemy", "enemy_zigzag", "enemy_spread",
-                                   "boss"};
+                                   "enemy_level2", "enemy_spread_level2", "boss"};
 
 static const size_t ENEMY_TAGS_COUNT =
     sizeof(ENEMY_TAGS) / sizeof(ENEMY_TAGS[0]);

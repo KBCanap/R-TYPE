@@ -12,6 +12,7 @@
 #include <memory>
 #include <string>
 
+
 class registry;
 
 namespace component {
@@ -331,6 +332,14 @@ struct enemy_stunned {
 
     enemy_stunned(bool is_stunned = false, float knockback = 0.0f)
         : stunned(is_stunned), knockback_velocity(knockback) {}
+};
+
+struct shield {
+    int current_shield;
+    int max_shield;
+
+    shield(int shield_points = 0, int max = 50)
+        : current_shield(shield_points), max_shield(max) {}
 };
 
 } // namespace component
