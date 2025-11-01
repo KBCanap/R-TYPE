@@ -136,6 +136,7 @@ void render_system(registry &r, sparse_array<component::position> &positions,
                    render::IRenderWindow &window, float dt) {
     sparse_array<component::animation> &animations = r.get_components<component::animation>();
     sparse_array<component::background> &backgrounds = r.get_components<component::background>();
+    sparse_array<component::enemy_stunned> &stunneds = r.get_components<component::enemy_stunned>();
 
     Settings &settings = Settings::getInstance();
     render::IShader *colorblindShader = settings.getColorblindShader(window);
@@ -186,11 +187,22 @@ void render_system(registry &r, sparse_array<component::position> &positions,
 
         if (!pos || !draw) continue;
 
+        // Change color for stunned enemies (Mario platformer)
+        render::Color original_color = draw->color;
+        auto stunned = (i < stunneds.size()) ? stunneds[i] : std::nullopt;
+        if (stunned && stunned->stunned && draw->tag == "enemy") {
+            // Make stunned enemies gray
+            draw->color = render::Color(128, 128, 128);
+        }
+
         if (draw->use_sprite) {
             render_sprite(*draw, *pos, window, colorblindShader, animations, i);
         } else {
             render_shape(*draw, *pos, window, colorblindShader);
         }
+
+        // Restore original color
+        draw->color = original_color;
     }
 }
 

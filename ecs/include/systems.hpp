@@ -170,5 +170,17 @@ void score_system(registry &r, sparse_array<component::score> &scores,
  */
 void health_system(registry &r, sparse_array<component::health> &healths,
                    float dt);
+  
+void gravity_system(registry &r, sparse_array<component::gravity> &gravities,
+                    sparse_array<component::velocity> &velocities, float dt);
+
+void platform_collision_system(
+    registry &r, sparse_array<component::position> &positions,
+    sparse_array<component::velocity> &velocities,
+    sparse_array<component::gravity> &gravities,
+    sparse_array<component::platform_tag> &platforms,
+    sparse_array<component::hitbox> &hitboxes);
+
+}
 
 } // namespace systems

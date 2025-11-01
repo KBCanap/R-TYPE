@@ -191,6 +191,69 @@ static bool process_powerup_collision(registry &r, size_t player_idx, size_t pow
     return false;
 }
 
+static void handle_platformer_stomp(registry &r, size_t player_idx, size_t enemy_idx,
+                                   sparse_array<component::velocity> &velocities,
+                                   sparse_array<component::enemy_stunned> &stunneds) {
+    std::optional<component::enemy_stunned> &enemy_stunned = stunneds[enemy_idx];
+    std::optional<component::velocity> &player_vel = velocities[player_idx];
+    std::optional<component::velocity> &enemy_vel = velocities[enemy_idx];
+
+    // Stun the enemy
+    if (enemy_stunned) {
+        enemy_stunned->stunned = true;
+        enemy_stunned->knockback_velocity = 0.0f;
+    }
+
+    // Stop enemy movement
+    if (enemy_vel) {
+        enemy_vel->vx = 0.0f;
+        enemy_vel->vy = 0.0f;
+    }
+
+    if (player_vel) {
+        player_vel->vy = -500.0f;
+    }
+}
+
+static void handle_platformer_stunned_collision(size_t player_idx, size_t enemy_idx,
+                                               const component::position &player_pos,
+                                               const component::position &enemy_pos,
+                                               const component::hitbox &player_hitbox,
+                                               const component::hitbox &enemy_hitbox,
+                                               sparse_array<component::velocity> &velocities,
+                                               sparse_array<component::enemy_stunned> &stunneds) {
+    std::optional<component::velocity> &player_vel = velocities[player_idx];
+    std::optional<component::enemy_stunned> &enemy_stunned = stunneds[enemy_idx];
+
+    float player_center_x = player_pos.x + player_hitbox.width / 2.0f;
+    float enemy_center_x = enemy_pos.x + enemy_hitbox.width / 2.0f;
+    float knockback_dir = (enemy_center_x > player_center_x) ? 1.0f : -1.0f;
+
+    if (enemy_stunned) {
+        enemy_stunned->knockback_velocity = knockback_dir * 600.0f;
+    }
+    
+    if (player_vel) {
+        player_vel->vx = -knockback_dir * 100.0f;
+    }
+}
+
+static void handle_platformer_death(registry &r, size_t player_idx,
+                                   sparse_array<component::velocity> &velocities,
+                                   sparse_array<component::dead> &deads) {
+    bool already_dead = (player_idx < deads.size()) && deads[player_idx];
+
+    if (!already_dead) {
+        r.add_component<component::dead>(entity(player_idx), component::dead(0.0f, -800.0f));
+
+        std::optional<component::velocity> &player_vel = velocities[player_idx];
+        if (player_vel) {
+            player_vel->vy = -800.0f;
+            player_vel->vx = 0.0f;
+        }
+    }
+}
+
 // ===============================
 // MAIN COLLISION PROCESSORS
 // ===============================
@@ -263,7 +326,8 @@ static void process_player_powerup_collisions(registry &r, size_t player_idx,
     }
 }
 
-static void process_player_enemy_collisions(sparse_array<component::position> &positions,
+static void process_player_enemy_collisions(registry &r,
+                                           sparse_array<component::position> &positions,
                                            sparse_array<component::drawable> &drawables,
                                            sparse_array<component::hitbox> &hitboxes,
                                            sparse_array<component::health> &healths,
@@ -273,12 +337,20 @@ static void process_player_enemy_collisions(sparse_array<component::position> &p
     const int COLLISION_DAMAGE = 50;
     size_t max_entities = std::min(positions.size(), drawables.size());
 
+    sparse_array<component::velocity> &velocities = r.get_components<component::velocity>();
+    sparse_array<component::gravity> &gravities = r.get_components<component::gravity>();
+    sparse_array<component::enemy_stunned> &stunneds = r.get_components<component::enemy_stunned>();
+    sparse_array<component::dead> &deads = r.get_components<component::dead>();
+
     for (size_t player_idx = 0; player_idx < max_entities; ++player_idx) {
         std::optional<component::position> &player_pos = positions[player_idx];
         std::optional<component::drawable> &player_drawable = drawables[player_idx];
         std::optional<component::hitbox> &player_hitbox = hitboxes[player_idx];
 
         if (!is_valid_player(player_pos, player_drawable) || !player_hitbox) continue;
+
+        bool player_already_dead = (player_idx < deads.size()) && deads[player_idx];
+        if (player_already_dead) continue;
 
         float player_left = player_pos->x + player_hitbox->offset_x;
         float player_top = player_pos->y + player_hitbox->offset_y;
@@ -299,13 +371,42 @@ static void process_player_enemy_collisions(sparse_array<component::position> &p
                 player_left, player_top, player_hitbox->width, player_hitbox->height,
                 enemy_left, enemy_top, enemy_hitbox->width, enemy_hitbox->height);
 
-            if (collision) {
-                handle_entity_damage(player_idx, COLLISION_DAMAGE, healths, positions, 
-                                    entities_to_kill, explosion_positions);
-                handle_entity_damage(enemy_idx, COLLISION_DAMAGE, healths, positions, 
-                                    entities_to_kill, explosion_positions);
-                break;
+            if (!collision) continue;
+
+            bool has_gravity = (player_idx < gravities.size()) && gravities[player_idx];
+            bool has_velocity = (player_idx < velocities.size()) && velocities[player_idx];
+            bool is_platformer = has_gravity && has_velocity;
+
+            if (is_platformer) {
+                std::optional<component::velocity> &player_vel = velocities[player_idx];
+                std::optional<component::enemy_stunned> &enemy_stunned = stunneds[enemy_idx];
+
+                if (enemy_stunned && enemy_stunned->stunned) {
+                    handle_platformer_stunned_collision(player_idx, enemy_idx, *player_pos, 
+                                                       *enemy_pos, *player_hitbox, *enemy_hitbox,
+                                                       velocities, stunneds);
+                } else {
+                    float player_bottom = player_top + player_hitbox->height;
+                    float stomp_threshold = enemy_top + enemy_hitbox->height * 0.5f;
+
+                    bool is_stomping = player_vel && player_vel->vy > 0.0f &&
+                                      player_bottom >= enemy_top &&
+                                      player_bottom <= stomp_threshold;
+
+                    if (is_stomping) {
+                        handle_platformer_stomp(r, player_idx, enemy_idx, velocities, stunneds);
+                    } else {
+                        handle_platformer_death(r, player_idx, velocities, deads);
+                    }
+                }
+                break; // Exit enemy loop after handling platformer collision
             }
+
+            handle_entity_damage(player_idx, COLLISION_DAMAGE, healths, positions, 
+                                entities_to_kill, explosion_positions);
+            handle_entity_damage(enemy_idx, COLLISION_DAMAGE, healths, positions, 
+                                entities_to_kill, explosion_positions);
+            break;
         }
     }
 }
@@ -360,7 +461,7 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
     }
 
     // Process player-enemy collisions
-    process_player_enemy_collisions(positions, drawables, hitboxes, healths, 
+    process_player_enemy_collisions(r, positions, drawables, hitboxes, healths, 
                                    entities_to_kill, explosion_positions);
 
     // Cleanup and effects

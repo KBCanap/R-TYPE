@@ -300,6 +300,40 @@ struct health {
     health(int hp = 100) : current_hp(hp), max_hp(hp), pending_damage(0) {}
 };
 
+struct gravity {
+    float acceleration;
+    float max_velocity;
+    float jump_strength;
+    bool on_ground;
+
+    gravity(float accel = 1500.0f, float max_vel = 1000.0f,
+            float jump = 0.0f)
+        : acceleration(accel), max_velocity(max_vel), jump_strength(jump),
+          on_ground(false) {}
+};
+
+struct platform_tag {
+    platform_tag() = default;
+};
+
+struct dead {
+    float death_time;
+    float death_jump_velocity;
+    bool ignore_platforms;
+
+    dead(float death_time_val = 0.0f, float jump_vel = -800.0f)
+        : death_time(death_time_val), death_jump_velocity(jump_vel),
+          ignore_platforms(true) {}
+};
+
+struct enemy_stunned {
+    bool stunned;
+    float knockback_velocity;
+
+    enemy_stunned(bool is_stunned = false, float knockback = 0.0f)
+        : stunned(is_stunned), knockback_velocity(knockback) {}
+};
+
 struct shield {
     int current_shield;
     int max_shield;
