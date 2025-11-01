@@ -10,6 +10,7 @@
 
 #include "../../ecs/include/registery.hpp"
 #include <chrono>
+#include <cstdint>
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -18,6 +19,9 @@
 #include <sys/types.h>
 #include <unordered_map>
 #include <vector>
+
+// Type alias for unsigned integer (uint is not standard C++)
+using uint = std::uint32_t;
 
 // Input events
 enum InputEvent {

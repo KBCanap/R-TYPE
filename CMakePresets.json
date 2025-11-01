@@ -5,7 +5,6 @@
         "minor": 20,
         "patch": 0
     },
-    "include": [],
     "configurePresets": [
         {
             "name": "linux-config-dev",
@@ -17,10 +16,10 @@
                 "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}",
-                "CMAKE_LIBRARY_OUTPUT_DIRECTORY": "${sourceDir}/lib",
                 "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
                 "RTYPE_BUILD_TESTS": "ON",
-                "RTYPE_WERROR": "OFF"
+                "RTYPE_WERROR": "OFF",
+                "BUILD_SHARED_LIBS": "OFF"
             }
         },
         {
@@ -33,10 +32,10 @@
                 "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}",
-                "CMAKE_LIBRARY_OUTPUT_DIRECTORY": "${sourceDir}/lib",
                 "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
                 "RTYPE_BUILD_TESTS": "OFF",
-                "RTYPE_WERROR": "OFF"
+                "RTYPE_WERROR": "OFF",
+                "BUILD_SHARED_LIBS": "OFF"
             }
         },
         {
@@ -50,7 +49,8 @@
                 "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}",
                 "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
-                "CMAKE_PREFIX_PATH": "C:/vcpkg/installed/x64-windows"
+                "CMAKE_PREFIX_PATH": "C:/vcpkg/installed/x64-windows",
+                "BUILD_SHARED_LIBS": "OFF"
             },
             "toolchainFile": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
         },
@@ -65,10 +65,10 @@
                 "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}",
-                "CMAKE_LIBRARY_OUTPUT_DIRECTORY": "${sourceDir}/lib",
                 "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
                 "RTYPE_BUILD_TESTS": "OFF",
-                "RTYPE_WERROR": "OFF"
+                "RTYPE_WERROR": "OFF",
+                "BUILD_SHARED_LIBS": "OFF"
             },
             "toolchainFile": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
         }
@@ -79,7 +79,6 @@
             "configurePreset": "linux-config-dev",
             "displayName": "Build Linux Debug",
             "jobs": 8,
-            "targets": [],
             "configuration": "Debug"
         },
         {
@@ -87,7 +86,6 @@
             "configurePreset": "linux-config-release",
             "displayName": "Build Linux Release",
             "jobs": 8,
-            "targets": [],
             "configuration": "Release"
         },
         {
@@ -95,7 +93,6 @@
             "configurePreset": "windows-config-dev",
             "displayName": "Build Windows Debug",
             "configuration": "Debug",
-            "targets": [],
             "jobs": 8
         },
         {
@@ -103,9 +100,7 @@
             "configurePreset": "windows-config-release",
             "displayName": "Build Windows Release",
             "configuration": "Release",
-            "targets": [],
             "jobs": 8
         }
     ]
 }
-

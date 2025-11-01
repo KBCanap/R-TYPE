@@ -10,7 +10,19 @@
 
 #include "MessageType.hpp"
 #include <cstring>
+// Platform-specific network includes
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
 #include <optional>
 #include <string>
 #include <unordered_map>

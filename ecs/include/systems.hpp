@@ -21,7 +21,7 @@ namespace systems {
  * @param tag The tag string to check
  * @return true if the tag represents an enemy, false otherwise
  */
-bool is_enemy_tag(const std::string& tag);
+bool is_enemy_tag(const std::string &tag);
 
 /**
  * @brief Create an explosion effect at the specified coordinates
@@ -79,7 +79,8 @@ void render_system(registry &r, sparse_array<component::position> &positions,
                    render::IRenderWindow &window, float dt);
 
 /**
- * @brief Handle collision detection between projectiles, players, enemies, and powerups
+ * @brief Handle collision detection between projectiles, players, enemies, and
+ * powerups
  * @param r Registry reference for entity management
  * @param positions Sparse array of position components
  * @param drawables Sparse array of drawable components
@@ -170,17 +171,15 @@ void score_system(registry &r, sparse_array<component::score> &scores,
  */
 void health_system(registry &r, sparse_array<component::health> &healths,
                    float dt);
-  
+
 void gravity_system(registry &r, sparse_array<component::gravity> &gravities,
                     sparse_array<component::velocity> &velocities, float dt);
 
-void platform_collision_system(
-    registry &r, sparse_array<component::position> &positions,
-    sparse_array<component::velocity> &velocities,
-    sparse_array<component::gravity> &gravities,
-    sparse_array<component::platform_tag> &platforms,
-    sparse_array<component::hitbox> &hitboxes);
-
-}
+void platform_collision_system(registry &r,
+                               sparse_array<component::position> &positions,
+                               sparse_array<component::velocity> &velocities,
+                               sparse_array<component::gravity> &gravities,
+                               sparse_array<component::platform_tag> &platforms,
+                               sparse_array<component::hitbox> &hitboxes);
 
 } // namespace systems

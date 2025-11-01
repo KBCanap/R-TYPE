@@ -6,7 +6,16 @@
 */
 
 #include "UdpProtocole.hpp"
+// Cross-platform network byte order conversion
+#ifdef _WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#pragma comment(lib, "ws2_32.lib")
+#undef ERROR
+#else
 #include <arpa/inet.h>
+#endif
 #include <cstring>
 #include <iostream>
 

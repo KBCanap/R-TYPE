@@ -4,10 +4,10 @@
 ** File description:
 ** Protocol message types and constants - Extended Lobby System
 */
-
 #ifndef MESSAGETYPES_HPP_
 #define MESSAGETYPES_HPP_
 
+#include <cstddef> // For std::size_t
 #include <cstdint>
 
 // Message types
@@ -81,19 +81,35 @@ static constexpr std::size_t MIN_PLAYERS = 2;
 static constexpr std::size_t MAX_USERNAME_LENGTH = 60;
 static constexpr std::size_t MAX_LOBBY_NAME_LENGTH = 32;
 
+// Cross-platform packing macros
+#ifdef _MSC_VER
+#define PACK_START __pragma(pack(push, 1))
+#define PACK_END __pragma(pack(pop))
+#define PACKED
+#else
+#define PACK_START
+#define PACK_END
+#define PACKED __attribute__((packed))
+#endif
+
 // Protocol structures
+PACK_START
 struct TCPHeader {
     uint8_t msg_type;
     uint8_t data_length[3];
-} __attribute__((packed));
+} PACKED;
+PACK_END
 
+PACK_START
 struct PlayerInfo {
     uint8_t player_id;
     uint8_t ready_flag;
     uint16_t username_length;
     char username[MAX_USERNAME_LENGTH];
-} __attribute__((packed));
+} PACKED;
+PACK_END
 
+PACK_START
 struct LobbyInfo {
     uint16_t lobby_id;
     uint8_t player_count;
@@ -102,6 +118,7 @@ struct LobbyInfo {
     char lobby_name[MAX_LOBBY_NAME_LENGTH];
     uint8_t status;
     uint8_t reserved[3];
-} __attribute__((packed));
+} PACKED;
+PACK_END
 
 #endif /* !MESSAGETYPES_HPP_ */
