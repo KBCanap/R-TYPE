@@ -60,8 +60,10 @@ jobs:
           libopenal-dev \
           libflac-dev \
           libvorbis-dev \
-          libsfml-dev  \
-          lua5.3  \
+          libsfml-dev \
+          libsndfile1-dev \
+          libx11-dev \
+          lua5.3 \
           liblua5.3-dev
     - name: Configure CMake (Debug with Tests)
       run: cmake --preset linux-config-dev
