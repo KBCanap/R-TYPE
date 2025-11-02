@@ -60,7 +60,7 @@ jobs:
           libopenal-dev \
           libflac-dev \
           libvorbis-dev \
-          libsfml-dev
+          libsfml-dev  \
           liblua-dev
     - name: Configure CMake (Debug with Tests)
       run: cmake --preset linux-config-dev
@@ -108,7 +108,8 @@ jobs:
           libopenal-dev \
           libflac-dev \
           libvorbis-dev \
-          libsfml-dev
+          libsfml-dev  \
+          liblua-dev
     - name: Build for analysis
       run: |
         cmake --preset linux-config-dev
