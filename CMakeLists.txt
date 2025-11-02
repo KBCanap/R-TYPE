@@ -156,17 +156,31 @@ function(setup_target_warnings target)
 endfunction()
 
 # ==== Lua ====
-find_path(LUA_INCLUDE_DIR lua.h PATHS /usr/include /usr/local/include)
-find_library(LUA_LIBRARY lua PATHS /usr/lib /usr/lib64 /usr/local/lib)
+find_package(Lua QUIET)
 
-if(NOT LUA_INCLUDE_DIR OR NOT LUA_LIBRARY)
-    message(FATAL_ERROR "Lua not found. Please install lua and lua-devel.")
+if(NOT Lua_FOUND)
+    message(STATUS "Lua not found via find_package, falling back to manual search")
+
+    find_path(LUA_INCLUDE_DIR lua.h PATHS /usr/include /usr/local/include)
+    find_library(LUA_LIBRARY lua PATHS /usr/lib /usr/lib64 /usr/local/lib)
+
+    if(NOT LUA_INCLUDE_DIR OR NOT LUA_LIBRARY)
+        message(FATAL_ERROR "Lua not found. Please install lua and lua-devel.")
+    endif()
+
+    add_library(lua STATIC IMPORTED GLOBAL)
+    set_target_properties(lua PROPERTIES
+        IMPORTED_LOCATION ${LUA_LIBRARY}
+        INTERFACE_INCLUDE_DIRECTORIES ${LUA_INCLUDE_DIR}
+    )
+else()
+    add_library(lua INTERFACE IMPORTED GLOBAL)
+    set_target_properties(lua PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${LUA_INCLUDE_DIR}"
+        INTERFACE_LINK_LIBRARIES "${LUA_LIBRARIES}"
+    )
 endif()
-
-add_library(lua STATIC IMPORTED GLOBAL)
-set_target_properties(lua PROPERTIES
-  IMPORTED_LOCATION ${LUA_LIBRARY}
-  INTERFACE_INCLUDE_DIRECTORIES ${LUA_INCLUDE_DIR}
+DIRECTORIES ${LUA_INCLUDE_DIR}
 )
 
 # ==== Sol2 ====
