@@ -180,8 +180,6 @@ else()
         INTERFACE_LINK_LIBRARIES "${LUA_LIBRARIES}"
     )
 endif()
-DIRECTORIES ${LUA_INCLUDE_DIR}
-)
 
 # ==== Sol2 ====
 CPMFindPackage(
