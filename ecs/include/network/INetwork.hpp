@@ -22,14 +22,39 @@ enum class ConnectionState {
 
 /**
  * @enum MessageType
- * @brief TCP message types from RFC
+ * @brief TCP message types from RFC (extended with lobby system)
  */
 enum class MessageType : uint8_t {
+    // Connection Messages
     TCP_CONNECT = 0x01,
     TCP_CONNECT_ACK = 0x02,
     TCP_CONNECT_NAK = 0x03,
     TCP_READY = 0x04,
     TCP_GAME_START = 0x05,
+
+    // Lobby Navigation Messages
+    LOBBY_LIST_REQUEST = 0x10,
+    LOBBY_LIST_RESPONSE = 0x11,
+    LOBBY_INFO_REQUEST = 0x12,
+    LOBBY_INFO_RESPONSE = 0x13,
+
+    // Join/Create Lobby
+    CREATE_LOBBY = 0x14,
+    CREATE_LOBBY_ACK = 0x15,
+    JOIN_LOBBY = 0x16,
+    JOIN_LOBBY_ACK = 0x17,
+    JOIN_LOBBY_NAK = 0x18,
+    LEAVE_LOBBY = 0x19,
+    LEAVE_LOBBY_ACK = 0x1A,
+
+    // Lobby Player Management
+    PLAYER_JOINED = 0x1B,
+    PLAYER_LEFT = 0x1C,
+
+    // Game Session Management
+    GAME_CANCELLED = 0x1D,
+
+    // Errors
     TCP_ERROR = 0xFF
 };
 
@@ -167,10 +192,12 @@ class INetwork {
      * @brief Connect to TCP server
      * @param host Server hostname or IP
      * @param port Server TCP port
+     * @param username Player username (optional, defaults to "Player")
      * @return ConnectionResult with success status and player ID
      */
-    virtual ConnectionResult connectTCP(const std::string &host,
-                                        uint16_t port) = 0;
+    virtual ConnectionResult
+    connectTCP(const std::string &host, uint16_t port,
+               const std::string &username = "Player") = 0;
 
     /**
      * @brief Disconnect from server

@@ -23,33 +23,17 @@ std::vector<TCPMessage> NetworkManager::pollTCP() {
 std::vector<UDPPacket> NetworkManager::pollUDP() {
     auto raw_packets = pollRawUDP();
 
-    std::cout << "[NetworkManager] Received " << raw_packets.size()
-              << " raw UDP packets" << std::endl;
-
     for (const auto &raw_packet : raw_packets) {
-        std::cout << "[NetworkManager] Raw packet size: "
-                  << raw_packet.data.size() << " bytes" << std::endl;
-
         UDPPacket packet = PacketProcessor::parseUDPPacket(raw_packet.data);
 
-        std::cout << "[NetworkManager] Parsed packet type: "
-                  << static_cast<int>(packet.msg_type)
-                  << " payload size: " << packet.payload.size() << std::endl;
-
         if (packet.msg_type == UDPMessageType::PLAYER_ASSIGNMENT) {
-            std::cout << "[NetworkManager] Handling PLAYER_ASSIGNMENT packet"
-                      << std::endl;
             handlePlayerAssignment(packet);
         }
 
-        std::cout << "[NetworkManager] Adding packet to processor queue"
-                  << std::endl;
         packet_processor_.addPacket(packet);
     }
 
     auto processed_packets = packet_processor_.getProcessedPackets();
-    std::cout << "[NetworkManager] Returning " << processed_packets.size()
-              << " processed packets" << std::endl;
 
     return processed_packets;
 }
@@ -91,22 +75,15 @@ bool NetworkManager::sendClientPing(uint32_t timestamp) {
 
 void NetworkManager::handlePlayerAssignment(const UDPPacket &packet) {
     if (packet.payload.size() != 4) {
-        std::cerr << "Invalid PLAYER_ASSIGNMENT size: " << packet.payload.size()
-                  << std::endl;
         return;
     }
 
     uint32_t net_id = PacketProcessor::parsePlayerAssignment(packet.payload);
 
-    std::cout << "[NetworkManager] PLAYER_ASSIGNMENT received - NET_ID: "
-              << net_id << std::endl;
-
     {
         std::lock_guard<std::mutex> lock(player_mutex_);
         assigned_player_net_id_ = net_id;
         player_assigned_ = true;
-        std::cout << "[NetworkManager] Player assignment stored successfully"
-                  << std::endl;
     }
 
     updateState(ConnectionState::IN_GAME);
@@ -131,7 +108,6 @@ void NetworkManager::initializeUDPSocket() {
         ping_start_time_ = last_ping_time_;
         ping_retry_count_ = 0;
     } else {
-        std::cerr << "Failed to send CLIENT_PING" << std::endl;
         updateState(ConnectionState::ERROR);
     }
 }
@@ -158,8 +134,6 @@ void NetworkManager::update(float dt) {
                                  .count();
 
         if (total_elapsed >= PING_TOTAL_TIMEOUT_S) {
-            std::cerr << "PLAYER_ASSIGNMENT timeout after "
-                      << PING_TOTAL_TIMEOUT_S << "s" << std::endl;
             updateState(ConnectionState::ERROR);
             disconnect();
             return;
@@ -180,7 +154,6 @@ void NetworkManager::update(float dt) {
                     ping_retry_count_++;
                     last_ping_time_ = now;
                 } else {
-                    std::cerr << "Failed to retry CLIENT_PING" << std::endl;
                     updateState(ConnectionState::ERROR);
                     disconnect();
                 }
@@ -214,24 +187,13 @@ void NetworkManager::sendPlayerFire() {
 }
 
 void NetworkManager::sendPlayerInput(uint8_t direction) {
-    std::cout << "[NetworkManager] sendPlayerInput called with direction: 0x"
-              << std::hex << static_cast<int>(direction) << std::dec
-              << std::endl;
-
     UDPPacket packet;
     packet.msg_type = UDPMessageType::PLAYER_INPUT;
     packet.sequence_num = packet_processor_.getNextSendSequence();
     packet.payload = {0x01, direction};
     packet.data_length = 2;
 
-    std::cout << "[NetworkManager] Created packet - Type: "
-              << static_cast<int>(packet.msg_type)
-              << ", Sequence: " << packet.sequence_num
-              << ", Payload size: " << packet.payload.size() << std::endl;
-
-    bool result = sendUDP(packet);
-    std::cout << "[NetworkManager] sendUDP result: "
-              << (result ? "SUCCESS" : "FAILED") << std::endl;
+    sendUDP(packet);
 }
 
 } // namespace network

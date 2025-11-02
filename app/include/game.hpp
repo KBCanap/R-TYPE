@@ -8,6 +8,7 @@
 #include "key_bindings.hpp"
 #include "network/NetworkCommandHandler.hpp"
 #include "player_manager.hpp"
+#include "powerup_manager.hpp"
 #include "registery.hpp"
 #include "tick_system.hpp"
 #include <memory>
@@ -46,6 +47,20 @@ class Game {
      * with separate update and render phases.
      */
     void run();
+
+    /**
+     * @brief Set the current game level
+     * @param level The level number to set (1, 2, etc.)
+     */
+    void setLevel(int level);
+
+    /**
+     * @brief Cleanup game resources and entities
+     *
+     * Called when exiting the game to ensure all entities are properly cleaned
+     * up
+     */
+    void cleanup();
 
   private:
     /**
@@ -121,19 +136,30 @@ class Game {
         *_networkManager; ///< Network manager (nullptr for solo)
     bool _isMultiplayer;  ///< Whether game is in multiplayer mode
 
-    PlayerManager _playerManager; ///< Player entity management
-    EnemyManager _enemyManager;   ///< Enemy entity management
-    BossManager _bossManager;     ///< Boss entity management
+    PlayerManager _playerManager;   ///< Player entity management
+    EnemyManager _enemyManager;     ///< Enemy entity management
+    BossManager _bossManager;       ///< Boss entity management
+    PowerupManager _powerupManager; ///< Powerup entity management
 
-    std::optional<entity> _player;     ///< Player entity
-    std::optional<entity> _background; ///< Background entity
-    std::vector<entity> _enemies;      ///< List of enemy entities
-    std::optional<entity> _boss;       ///< Boss entity
+    std::optional<entity> _player;       ///< Player entity
+    std::optional<entity> _playerShield; ///< Player shield entity
+    std::optional<entity> _background;   ///< Background entity
+    std::vector<entity> _enemies;        ///< List of enemy entities
+    std::optional<entity> _boss;         ///< Boss entity
+    std::vector<entity> _bossParts;      ///< Boss phase 2 parts
+    bool _bossPhase2 = false;            ///< Boss transformed to phase 2
 
-    float _playerSpeed = 300.f;      ///< Player movement speed
-    float _enemySpawnTimer = 0.f;    ///< Timer for enemy spawning
-    float _enemySpawnInterval = 2.f; ///< Interval between enemy spawns
-    float _gameTime = 0.f;           ///< Total game time elapsed
+    float _playerSpeed = 300.f;         ///< Player movement speed
+    float _enemySpawnTimer = 0.f;       ///< Timer for enemy spawning
+    float _enemySpawnInterval = 2.f;    ///< Interval between enemy spawns
+    float _powerupSpawnTimer = 0.f;     ///< Timer for powerup spawning
+    float _powerupSpawnInterval = 10.f; ///< Interval between powerup spawns
+    float _gameTime = 0.f;              ///< Total game time elapsed
+
+    // Boss wave spawn system
+    float _bossWaveTimer = 0.f;    ///< Timer for boss wave spawning
+    float _bossWaveInterval = 3.f; ///< Interval between boss waves
+    int _bossWaveEnemyCount = 3;   ///< Enemies per wave
 
     float _playerRelativeX = 0.125f; ///< Player relative X position (0.0-1.0)
     float _playerRelativeY = 0.5f;   ///< Player relative Y position (0.0-1.0)
@@ -142,6 +168,10 @@ class Game {
     VictoryMenu _victoryMenu;   ///< Victory menu handler
     bool _gameOver = false;     ///< Game over state flag
     bool _victory = false;      ///< Victory state flag
+    int _currentLevel = 1;      ///< Current level (1, 2, etc.)
+    bool _endlessMode = false;  ///< Endless mode flag
+    int _nextBossType = 1;      ///< Next boss to spawn in endless mode (1 or 2)
+    int _lastBossScore = 0;     ///< Score when last boss was spawned
 
     TickSystem _tickSystem;   ///< Fixed timestep game loop system
     bool _shouldExit = false; ///< Flag to exit the game

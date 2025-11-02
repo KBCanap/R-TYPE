@@ -1,5 +1,7 @@
 #include "../include/components.hpp"
 #include <cmath>
+#include <iostream>
+#include <sol/sol.hpp>
 
 namespace component {
 
@@ -10,46 +12,49 @@ projectile_pattern::projectile_pattern(const std::string &type, float p1,
 void projectile_pattern::apply_pattern(float &vx, float &vy, float pos_x,
                                        float pos_y, float age, float speed,
                                        bool friendly) const {
-    if (custom_function) {
-        custom_function(vx, vy, pos_x, pos_y, age, speed, friendly);
+    static sol::state lua;
+    static bool initialized = false;
+
+    if (!initialized) {
+        lua.open_libraries(sol::lib::base, sol::lib::math);
+
+        try {
+            lua.script_file("scripts/projectile_pattern.lua");
+        } catch (const sol::error &e) {
+            std::cerr << "[Lua Error] " << e.what() << std::endl;
+            return;
+        }
+
+        initialized = true;
+    }
+
+    // Pass parameters to Lua
+    lua["pattern_type"] = pattern_type;
+    lua["param1"] = param1;
+    lua["param2"] = param2;
+    lua["param3"] = param3;
+    lua["param4"] = param4;
+    lua["pos_x"] = pos_x;
+    lua["pos_y"] = pos_y;
+    lua["age"] = age;
+    lua["speed"] = speed;
+    lua["friendly"] = friendly;
+    lua["vx"] = vx;
+    lua["vy"] = vy;
+
+    // Call Lua function
+    sol::protected_function pattern_func = lua["apply_projectile_pattern"];
+    sol::protected_function_result result = pattern_func();
+
+    if (!result.valid()) {
+        sol::error err = result;
+        std::cerr << "[Lua Runtime Error] " << err.what() << std::endl;
         return;
     }
 
-    float base_direction = friendly ? 1.0f : -1.0f;
-
-    if (pattern_type == "straight") {
-        float current_speed = std::sqrt(vx * vx + vy * vy);
-        if (current_speed > 0) {
-            float scale = speed / current_speed;
-            vx *= scale;
-            vy *= scale;
-        }
-    } else if (pattern_type == "wave") {
-        vx = base_direction * speed;
-        vy = std::sin((pos_x + param3) * param2) * param1;
-    } else if (pattern_type == "spiral") {
-        float angle = age * param2 + param3;
-        float spiral_radius = param1 * (age * 0.5f);
-
-        vx = base_direction * speed + spiral_radius * std::cos(angle);
-        vy = spiral_radius * std::sin(angle);
-    } else if (pattern_type == "bounce") {
-        float screen_width = 800.0f;
-        float screen_height = 600.0f;
-        if (pos_x <= 0 || pos_x >= screen_width) {
-            vx = -vx;
-        }
-        if (pos_y <= 0 || pos_y >= screen_height) {
-            vy = -vy;
-        }
-    } else if (pattern_type == "spread") {
-        float current_speed = std::sqrt(vx * vx + vy * vy);
-        if (current_speed > 0) {
-            float scale = speed / current_speed;
-            vx *= scale;
-            vy *= scale;
-        }
-    }
+    sol::table velocity = result;
+    vx = velocity["vx"];
+    vy = velocity["vy"];
 }
 
 projectile_pattern projectile_pattern::straight() {

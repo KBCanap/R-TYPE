@@ -7,29 +7,10 @@
 
 #pragma once
 #include "render/IRenderWindow.hpp"
-#include <SFML/Graphics.hpp>
 #include <cmath>
 #include <functional>
 #include <memory>
 #include <string>
-
-namespace render {
-inline IntRect toRenderIntRect(const sf::IntRect &rect) {
-    return IntRect(rect.left, rect.top, rect.width, rect.height);
-}
-
-inline sf::IntRect toSFMLIntRect(const IntRect &rect) {
-    return sf::IntRect(rect.left, rect.top, rect.width, rect.height);
-}
-
-inline Color toRenderColor(const sf::Color &color) {
-    return Color(color.r, color.g, color.b, color.a);
-}
-
-inline sf::Color toSFMLColor(const Color &color) {
-    return sf::Color(color.r, color.g, color.b, color.a);
-}
-} // namespace render
 
 class registry;
 
@@ -316,6 +297,14 @@ struct health {
     int pending_damage;
 
     health(int hp = 100) : current_hp(hp), max_hp(hp), pending_damage(0) {}
+};
+
+struct shield {
+    int current_shield;
+    int max_shield;
+
+    shield(int shield_points = 0, int max = 50)
+        : current_shield(shield_points), max_shield(max) {}
 };
 
 } // namespace component

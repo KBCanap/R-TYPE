@@ -7,46 +7,62 @@
 
 #include "../include/components.hpp"
 #include <cmath>
+#include <iostream>
+#include <sol/sol.hpp>
 
 namespace component {
 
 void ai_movement_pattern::apply_pattern(float &vx, float &vy, float pos_x,
                                         float pos_y, float dt) {
+
     pattern_time += dt;
 
-    if (pattern_type == "straight") {
-        vx = -base_speed;
-        vy = 0.0f;
-    } else if (pattern_type == "wave") {
-        vx = -base_speed;
-        vy = amplitude * std::sin(frequency * pos_x + phase_offset);
-    } else if (pattern_type == "sine_wave") {
-        vx = -base_speed;
-        vy = amplitude * std::sin(frequency * pattern_time + phase_offset);
-    } else if (pattern_type == "zigzag") {
-        vx = -base_speed;
-        float triangle_wave =
-            std::abs(std::fmod(frequency * pattern_time + phase_offset, 2.0f) -
-                     1.0f) *
-                2.0f -
-            1.0f;
-        vy = amplitude * triangle_wave;
-    } else if (pattern_type == "circle") {
-        if (start_x == 0.0f && start_y == 0.0f) {
-            start_x = pos_x;
-            start_y = pos_y;
-        }
-        float angle = frequency * pattern_time + phase_offset;
-        float target_x =
-            start_x + amplitude * std::cos(angle) - base_speed * pattern_time;
-        float target_y = start_y + amplitude * std::sin(angle);
+    static sol::state lua;
+    static bool initialized = false;
 
-        vx = (target_x - pos_x) / dt;
-        vy = (target_y - pos_y) / dt;
-    } else {
+    if (!initialized) {
+        lua.open_libraries(sol::lib::base, sol::lib::math);
+
+        // Load external Lua script
+        try {
+            lua.script_file("scripts/ai_pattern.lua");
+        } catch (const sol::error &e) {
+            std::cerr << "[Lua Error] " << e.what() << std::endl;
+            vx = -base_speed;
+            vy = 0.0f;
+            return;
+        }
+
+        initialized = true;
+    }
+
+    // Pass parameters to Lua
+    lua["pattern_type"] = pattern_type;
+    lua["base_speed"] = base_speed;
+    lua["amplitude"] = amplitude;
+    lua["frequency"] = frequency;
+    lua["phase_offset"] = phase_offset;
+    lua["pattern_time"] = pattern_time;
+    lua["pos_x"] = pos_x;
+    lua["pos_y"] = pos_y;
+    lua["dt"] = dt;
+
+    // Call Lua function
+    sol::protected_function pattern_func = lua["apply_pattern"];
+    sol::protected_function_result result = pattern_func();
+
+    if (!result.valid()) {
+        sol::error err = result;
+        std::cerr << "[Lua Runtime Error] " << err.what() << std::endl;
         vx = -base_speed;
         vy = 0.0f;
+        return;
     }
+
+    // Extract result
+    sol::table velocity = result;
+    vx = velocity["vx"];
+    vy = velocity["vy"];
 }
 
 ai_movement_pattern ai_movement_pattern::straight(float speed) {
