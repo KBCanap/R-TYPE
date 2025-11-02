@@ -1,8 +1,8 @@
 #include "../include/components.hpp"
 #include "../include/registery.hpp"
-#include <sol/sol.hpp>
 #include <cmath>
 #include <iostream>
+#include <sol/sol.hpp>
 
 namespace component {
 
@@ -57,10 +57,11 @@ void weapon::fire(registry &r, const position &shooter_pos, bool is_friendly) {
         r.add_component(projectile_entity,
                         drawable("assets/sprites/r-typesheet1.gif",
                                  projectile_sprite_rect, 1.0f, "projectile"));
-        r.add_component(projectile_entity,
-                        hitbox(static_cast<float>(projectile_sprite_rect.width) * 2.0f,
-                               static_cast<float>(projectile_sprite_rect.height) * 2.0f,
-                               0.0f, 0.0f));
+        r.add_component(
+            projectile_entity,
+            hitbox(static_cast<float>(projectile_sprite_rect.width) * 2.0f,
+                   static_cast<float>(projectile_sprite_rect.height) * 2.0f,
+                   0.0f, 0.0f));
     };
 
     // Call Lua fire function

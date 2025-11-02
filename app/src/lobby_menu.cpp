@@ -123,13 +123,13 @@ void LobbyMenu::updateButtonScale() {
     // Buttons at bottom
     _readyButton->setPosition(centerX - 310, _windowSize.y - 150);
     render::FloatRect readyBounds = _readyButtonText->getLocalBounds();
-    _readyButtonText->setPosition(
-        centerX - 310 + 150 - readyBounds.width / 2, _windowSize.y - 127);
+    _readyButtonText->setPosition(centerX - 310 + 150 - readyBounds.width / 2,
+                                  _windowSize.y - 127);
 
     _leaveButton->setPosition(centerX + 10, _windowSize.y - 150);
     render::FloatRect leaveBounds = _leaveButtonText->getLocalBounds();
-    _leaveButtonText->setPosition(
-        centerX + 10 + 150 - leaveBounds.width / 2, _windowSize.y - 127);
+    _leaveButtonText->setPosition(centerX + 10 + 150 - leaveBounds.width / 2,
+                                  _windowSize.y - 127);
 
     float scaleX = static_cast<float>(_windowSize.x) / _bgTexture->getSize().x;
     float scaleY = static_cast<float>(_windowSize.y) / _bgTexture->getSize().y;
@@ -149,26 +149,30 @@ void LobbyMenu::sendReady() {
         _errorMessage = "Failed to send ready signal";
         _errorMessageTime = std::chrono::steady_clock::now();
     } else {
-        _isReady = !_isReady;  // Toggle ready state
+        _isReady = !_isReady; // Toggle ready state
         _readyButtonText->setString(_isReady ? "UNREADY" : "READY");
-        _readyButton->setFillColor(_isReady ? render::Color(220, 150, 70) : 
-                                              render::Color(70, 180, 70));
-        _statusText->setString(_isReady ? "You are ready!" : "Waiting for players...");
-        std::cout << "[LobbyMenu] Ready state: " << (_isReady ? "READY" : "NOT READY") << std::endl;
+        _readyButton->setFillColor(_isReady ? render::Color(220, 150, 70)
+                                            : render::Color(70, 180, 70));
+        _statusText->setString(_isReady ? "You are ready!"
+                                        : "Waiting for players...");
+        std::cout << "[LobbyMenu] Ready state: "
+                  << (_isReady ? "READY" : "NOT READY") << std::endl;
     }
 }
 
 void LobbyMenu::leaveLobby() {
     std::cout << "[LobbyMenu] Leaving lobby..." << std::endl;
 
-    bool success = _networkManager.sendTCP(network::MessageType::LEAVE_LOBBY, {});
+    bool success =
+        _networkManager.sendTCP(network::MessageType::LEAVE_LOBBY, {});
 
     if (!success) {
         std::cerr << "[LobbyMenu] Failed to send LEAVE_LOBBY!" << std::endl;
         _errorMessage = "Failed to leave lobby";
         _errorMessageTime = std::chrono::steady_clock::now();
     } else {
-        std::cout << "[LobbyMenu] LEAVE_LOBBY sent, waiting for ACK..." << std::endl;
+        std::cout << "[LobbyMenu] LEAVE_LOBBY sent, waiting for ACK..."
+                  << std::endl;
         _waitingForLeaveAck = true;
         _statusText->setString("Leaving lobby...");
     }
@@ -178,15 +182,19 @@ void LobbyMenu::handleNetworkMessages() {
     auto tcpMessages = _networkManager.pollTCP();
     for (const auto &msg : tcpMessages) {
         if (msg.msg_type == network::MessageType::JOIN_LOBBY_ACK) {
-            std::cout << "[LobbyMenu] Received JOIN_LOBBY_ACK (initial lobby info)" << std::endl;
-            
+            std::cout
+                << "[LobbyMenu] Received JOIN_LOBBY_ACK (initial lobby info)"
+                << std::endl;
+
             if (msg.data.size() >= 5) {
                 // Parse: LOBBY_ID (2) + YOUR_PLAYER_ID (1) + PLAYER_COUNT (2)
-                _lobbyId = (static_cast<uint16_t>(msg.data[0]) << 8) | msg.data[1];
+                _lobbyId =
+                    (static_cast<uint16_t>(msg.data[0]) << 8) | msg.data[1];
                 _myPlayerId = msg.data[2];
-                uint16_t playerCount = (static_cast<uint16_t>(msg.data[3]) << 8) | msg.data[4];
+                uint16_t playerCount =
+                    (static_cast<uint16_t>(msg.data[3]) << 8) | msg.data[4];
 
-                std::cout << "[LobbyMenu] Lobby ID: " << _lobbyId 
+                std::cout << "[LobbyMenu] Lobby ID: " << _lobbyId
                           << ", My Player ID: " << static_cast<int>(_myPlayerId)
                           << ", Players: " << playerCount << std::endl;
 
@@ -199,32 +207,40 @@ void LobbyMenu::handleNetworkMessages() {
 
                 // Parse PlayerInfo structures (each 66 bytes)
                 for (uint16_t i = 0; i < playerCount; ++i) {
-                    if (offset + 66 > msg.data.size()) break;
+                    if (offset + 66 > msg.data.size())
+                        break;
 
                     PlayerDisplayInfo player;
                     player.player_id = msg.data[offset];
                     player.ready = msg.data[offset + 1];
-                    
-                    uint16_t usernameLen = (static_cast<uint16_t>(msg.data[offset + 2]) << 8) | 
-                                           msg.data[offset + 3];
-                    
+
+                    uint16_t usernameLen =
+                        (static_cast<uint16_t>(msg.data[offset + 2]) << 8) |
+                        msg.data[offset + 3];
+
                     offset += 4;
-                    
-                    if (offset + 60 > msg.data.size()) break;
-                    
-                    player.username = std::string(msg.data.begin() + offset,
-                                                  msg.data.begin() + offset + 
-                                                  std::min(static_cast<size_t>(usernameLen), size_t(60)));
+
+                    if (offset + 60 > msg.data.size())
+                        break;
+
+                    player.username = std::string(
+                        msg.data.begin() + offset,
+                        msg.data.begin() + offset +
+                            std::min(static_cast<size_t>(usernameLen),
+                                     size_t(60)));
                     offset += 60;
 
                     _players.push_back(player);
 
                     // Create UI for this player
-                    auto playerBox = _window.createRectangleShape(render::Vector2f(600, 60));
+                    auto playerBox =
+                        _window.createRectangleShape(render::Vector2f(600, 60));
                     playerBox->setFillColor(render::Color(40, 40, 60, 200));
-                    playerBox->setOutlineColor(player.ready ? 
-                        settings.applyColorblindFilter(render::Color(100, 255, 100)) :
-                        settings.applyColorblindFilter(render::Color::White()));
+                    playerBox->setOutlineColor(
+                        player.ready ? settings.applyColorblindFilter(
+                                           render::Color(100, 255, 100))
+                                     : settings.applyColorblindFilter(
+                                           render::Color::White()));
                     playerBox->setOutlineThickness(player.ready ? 3 : 2);
                     _playerBoxes.push_back(std::move(playerBox));
 
@@ -248,23 +264,27 @@ void LobbyMenu::handleNetworkMessages() {
             }
         } else if (msg.msg_type == network::MessageType::PLAYER_JOINED) {
             std::cout << "[LobbyMenu] Received PLAYER_JOINED" << std::endl;
-            
+
             if (msg.data.size() >= 66) {
                 PlayerDisplayInfo player;
                 player.player_id = msg.data[0];
                 player.ready = msg.data[1];
-                
-                uint16_t usernameLen = (static_cast<uint16_t>(msg.data[2]) << 8) | msg.data[3];
-                
-                player.username = std::string(msg.data.begin() + 4,
-                                              msg.data.begin() + 4 + 
-                                              std::min(static_cast<size_t>(usernameLen), size_t(60)));
+
+                uint16_t usernameLen =
+                    (static_cast<uint16_t>(msg.data[2]) << 8) | msg.data[3];
+
+                player.username = std::string(
+                    msg.data.begin() + 4,
+                    msg.data.begin() + 4 +
+                        std::min(static_cast<size_t>(usernameLen), size_t(60)));
 
                 _players.push_back(player);
-                std::cout << "[LobbyMenu] Player joined: " << player.username << std::endl;
+                std::cout << "[LobbyMenu] Player joined: " << player.username
+                          << std::endl;
 
                 Settings &settings = Settings::getInstance();
-                auto playerBox = _window.createRectangleShape(render::Vector2f(600, 60));
+                auto playerBox =
+                    _window.createRectangleShape(render::Vector2f(600, 60));
                 playerBox->setFillColor(render::Color(40, 40, 60, 200));
                 playerBox->setOutlineColor(
                     settings.applyColorblindFilter(render::Color::White()));
@@ -283,14 +303,15 @@ void LobbyMenu::handleNetworkMessages() {
             }
         } else if (msg.msg_type == network::MessageType::PLAYER_LEFT) {
             std::cout << "[LobbyMenu] Received PLAYER_LEFT" << std::endl;
-            
+
             if (msg.data.size() >= 1) {
                 uint8_t leftPlayerId = msg.data[0];
-                
+
                 for (size_t i = 0; i < _players.size(); ++i) {
                     if (_players[i].player_id == leftPlayerId) {
-                        std::cout << "[LobbyMenu] Player " << _players[i].username 
-                                  << " left the lobby" << std::endl;
+                        std::cout << "[LobbyMenu] Player "
+                                  << _players[i].username << " left the lobby"
+                                  << std::endl;
                         _players.erase(_players.begin() + i);
                         _playerTexts.erase(_playerTexts.begin() + i);
                         _playerBoxes.erase(_playerBoxes.begin() + i);
@@ -300,35 +321,43 @@ void LobbyMenu::handleNetworkMessages() {
                 }
             }
         } else if (msg.msg_type == network::MessageType::LEAVE_LOBBY_ACK) {
-            std::cout << "[LobbyMenu] Received LEAVE_LOBBY_ACK, returning to browser" << std::endl;
+            std::cout
+                << "[LobbyMenu] Received LEAVE_LOBBY_ACK, returning to browser"
+                << std::endl;
             _waitingForLeaveAck = false;
             _leftSuccessfully = true;
         } else if (msg.msg_type == network::MessageType::TCP_GAME_START) {
-            std::cout << "[LobbyMenu] Received TCP_GAME_START! Game is starting!" << std::endl;
+            std::cout
+                << "[LobbyMenu] Received TCP_GAME_START! Game is starting!"
+                << std::endl;
             _gameStarting = true;
             _statusText->setString("Starting game...");
-            
+
             // Parse game server info if needed
             if (msg.data.size() >= 8) {
-                uint16_t udpPort = (static_cast<uint16_t>(msg.data[0]) << 8) | msg.data[1];
-                uint16_t serverId = (static_cast<uint16_t>(msg.data[2]) << 8) | msg.data[3];
-                std::cout << "[LobbyMenu] Game server - Port: " << udpPort 
+                uint16_t udpPort =
+                    (static_cast<uint16_t>(msg.data[0]) << 8) | msg.data[1];
+                uint16_t serverId =
+                    (static_cast<uint16_t>(msg.data[2]) << 8) | msg.data[3];
+                std::cout << "[LobbyMenu] Game server - Port: " << udpPort
                           << ", Server ID: " << serverId << std::endl;
             }
         } else if (msg.msg_type == network::MessageType::TCP_ERROR) {
-            std::cerr << "[LobbyMenu] Received TCP_ERROR from server!" << std::endl;
+            std::cerr << "[LobbyMenu] Received TCP_ERROR from server!"
+                      << std::endl;
             if (msg.data.size() >= 1) {
                 uint8_t errorCode = msg.data[0];
-                std::cerr << "[LobbyMenu] Error code: " << static_cast<int>(errorCode) << std::endl;
-                
+                std::cerr << "[LobbyMenu] Error code: "
+                          << static_cast<int>(errorCode) << std::endl;
+
                 switch (errorCode) {
-                    case 0x09:
-                        _errorMessage = "You are not in a lobby!";
-                        _leftSuccessfully = true;  // Force return to browser
-                        break;
-                    default:
-                        _errorMessage = "Server error occurred!";
-                        break;
+                case 0x09:
+                    _errorMessage = "You are not in a lobby!";
+                    _leftSuccessfully = true; // Force return to browser
+                    break;
+                default:
+                    _errorMessage = "Server error occurred!";
+                    break;
                 }
                 _errorMessageTime = std::chrono::steady_clock::now();
                 _statusText->setString(_errorMessage);
@@ -340,7 +369,8 @@ void LobbyMenu::handleNetworkMessages() {
     auto state = _networkManager.getConnectionState();
     if (state == network::ConnectionState::ERROR ||
         state == network::ConnectionState::DISCONNECTED) {
-        std::cerr << "[LobbyMenu] Connection error or disconnected!" << std::endl;
+        std::cerr << "[LobbyMenu] Connection error or disconnected!"
+                  << std::endl;
         _errorMessage = "Connection lost!";
         _errorMessageTime = std::chrono::steady_clock::now();
     }
@@ -354,17 +384,19 @@ void LobbyMenu::render() {
 
     _window.draw(*_titleText);
     _window.draw(*_lobbyNameText);
-    
+
     // Show status or error message
     auto now = std::chrono::steady_clock::now();
     if (!_errorMessage.empty() &&
-        std::chrono::duration_cast<std::chrono::seconds>(now - _errorMessageTime).count() < 5) {
+        std::chrono::duration_cast<std::chrono::seconds>(now -
+                                                         _errorMessageTime)
+                .count() < 5) {
         _statusText->setString(_errorMessage);
         _statusText->setFillColor(render::Color(255, 100, 100));
     } else if (_errorMessage.empty()) {
         _statusText->setFillColor(render::Color(150, 200, 255));
     }
-    
+
     _window.draw(*_statusText);
 
     // Draw player list
@@ -394,13 +426,16 @@ LobbyResult LobbyMenu::run() {
 
         // Check if we left the lobby
         if (_leftSuccessfully) {
-            std::cout << "[LobbyMenu] Successfully left lobby, returning to browser..." << std::endl;
+            std::cout << "[LobbyMenu] Successfully left lobby, returning to "
+                         "browser..."
+                      << std::endl;
             return LobbyResult::LeftLobby;
         }
 
         // Check if game is starting
         if (_gameStarting) {
-            std::cout << "[LobbyMenu] Game starting, transitioning to game..." << std::endl;
+            std::cout << "[LobbyMenu] Game starting, transitioning to game..."
+                      << std::endl;
             return LobbyResult::GameStarting;
         }
 
@@ -436,13 +471,15 @@ LobbyResult LobbyMenu::run() {
 
                     // Ready button
                     if (mouseX >= centerX - 310 && mouseX <= centerX - 10 &&
-                        mouseY >= _windowSize.y - 150 && mouseY <= _windowSize.y - 80) {
+                        mouseY >= _windowSize.y - 150 &&
+                        mouseY <= _windowSize.y - 80) {
                         sendReady();
                     }
 
                     // Leave button
                     if (mouseX >= centerX + 10 && mouseX <= centerX + 310 &&
-                        mouseY >= _windowSize.y - 150 && mouseY <= _windowSize.y - 80) {
+                        mouseY >= _windowSize.y - 150 &&
+                        mouseY <= _windowSize.y - 80) {
                         leaveLobby();
                     }
                 }
@@ -454,7 +491,7 @@ LobbyResult LobbyMenu::run() {
                 }
 
                 // Ready with R or Space
-                if (event.key.code == render::Key::R || 
+                if (event.key.code == render::Key::R ||
                     event.key.code == render::Key::Space) {
                     sendReady();
                 }

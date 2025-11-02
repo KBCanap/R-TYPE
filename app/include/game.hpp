@@ -57,7 +57,8 @@ class Game {
     /**
      * @brief Cleanup game resources and entities
      *
-     * Called when exiting the game to ensure all entities are properly cleaned up
+     * Called when exiting the game to ensure all entities are properly cleaned
+     * up
      */
     void cleanup();
 
@@ -148,17 +149,17 @@ class Game {
     std::vector<entity> _bossParts;      ///< Boss phase 2 parts
     bool _bossPhase2 = false;            ///< Boss transformed to phase 2
 
-    float _playerSpeed = 300.f;        ///< Player movement speed
-    float _enemySpawnTimer = 0.f;      ///< Timer for enemy spawning
-    float _enemySpawnInterval = 2.f;   ///< Interval between enemy spawns
-    float _powerupSpawnTimer = 0.f;    ///< Timer for powerup spawning
+    float _playerSpeed = 300.f;         ///< Player movement speed
+    float _enemySpawnTimer = 0.f;       ///< Timer for enemy spawning
+    float _enemySpawnInterval = 2.f;    ///< Interval between enemy spawns
+    float _powerupSpawnTimer = 0.f;     ///< Timer for powerup spawning
     float _powerupSpawnInterval = 10.f; ///< Interval between powerup spawns
-    float _gameTime = 0.f;             ///< Total game time elapsed
+    float _gameTime = 0.f;              ///< Total game time elapsed
 
     // Boss wave spawn system
-    float _bossWaveTimer = 0.f;        ///< Timer for boss wave spawning
-    float _bossWaveInterval = 3.f;     ///< Interval between boss waves
-    int _bossWaveEnemyCount = 3;       ///< Enemies per wave
+    float _bossWaveTimer = 0.f;    ///< Timer for boss wave spawning
+    float _bossWaveInterval = 3.f; ///< Interval between boss waves
+    int _bossWaveEnemyCount = 3;   ///< Enemies per wave
 
     float _playerRelativeX = 0.125f; ///< Player relative X position (0.0-1.0)
     float _playerRelativeY = 0.5f;   ///< Player relative Y position (0.0-1.0)

@@ -87,8 +87,7 @@ void LevelSelectionMenu::initializeMenu() {
         text->setCharacterSize(fontSize);
         text->setFillColor(TEXT_COLOR);
         render::FloatRect textBounds = text->getLocalBounds();
-        text->setPosition(centerX - textBounds.width / 2,
-                          startY + i * 80 + 15);
+        text->setPosition(centerX - textBounds.width / 2, startY + i * 80 + 15);
         _buttonTexts.push_back(std::move(text));
     }
 
@@ -106,9 +105,8 @@ void LevelSelectionMenu::handleEvents(bool &running) {
         if (event.type == render::EventType::KeyPressed) {
             switch (event.key.code) {
             case render::Key::Up:
-                _selectedButton =
-                    (_selectedButton - 1 + _buttonLabels.size()) %
-                    _buttonLabels.size();
+                _selectedButton = (_selectedButton - 1 + _buttonLabels.size()) %
+                                  _buttonLabels.size();
                 updateButtonColors();
                 break;
             case render::Key::Down:

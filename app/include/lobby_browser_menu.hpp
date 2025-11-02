@@ -15,10 +15,10 @@
 #include <vector>
 
 enum class LobbyBrowserResult {
-    JoinedLobby,  // Successfully joined a lobby, proceed to LobbyMenu
-    Disconnect,   // User wants to disconnect
-    BackToMenu,   // User wants to go back without disconnecting
-    Error         // An error occurred
+    JoinedLobby, // Successfully joined a lobby, proceed to LobbyMenu
+    Disconnect,  // User wants to disconnect
+    BackToMenu,  // User wants to go back without disconnecting
+    Error        // An error occurred
 };
 
 struct LobbyDisplayInfo {
@@ -26,7 +26,7 @@ struct LobbyDisplayInfo {
     std::string lobby_name;
     uint8_t player_count;
     uint8_t max_players;
-    uint8_t status;  // 0=WAITING, 1=READY, 2=IN_GAME
+    uint8_t status; // 0=WAITING, 1=READY, 2=IN_GAME
 };
 
 class LobbyBrowserMenu {
@@ -44,7 +44,7 @@ class LobbyBrowserMenu {
     void requestLobbyList();
     void createLobby();
     void joinLobby(uint16_t lobby_id);
-    
+
     // Dialog for creating lobby
     void showCreateLobbyDialog();
     void updateCreateLobbyDialog();
@@ -83,12 +83,12 @@ class LobbyBrowserMenu {
     bool _waitingForJoinAck;
     bool _joinedSuccessfully;
     bool _showCreateDialog;
-    
+
     // Create lobby dialog
     std::string _newLobbyName;
     int _newLobbyMaxPlayers;
     bool _isTypingLobbyName;
-    
+
     // Dialog UI elements
     std::unique_ptr<render::IShape> _dialogBackground;
     std::unique_ptr<render::IText> _dialogTitle;

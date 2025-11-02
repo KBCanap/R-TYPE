@@ -28,10 +28,12 @@ void audio_system(registry & /*r*/,
         std::optional<component::audio_trigger> &trigger = triggers[i];
 
         bool should_trigger = sound_effect && trigger && !trigger->triggered;
-        if (!should_trigger) continue;
+        if (!should_trigger)
+            continue;
 
         // Single map lookup instead of two
-        std::unordered_map<std::string, render::ISoundBuffer *>::iterator buffer_it = sound_buffers.find(sound_effect->sound_path);
+        std::unordered_map<std::string, render::ISoundBuffer *>::iterator
+            buffer_it = sound_buffers.find(sound_effect->sound_path);
         bool buffer_exists = (buffer_it != sound_buffers.end());
 
         // Load buffer if needed (max 2 branches)
@@ -62,11 +64,13 @@ void audio_system(registry & /*r*/,
         // Update playing status (max 2 branches but separated)
         bool should_check_status = sound_effect && sound_effect->is_playing;
         if (should_check_status) {
-            std::unordered_map<std::string, render::ISound *>::iterator sound_it = sounds.find(sound_effect->sound_path);
+            std::unordered_map<std::string, render::ISound *>::iterator
+                sound_it = sounds.find(sound_effect->sound_path);
             bool sound_found = (sound_it != sounds.end());
             if (sound_found) {
                 render::ISound *sound = sound_it->second;
-                sound_effect->is_playing = (sound->getStatus() == render::AudioStatus::Playing);
+                sound_effect->is_playing =
+                    (sound->getStatus() == render::AudioStatus::Playing);
             }
         }
     }
@@ -75,11 +79,14 @@ void audio_system(registry & /*r*/,
         std::optional<component::music> &music = musics[i];
         std::optional<component::audio_trigger> &trigger = triggers[i];
 
-        bool should_start = music && trigger && !trigger->triggered && !music->is_playing;
-        if (!should_start) continue;
+        bool should_start =
+            music && trigger && !trigger->triggered && !music->is_playing;
+        if (!should_start)
+            continue;
 
         // Get or create track (max 2 branches)
-        std::unordered_map<std::string, render::IMusic *>::iterator track_it = music_tracks.find(music->music_path);
+        std::unordered_map<std::string, render::IMusic *>::iterator track_it =
+            music_tracks.find(music->music_path);
         render::IMusic *track = nullptr;
 
         if (track_it == music_tracks.end()) {
@@ -102,11 +109,13 @@ void audio_system(registry & /*r*/,
         // Update playing status (max 2 branches but separated)
         bool should_check_music_status = music && music->is_playing;
         if (should_check_music_status) {
-            std::unordered_map<std::string, render::IMusic *>::iterator track_it = music_tracks.find(music->music_path);
+            std::unordered_map<std::string, render::IMusic *>::iterator
+                track_it = music_tracks.find(music->music_path);
             bool track_found = (track_it != music_tracks.end());
             if (track_found) {
                 render::IMusic *track = track_it->second;
-                music->is_playing = (track->getStatus() == render::AudioStatus::Playing);
+                music->is_playing =
+                    (track->getStatus() == render::AudioStatus::Playing);
             }
         }
     }

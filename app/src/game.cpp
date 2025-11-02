@@ -224,7 +224,8 @@ void Game::update(float dt) {
     }
 
     // For level 1 boss: check if it's still alive
-    if (!_gameOver && !_victory && _boss && (_currentLevel == 1 || _endlessMode)) {
+    if (!_gameOver && !_victory && _boss &&
+        (_currentLevel == 1 || _endlessMode)) {
         auto &boss_pos = positions[*_boss];
         auto &boss_drawable = drawables[*_boss];
 
@@ -262,13 +263,16 @@ void Game::update(float dt) {
             if (*last_part < weapons.size() && !weapons[*last_part]) {
                 // Add spread weapon to the last part
                 _registry.add_component<component::weapon>(
-                    *last_part, component::weapon(0.8f, false, 5, 30.0f,
-                                    component::projectile_pattern::spread(30.0f),
-                                    20.0f, 300.0f, 5.0f, false, 1, false, 1, 0.1f,
-                                    render::IntRect(249, 103, 16, 12)));
+                    *last_part,
+                    component::weapon(
+                        0.8f, false, 5, 30.0f,
+                        component::projectile_pattern::spread(30.0f), 20.0f,
+                        300.0f, 5.0f, false, 1, false, 1, 0.1f,
+                        render::IntRect(249, 103, 16, 12)));
 
                 // Enable firing on AI
-                auto &ai_inputs = _registry.get_components<component::ai_input>();
+                auto &ai_inputs =
+                    _registry.get_components<component::ai_input>();
                 if (*last_part < ai_inputs.size() && ai_inputs[*last_part]) {
                     ai_inputs[*last_part]->fire = true;
                     ai_inputs[*last_part]->fire_interval = 0.8f;
@@ -343,7 +347,8 @@ void Game::update(float dt) {
             _bossManager.spawnBossLevel2Phase2Parts(boss_x, boss_y, _bossParts);
             _bossPhase2 = true;
 
-            std::cout << "[Game] Boss Level 2 spawned with 3 parts" << std::endl;
+            std::cout << "[Game] Boss Level 2 spawned with 3 parts"
+                      << std::endl;
         }
 
         // In endless mode, alternate boss type for next spawn
@@ -355,18 +360,21 @@ void Game::update(float dt) {
     // Enemy spawning logic
     if (!_gameOver && !_victory) {
         if (_boss && (_currentLevel == 2 || (_endlessMode && _bossPhase2))) {
-            // Level 2 Boss (or endless mode with boss 2) is present: spawn enemies in waves from boss position
+            // Level 2 Boss (or endless mode with boss 2) is present: spawn
+            // enemies in waves from boss position
             _bossWaveTimer += dt;
             if (_bossWaveTimer >= _bossWaveInterval) {
                 _bossWaveTimer = 0.f;
 
                 // Get boss position from any remaining part
-                auto &positions = _registry.get_components<component::position>();
+                auto &positions =
+                    _registry.get_components<component::position>();
                 float boss_x = 0.0f;
                 float boss_y = 0.0f;
 
                 if (!_bossParts.empty()) {
-                    // Use the first alive boss part (any part will do for positioning)
+                    // Use the first alive boss part (any part will do for
+                    // positioning)
                     entity part = _bossParts[0];
                     if (part < positions.size() && positions[part]) {
                         boss_x = positions[part]->x;
@@ -376,10 +384,12 @@ void Game::update(float dt) {
 
                 // Spawn a wave of enemies from boss position
                 float wave_spacing = 80.0f;
-                float start_y = boss_y - (wave_spacing * (_bossWaveEnemyCount - 1) / 2.0f);
+                float start_y =
+                    boss_y - (wave_spacing * (_bossWaveEnemyCount - 1) / 2.0f);
 
                 for (int i = 0; i < _bossWaveEnemyCount; ++i) {
-                    entity enemy = _enemyManager.spawnEnemyLevel2(); // Default spawn
+                    entity enemy =
+                        _enemyManager.spawnEnemyLevel2(); // Default spawn
 
                     if (_endlessMode) {
                         // Endless mode: mix all enemy types
@@ -393,9 +403,12 @@ void Game::update(float dt) {
                         }
                     }
 
-                    // Position enemies starting from boss position in a vertical wave pattern
+                    // Position enemies starting from boss position in a
+                    // vertical wave pattern
                     if (enemy < positions.size() && positions[enemy]) {
-                        positions[enemy]->x = boss_x - 50.0f; // Spawn slightly to the left of boss
+                        positions[enemy]->x =
+                            boss_x -
+                            50.0f; // Spawn slightly to the left of boss
                         positions[enemy]->y = start_y + (i * wave_spacing);
                     }
 
@@ -416,7 +429,8 @@ void Game::update(float dt) {
                     } else if (enemyType == 1) {
                         _enemies.push_back(_enemyManager.spawnEnemyLevel2());
                     } else {
-                        _enemies.push_back(_enemyManager.spawnEnemyLevel2Spread());
+                        _enemies.push_back(
+                            _enemyManager.spawnEnemyLevel2Spread());
                     }
                 } else {
                     // Spawn appropriate enemy based on level
@@ -424,10 +438,13 @@ void Game::update(float dt) {
                         _enemies.push_back(_enemyManager.spawnEnemy());
                     } else {
                         // Level 2: randomly spawn either normal or spread enemy
-                        if (std::rand() % 3 == 0) { // 33% chance for spread enemy
-                            _enemies.push_back(_enemyManager.spawnEnemyLevel2Spread());
+                        if (std::rand() % 3 ==
+                            0) { // 33% chance for spread enemy
+                            _enemies.push_back(
+                                _enemyManager.spawnEnemyLevel2Spread());
                         } else {
-                            _enemies.push_back(_enemyManager.spawnEnemyLevel2());
+                            _enemies.push_back(
+                                _enemyManager.spawnEnemyLevel2());
                         }
                     }
                 }
@@ -442,13 +459,16 @@ void Game::update(float dt) {
             _powerupSpawnTimer = 0.f;
             // Spawn powerup at random Y position on right side of screen
             render::Vector2u window_size = _window.getSize();
-            float random_y = static_cast<float>(std::rand() % (window_size.y - 100) + 50);
+            float random_y =
+                static_cast<float>(std::rand() % (window_size.y - 100) + 50);
 
             // Randomly choose between shield and spread powerup
             if (std::rand() % 2 == 0) {
-                _powerupManager.spawnShieldPowerup(static_cast<float>(window_size.x) - 50.0f, random_y);
+                _powerupManager.spawnShieldPowerup(
+                    static_cast<float>(window_size.x) - 50.0f, random_y);
             } else {
-                _powerupManager.spawnSpreadPowerup(static_cast<float>(window_size.x) - 50.0f, random_y);
+                _powerupManager.spawnSpreadPowerup(
+                    static_cast<float>(window_size.x) - 50.0f, random_y);
             }
         }
     }
@@ -526,8 +546,9 @@ void Game::renderPlayerInfo(entity player_entity) {
         // Display HP
         auto hp_text = _window.createText();
         hp_text->setFont(*_scoreFont);
-        hp_text->setString("HP " + std::to_string(healths[player_entity]->current_hp) + "/" +
-                           std::to_string(healths[player_entity]->max_hp));
+        hp_text->setString(
+            "HP " + std::to_string(healths[player_entity]->current_hp) + "/" +
+            std::to_string(healths[player_entity]->max_hp));
         hp_text->setCharacterSize(24);
         hp_text->setFillColor(render::Color::White());
         hp_text->setPosition(20, 20);
@@ -538,10 +559,13 @@ void Game::renderPlayerInfo(entity player_entity) {
             if (shields[player_entity]->current_shield > 0) {
                 auto sh_text = _window.createText();
                 sh_text->setFont(*_scoreFont);
-                sh_text->setString("Shield " + std::to_string(shields[player_entity]->current_shield) +
-                                   "/" + std::to_string(shields[player_entity]->max_shield));
+                sh_text->setString(
+                    "Shield " +
+                    std::to_string(shields[player_entity]->current_shield) +
+                    "/" + std::to_string(shields[player_entity]->max_shield));
                 sh_text->setCharacterSize(24);
-                sh_text->setFillColor(render::Color(100, 150, 255)); // Light blue for shield
+                sh_text->setFillColor(
+                    render::Color(100, 150, 255)); // Light blue for shield
                 sh_text->setPosition(20, 50);
                 _window.draw(*sh_text);
             }
@@ -607,7 +631,8 @@ void Game::setLevel(int level) {
     // Reload background for the new level
     if (_background) {
         auto &backgrounds = _registry.get_components<component::background>();
-        if (_background.value() < backgrounds.size() && backgrounds[*_background]) {
+        if (_background.value() < backgrounds.size() &&
+            backgrounds[*_background]) {
             auto &bg_component = backgrounds[*_background];
             bg_component->texture = _window.createTexture();
 
@@ -624,7 +649,8 @@ void Game::setLevel(int level) {
                 fallback_image->create(800, 600, render::Color(20, 20, 80));
                 bg_component->texture->loadFromImage(*fallback_image);
             }
-            std::cout << "[Game] Background loaded: " << backgroundFile << std::endl;
+            std::cout << "[Game] Background loaded: " << backgroundFile
+                      << std::endl;
         }
     }
 }

@@ -10,8 +10,9 @@
 
 namespace systems {
 
-static const char *ENEMY_TAGS[] = {"enemy", "enemy_zigzag", "enemy_spread",
-                                   "enemy_level2", "enemy_spread_level2", "boss"};
+static const char *ENEMY_TAGS[] = {
+    "enemy",        "enemy_zigzag",        "enemy_spread",
+    "enemy_level2", "enemy_spread_level2", "boss"};
 
 static const size_t ENEMY_TAGS_COUNT =
     sizeof(ENEMY_TAGS) / sizeof(ENEMY_TAGS[0]);
@@ -34,16 +35,16 @@ static const size_t EXPLOSION_FRAMES_COUNT =
 
 void create_explosion(registry &r, float x, float y) {
     entity explosion_entity = r.spawn_entity();
-    r.add_component<component::position>(
-        explosion_entity,
-        component::position(x, y));
+    r.add_component<component::position>(explosion_entity,
+                                         component::position(x, y));
     r.add_component<component::drawable>(
         explosion_entity,
         component::drawable("assets/sprites/r-typesheet1.gif",
                             EXPLOSION_FRAMES[0], 2.0f, "explosion"));
 
-    std::optional<component::animation> &anim = r.add_component<component::animation>(
-        explosion_entity, component::animation(0.1f, false, true));
+    std::optional<component::animation> &anim =
+        r.add_component<component::animation>(
+            explosion_entity, component::animation(0.1f, false, true));
     for (size_t i = 0; i < EXPLOSION_FRAMES_COUNT; ++i) {
         anim->frames.push_back(EXPLOSION_FRAMES[i]);
     }

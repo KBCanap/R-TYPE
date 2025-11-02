@@ -53,28 +53,32 @@ entity EnemyManager::spawnEnemy() {
 
     component::ai_movement_pattern movement_pattern;
     if (movement_type == "wave")
-        movement_pattern = component::ai_movement_pattern::wave(amplitude, frequency, speed);
+        movement_pattern =
+            component::ai_movement_pattern::wave(amplitude, frequency, speed);
     else if (movement_type == "zigzag")
-        movement_pattern = component::ai_movement_pattern::zigzag(amplitude, frequency, speed);
+        movement_pattern =
+            component::ai_movement_pattern::zigzag(amplitude, frequency, speed);
     else if (movement_type == "sine_wave")
-        movement_pattern = component::ai_movement_pattern::sine_wave(amplitude, frequency, speed);
+        movement_pattern = component::ai_movement_pattern::sine_wave(
+            amplitude, frequency, speed);
     else
         movement_pattern = component::ai_movement_pattern::straight(speed);
 
     auto enemy = _registry.spawn_entity();
     render::Vector2u window_size = _window.getSize();
-    float spawn_y = (0.16f + (rand() % 68) / 100.0f) * static_cast<float>(window_size.y);
+    float spawn_y =
+        (0.16f + (rand() % 68) / 100.0f) * static_cast<float>(window_size.y);
     float spawn_x = static_cast<float>(window_size.x);
 
     component::weapon weapon_config;
-        if (weapon_type == "spread")
-            weapon_config = createEnemySpreadWeapon();
-        else if (weapon_type == "burst")
-            weapon_config = createEnemyBurstWeapon();
-        else if (weapon_type == "wave")
-            weapon_config = createEnemyWaveWeapon();
-        else
-            weapon_config = createEnemySingleWeapon();
+    if (weapon_type == "spread")
+        weapon_config = createEnemySpreadWeapon();
+    else if (weapon_type == "burst")
+        weapon_config = createEnemyBurstWeapon();
+    else if (weapon_type == "wave")
+        weapon_config = createEnemyWaveWeapon();
+    else
+        weapon_config = createEnemySingleWeapon();
 
     if (weapon_type == "spread") {
         _registry.add_component<component::drawable>(
@@ -87,11 +91,14 @@ entity EnemyManager::spawnEnemy() {
                                        render::IntRect(), 1.0f, "enemy"));
     }
 
-    _registry.add_component<component::position>(enemy, component::position(spawn_x, spawn_y));
-    _registry.add_component<component::velocity>(enemy, component::velocity(0.f, 0.f));
+    _registry.add_component<component::position>(
+        enemy, component::position(spawn_x, spawn_y));
+    _registry.add_component<component::velocity>(enemy,
+                                                 component::velocity(0.f, 0.f));
     _registry.add_component<component::weapon>(enemy, std::move(weapon_config));
     _registry.add_component<component::health>(enemy, component::health(25));
-    _registry.add_component<component::ai_input>(enemy, component::ai_input(true, 1.0f, movement_pattern));
+    _registry.add_component<component::ai_input>(
+        enemy, component::ai_input(true, 1.0f, movement_pattern));
     auto &anim = _registry.add_component<component::animation>(
         enemy, component::animation(0.5f, true));
     if (weapon_type == "spread") {
@@ -133,9 +140,9 @@ entity EnemyManager::spawnEnemyLevel2() {
     // Frame dimensions: 22x23 pixels
     // 8 frames with 10px spacing between each frame
     _registry.add_component<component::drawable>(
-        enemy,
-        component::drawable("assets/sprites/r-typesheet5.gif",
-                            render::IntRect(6, 6, 22, 23), 2.0f, "enemy_level2"));
+        enemy, component::drawable("assets/sprites/r-typesheet5.gif",
+                                   render::IntRect(6, 6, 22, 23), 2.0f,
+                                   "enemy_level2"));
 
     // Level 2 enemies fire in wave pattern
     component::weapon enemy_weapon_config = createEnemyWaveWeapon();
@@ -169,7 +176,8 @@ entity EnemyManager::spawnEnemyLevel2() {
 
     for (int i = 0; i < 8; ++i) {
         int x_pos = start_x + i * (frame_width + spacing);
-        anim->frames.push_back(render::IntRect(x_pos, start_y, frame_width, frame_height));
+        anim->frames.push_back(
+            render::IntRect(x_pos, start_y, frame_width, frame_height));
     }
 
     return enemy;
@@ -192,9 +200,9 @@ entity EnemyManager::spawnEnemyLevel2Spread() {
     // Frame 2: x=34 to x=66 (width=32)
     // Frame 3: x=66 to x=99 (width=33)
     _registry.add_component<component::drawable>(
-        enemy,
-        component::drawable("assets/sprites/r-typesheet11.gif",
-                            render::IntRect(0, 0, 34, 31), 2.0f, "enemy_spread_level2"));
+        enemy, component::drawable("assets/sprites/r-typesheet11.gif",
+                                   render::IntRect(0, 0, 34, 31), 2.0f,
+                                   "enemy_spread_level2"));
 
     // Create spread weapon (3 projectiles with 20 degree spread)
     component::weapon spread_weapon = createEnemySpreadWeapon();
@@ -283,7 +291,7 @@ component::weapon EnemyManager::createEnemySpreadWeapon() {
 
 component::weapon EnemyManager::createEnemyWaveWeapon() {
     return component::weapon(1.2f, false, 1, 0.0f,
-                             component::projectile_pattern::wave(60.0f, 0.015f), 25.0f,
-                             200.0f, 5.0f, false, 1, false, 3, 0.1f,
+                             component::projectile_pattern::wave(60.0f, 0.015f),
+                             25.0f, 200.0f, 5.0f, false, 1, false, 3, 0.1f,
                              render::IntRect(249, 103, 16, 12));
 }

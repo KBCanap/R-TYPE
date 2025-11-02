@@ -15,11 +15,9 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <sys/types.h>
 #include <unordered_map>
 #include <vector>
-#include <sys/types.h>
-
-
 
 // Structure to track running game instances
 struct GameInstance {
@@ -29,13 +27,14 @@ struct GameInstance {
     uint16_t udp_port;
     uint32_t server_ip;
     std::vector<ClientId> player_ids;
-    
-    GameInstance() : lobby_id(0), server_id(0), process_id(0), 
-                     udp_port(0), server_ip(0) {}
-    
-    GameInstance(uint16_t lid, uint16_t sid, pid_t pid, uint16_t port, uint32_t ip)
-        : lobby_id(lid), server_id(sid), process_id(pid), 
-          udp_port(port), server_ip(ip) {}
+
+    GameInstance()
+        : lobby_id(0), server_id(0), process_id(0), udp_port(0), server_ip(0) {}
+
+    GameInstance(uint16_t lid, uint16_t sid, pid_t pid, uint16_t port,
+                 uint32_t ip)
+        : lobby_id(lid), server_id(sid), process_id(pid), udp_port(port),
+          server_ip(ip) {}
 };
 
 class StartServer {
@@ -53,57 +52,61 @@ class StartServer {
     int _tcp_port;
     int _base_udp_port;
     uint16_t _next_server_id;
-    
+
     // Server components
     std::unique_ptr<TCPServer> _tcp_server;
     Protocol _protocol;
     GameSession _game_session;
-    
+
     // Running state
     std::atomic<bool> _running{true};
-    
+
     // Game instance tracking
-    std::unordered_map<uint16_t, GameInstance> _game_instances; // lobby_id -> GameInstance
-    std::unordered_map<uint16_t, uint16_t> _udp_port_allocations; // udp_port -> lobby_id
-    
+    std::unordered_map<uint16_t, GameInstance>
+        _game_instances; // lobby_id -> GameInstance
+    std::unordered_map<uint16_t, uint16_t>
+        _udp_port_allocations; // udp_port -> lobby_id
+
     // Signal handling
     static StartServer *_instance;
     static void signalHandler(int signal);
     static void childSignalHandler(int signal);
     void setupSignalHandlers();
-    
+
     // Main loop
     void lobbyLoop();
     void processMessage(const ClientMessage &message);
-    
+
     // Message handlers - Connection
     void handleConnect(uint32_t client_id, const std::vector<uint8_t> &data);
-    
+
     // Message handlers - Lobby Navigation
     void handleLobbyListRequest(uint32_t client_id);
-    void handleLobbyInfoRequest(uint32_t client_id, const std::vector<uint8_t> &data);
-    
+    void handleLobbyInfoRequest(uint32_t client_id,
+                                const std::vector<uint8_t> &data);
+
     // Message handlers - Lobby Management
-    void handleCreateLobby(uint32_t client_id, const std::vector<uint8_t> &data);
+    void handleCreateLobby(uint32_t client_id,
+                           const std::vector<uint8_t> &data);
     void handleJoinLobby(uint32_t client_id, const std::vector<uint8_t> &data);
     void handleLeaveLobby(uint32_t client_id);
-    
+
     // Message handlers - Game Flow
     void handleReady(uint32_t client_id);
-    
+
     // Game instance management
     uint16_t allocateUdpPort();
     void freeUdpPort(uint16_t port);
     bool startGameInstance(uint16_t lobby_id);
     void cleanupFinishedGames();
-    
+
     // Broadcasting
-    void broadcastToLobby(uint16_t lobby_id, const std::string &message, 
+    void broadcastToLobby(uint16_t lobby_id, const std::string &message,
                           std::optional<ClientId> exclude = std::nullopt);
-    
+
     // Client management
     void handleClientDisconnect(uint32_t client_id);
-    
+
     // Utilities
     bool sendToClient(uint32_t client_id, const std::string &message);
     void sendError(uint32_t client_id, ProtocolError error);

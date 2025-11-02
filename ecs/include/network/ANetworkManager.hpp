@@ -44,8 +44,9 @@ class ANetworkManager : public INetwork {
      */
     virtual ~ANetworkManager();
 
-    ConnectionResult connectTCP(const std::string &host, uint16_t port,
-                                const std::string &username = "Player") override;
+    ConnectionResult
+    connectTCP(const std::string &host, uint16_t port,
+               const std::string &username = "Player") override;
     void disconnect() override;
     ConnectionState getConnectionState() const override;
     bool isConnected() const override;

@@ -7,8 +7,8 @@
 
 #include "../../include/systems.hpp"
 #include "../include/render/IRenderWindow.hpp"
-#include <vector>
 #include "algorithm"
+#include <vector>
 
 namespace systems {
 
@@ -16,8 +16,10 @@ void projectile_system(registry &r,
                        sparse_array<component::projectile> &projectiles,
                        sparse_array<component::position> &positions,
                        render::IRenderWindow &window, float dt) {
-    sparse_array<component::velocity> &velocities = r.get_components<component::velocity>();
-    sparse_array<component::projectile_behavior> &behaviors = r.get_components<component::projectile_behavior>();
+    sparse_array<component::velocity> &velocities =
+        r.get_components<component::velocity>();
+    sparse_array<component::projectile_behavior> &behaviors =
+        r.get_components<component::projectile_behavior>();
     std::vector<size_t> entities_to_kill;
     render::Vector2u window_size = window.getSize();
 
@@ -33,15 +35,17 @@ void projectile_system(registry &r,
         std::optional<component::velocity> &vel = velocities[i];
 
         bool valid = projectile && pos && vel;
-        if (!valid) continue;
+        if (!valid)
+            continue;
 
         projectile->age += dt;
 
         // Compute all death conditions upfront
         bool expired = (projectile->age >= projectile->lifetime);
-        bool piercing_exhausted = projectile->piercing && (projectile->hits >= projectile->max_hits);
+        bool piercing_exhausted =
+            projectile->piercing && (projectile->hits >= projectile->max_hits);
         bool out_of_bounds = (pos->x < BOUNDARY_MARGIN) | (pos->x > max_x) |
-                            (pos->y < BOUNDARY_MARGIN) | (pos->y > max_y);
+                             (pos->y < BOUNDARY_MARGIN) | (pos->y > max_y);
 
         bool should_die = expired | piercing_exhausted | out_of_bounds;
 

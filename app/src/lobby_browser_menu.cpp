@@ -65,7 +65,8 @@ void LobbyBrowserMenu::createUI() {
     _statusText->setFillColor(
         settings.applyColorblindFilter(render::Color(255, 200, 100)));
 
-    _createLobbyButton = _window.createRectangleShape(render::Vector2f(250, 60));
+    _createLobbyButton =
+        _window.createRectangleShape(render::Vector2f(250, 60));
     _createLobbyButton->setFillColor(render::Color(70, 150, 220));
     _createLobbyButton->setOutlineColor(
         settings.applyColorblindFilter(render::Color::White()));
@@ -105,7 +106,8 @@ void LobbyBrowserMenu::createUI() {
         settings.applyColorblindFilter(render::Color::White()));
 
     // Create dialog UI elements
-    _dialogBackground = _window.createRectangleShape(render::Vector2f(600, 400));
+    _dialogBackground =
+        _window.createRectangleShape(render::Vector2f(600, 400));
     _dialogBackground->setFillColor(render::Color(30, 30, 50, 240));
     _dialogBackground->setOutlineColor(
         settings.applyColorblindFilter(render::Color::White()));
@@ -125,7 +127,8 @@ void LobbyBrowserMenu::createUI() {
     _lobbyNameLabel->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
 
-    _lobbyNameInputBox = _window.createRectangleShape(render::Vector2f(400, 50));
+    _lobbyNameInputBox =
+        _window.createRectangleShape(render::Vector2f(400, 50));
     _lobbyNameInputBox->setFillColor(render::Color(40, 40, 40));
     _lobbyNameInputBox->setOutlineColor(
         settings.applyColorblindFilter(render::Color::White()));
@@ -152,7 +155,8 @@ void LobbyBrowserMenu::createUI() {
     _maxPlayersText->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
 
-    _decreasePlayersButton = _window.createRectangleShape(render::Vector2f(50, 50));
+    _decreasePlayersButton =
+        _window.createRectangleShape(render::Vector2f(50, 50));
     _decreasePlayersButton->setFillColor(render::Color(180, 70, 70));
     _decreasePlayersButton->setOutlineColor(
         settings.applyColorblindFilter(render::Color::White()));
@@ -165,7 +169,8 @@ void LobbyBrowserMenu::createUI() {
     _decreasePlayersButtonText->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
 
-    _increasePlayersButton = _window.createRectangleShape(render::Vector2f(50, 50));
+    _increasePlayersButton =
+        _window.createRectangleShape(render::Vector2f(50, 50));
     _increasePlayersButton->setFillColor(render::Color(70, 180, 70));
     _increasePlayersButton->setOutlineColor(
         settings.applyColorblindFilter(render::Color::White()));
@@ -227,8 +232,8 @@ void LobbyBrowserMenu::updateButtonScale() {
 
     _refreshButton->setPosition(centerX - 125, buttonY);
     render::FloatRect refreshBounds = _refreshButtonText->getLocalBounds();
-    _refreshButtonText->setPosition(centerX - 125 + 125 - refreshBounds.width / 2,
-                                    buttonY + 18);
+    _refreshButtonText->setPosition(
+        centerX - 125 + 125 - refreshBounds.width / 2, buttonY + 18);
 
     _backButton->setPosition(centerX + 130, buttonY);
     render::FloatRect backBounds = _backButtonText->getLocalBounds();
@@ -240,7 +245,8 @@ void LobbyBrowserMenu::updateButtonScale() {
     float lobbySpacing = 70;
 
     for (size_t i = 0; i < _lobbyTexts.size(); ++i) {
-        float yPos = lobbyStartY + i * lobbySpacing - _scrollOffset * lobbySpacing;
+        float yPos =
+            lobbyStartY + i * lobbySpacing - _scrollOffset * lobbySpacing;
         _lobbyTexts[i]->setPosition(centerX - 350, yPos);
 
         if (i < _lobbyJoinButtons.size()) {
@@ -254,23 +260,25 @@ void LobbyBrowserMenu::updateButtonScale() {
 
     // Dialog positioning
     _dialogBackground->setPosition(centerX - 300, centerY - 200);
-    
+
     render::FloatRect dialogTitleBounds = _dialogTitle->getLocalBounds();
-    _dialogTitle->setPosition(centerX - dialogTitleBounds.width / 2, centerY - 170);
+    _dialogTitle->setPosition(centerX - dialogTitleBounds.width / 2,
+                              centerY - 170);
 
     _lobbyNameLabel->setPosition(centerX - 200, centerY - 100);
     _lobbyNameInputBox->setPosition(centerX - 200, centerY - 65);
     _lobbyNameInputText->setPosition(centerX - 190, centerY - 55);
 
     _maxPlayersLabel->setPosition(centerX - 200, centerY + 10);
-    
+
     _decreasePlayersButton->setPosition(centerX - 100, centerY + 50);
     render::FloatRect decBounds = _decreasePlayersButtonText->getLocalBounds();
     _decreasePlayersButtonText->setPosition(
         centerX - 100 + 25 - decBounds.width / 2, centerY + 55);
 
     render::FloatRect maxPlayersBounds = _maxPlayersText->getLocalBounds();
-    _maxPlayersText->setPosition(centerX - maxPlayersBounds.width / 2, centerY + 58);
+    _maxPlayersText->setPosition(centerX - maxPlayersBounds.width / 2,
+                                 centerY + 58);
 
     _increasePlayersButton->setPosition(centerX + 50, centerY + 50);
     render::FloatRect incBounds = _increasePlayersButtonText->getLocalBounds();
@@ -284,8 +292,8 @@ void LobbyBrowserMenu::updateButtonScale() {
 
     _cancelButton->setPosition(centerX + 20, centerY + 120);
     render::FloatRect cancelBounds = _cancelButtonText->getLocalBounds();
-    _cancelButtonText->setPosition(
-        centerX + 20 + 90 - cancelBounds.width / 2, centerY + 137);
+    _cancelButtonText->setPosition(centerX + 20 + 90 - cancelBounds.width / 2,
+                                   centerY + 137);
 
     float scaleX = static_cast<float>(_windowSize.x) / _bgTexture->getSize().x;
     float scaleY = static_cast<float>(_windowSize.y) / _bgTexture->getSize().y;
@@ -297,8 +305,8 @@ void LobbyBrowserMenu::updateButtonScale() {
 
 void LobbyBrowserMenu::requestLobbyList() {
     std::cout << "[LobbyBrowser] Requesting lobby list..." << std::endl;
-    bool success = _networkManager.sendTCP(
-        network::MessageType::LOBBY_LIST_REQUEST, {});
+    bool success =
+        _networkManager.sendTCP(network::MessageType::LOBBY_LIST_REQUEST, {});
 
     if (!success) {
         std::cerr << "[LobbyBrowser] Failed to send LOBBY_LIST_REQUEST!"
@@ -333,8 +341,9 @@ void LobbyBrowserMenu::createLobby() {
         return;
     }
 
-    std::cout << "[LobbyBrowser] Creating lobby: " << _newLobbyName 
-              << " (max " << static_cast<int>(_newLobbyMaxPlayers) << " players)" << std::endl;
+    std::cout << "[LobbyBrowser] Creating lobby: " << _newLobbyName << " (max "
+              << static_cast<int>(_newLobbyMaxPlayers) << " players)"
+              << std::endl;
 
     std::vector<uint8_t> data;
     data.push_back(static_cast<uint8_t>(_newLobbyMaxPlayers));
@@ -373,7 +382,8 @@ void LobbyBrowserMenu::joinLobby(uint16_t lobby_id) {
     data.push_back(static_cast<uint8_t>((lobby_id >> 8) & 0xFF));
     data.push_back(static_cast<uint8_t>(lobby_id & 0xFF));
 
-    bool success = _networkManager.sendTCP(network::MessageType::JOIN_LOBBY, data);
+    bool success =
+        _networkManager.sendTCP(network::MessageType::JOIN_LOBBY, data);
 
     if (!success) {
         std::cerr << "[LobbyBrowser] Failed to send JOIN_LOBBY!" << std::endl;
@@ -391,7 +401,8 @@ void LobbyBrowserMenu::handleNetworkMessages() {
     auto tcpMessages = _networkManager.pollTCP();
     for (const auto &msg : tcpMessages) {
         if (msg.msg_type == network::MessageType::LOBBY_LIST_RESPONSE) {
-            std::cout << "[LobbyBrowser] Received LOBBY_LIST_RESPONSE" << std::endl;
+            std::cout << "[LobbyBrowser] Received LOBBY_LIST_RESPONSE"
+                      << std::endl;
 
             // Parse lobby count (2 bytes)
             if (msg.data.size() >= 2) {
@@ -411,8 +422,9 @@ void LobbyBrowserMenu::handleNetworkMessages() {
                         break;
 
                     LobbyDisplayInfo lobby;
-                    lobby.lobby_id = (static_cast<uint16_t>(msg.data[offset]) << 8) |
-                                     msg.data[offset + 1];
+                    lobby.lobby_id =
+                        (static_cast<uint16_t>(msg.data[offset]) << 8) |
+                        msg.data[offset + 1];
                     lobby.player_count = msg.data[offset + 2];
                     lobby.max_players = msg.data[offset + 3];
 
@@ -426,11 +438,12 @@ void LobbyBrowserMenu::handleNetworkMessages() {
                         break;
 
                     // Read actual name bytes (up to nameLen)
-                    std::string actualName(msg.data.begin() + offset,
-                                          msg.data.begin() + offset + 
-                                          std::min(static_cast<size_t>(nameLen), size_t(32)));
+                    std::string actualName(
+                        msg.data.begin() + offset,
+                        msg.data.begin() + offset +
+                            std::min(static_cast<size_t>(nameLen), size_t(32)));
                     lobby.lobby_name = actualName;
-                    
+
                     offset += 32; // Fixed size for lobby name in protocol
 
                     if (offset >= msg.data.size())
@@ -445,35 +458,44 @@ void LobbyBrowserMenu::handleNetworkMessages() {
                     Settings &settings = Settings::getInstance();
                     auto lobbyText = _window.createText();
                     lobbyText->setFont(*_font);
-                    
+
                     std::string statusStr = "";
-                    if (lobby.status == 0) statusStr = "[WAITING]";
-                    else if (lobby.status == 1) statusStr = "[READY]";
-                    else if (lobby.status == 2) statusStr = "[IN GAME]";
-                    
-                    std::string displayText = lobby.lobby_name + " " + statusStr + 
-                                              " [" + std::to_string(lobby.player_count) +
-                                              "/" + std::to_string(lobby.max_players) + "]";
+                    if (lobby.status == 0)
+                        statusStr = "[WAITING]";
+                    else if (lobby.status == 1)
+                        statusStr = "[READY]";
+                    else if (lobby.status == 2)
+                        statusStr = "[IN GAME]";
+
+                    std::string displayText =
+                        lobby.lobby_name + " " + statusStr + " [" +
+                        std::to_string(lobby.player_count) + "/" +
+                        std::to_string(lobby.max_players) + "]";
                     lobbyText->setString(displayText);
                     lobbyText->setCharacterSize(24);
-                    
+
                     // Color based on status
                     render::Color textColor = render::Color::White();
-                    if (lobby.status == 2 || lobby.player_count >= lobby.max_players) {
-                        textColor = render::Color(150, 150, 150); // Gray for full/in game
+                    if (lobby.status == 2 ||
+                        lobby.player_count >= lobby.max_players) {
+                        textColor = render::Color(150, 150,
+                                                  150); // Gray for full/in game
                     }
-                    
-                    lobbyText->setFillColor(settings.applyColorblindFilter(textColor));
+
+                    lobbyText->setFillColor(
+                        settings.applyColorblindFilter(textColor));
                     _lobbyTexts.push_back(std::move(lobbyText));
 
                     // Create join button for this lobby
                     auto joinButton =
                         _window.createRectangleShape(render::Vector2f(150, 50));
-                    
+
                     // Disable button if lobby is full or in game
-                    bool canJoin = (lobby.status != 2 && lobby.player_count < lobby.max_players);
-                    joinButton->setFillColor(canJoin ? render::Color(70, 180, 70) : 
-                                                       render::Color(100, 100, 100));
+                    bool canJoin = (lobby.status != 2 &&
+                                    lobby.player_count < lobby.max_players);
+                    joinButton->setFillColor(
+                        canJoin ? render::Color(70, 180, 70)
+                                : render::Color(100, 100, 100));
                     joinButton->setOutlineColor(
                         settings.applyColorblindFilter(render::Color::White()));
                     joinButton->setOutlineThickness(2);
@@ -488,11 +510,13 @@ void LobbyBrowserMenu::handleNetworkMessages() {
                     _lobbyJoinButtonTexts.push_back(std::move(joinButtonText));
                 }
 
-                _statusText->setString(lobbyCount > 0 ? "" : "No lobbies available. Create one!");
+                _statusText->setString(
+                    lobbyCount > 0 ? "" : "No lobbies available. Create one!");
                 updateButtonScale();
             }
         } else if (msg.msg_type == network::MessageType::CREATE_LOBBY_ACK) {
-            std::cout << "[LobbyBrowser] Received CREATE_LOBBY_ACK" << std::endl;
+            std::cout << "[LobbyBrowser] Received CREATE_LOBBY_ACK"
+                      << std::endl;
             if (msg.data.size() >= 2) {
                 uint16_t lobbyId =
                     (static_cast<uint16_t>(msg.data[0]) << 8) | msg.data[1];
@@ -501,7 +525,8 @@ void LobbyBrowserMenu::handleNetworkMessages() {
                 // When we create a lobby, we are automatically in it
                 _waitingForJoinAck = false;
                 _joinedSuccessfully = true;
-                _statusText->setString("Lobby created! You are now in the lobby.");
+                _statusText->setString(
+                    "Lobby created! You are now in the lobby.");
             }
         } else if (msg.msg_type == network::MessageType::JOIN_LOBBY_ACK) {
             std::cout << "[LobbyBrowser] Received JOIN_LOBBY_ACK" << std::endl;
@@ -515,27 +540,27 @@ void LobbyBrowserMenu::handleNetworkMessages() {
                 uint8_t errorCode = msg.data[0];
                 std::cerr << "[LobbyBrowser] Error code: "
                           << static_cast<int>(errorCode) << std::endl;
-                
+
                 // Handle specific error codes
                 switch (errorCode) {
-                    case 0x01:
-                        _errorMessage = "Lobby is full!";
-                        break;
-                    case 0x02:
-                        _errorMessage = "Lobby not found!";
-                        break;
-                    case 0x03:
-                        _errorMessage = "Game already started!";
-                        break;
-                    case 0x04:
-                        _errorMessage = "Invalid username!";
-                        break;
-                    case 0x0A:
-                        _errorMessage = "Already in a lobby!";
-                        break;
-                    default:
-                        _errorMessage = "Server error occurred!";
-                        break;
+                case 0x01:
+                    _errorMessage = "Lobby is full!";
+                    break;
+                case 0x02:
+                    _errorMessage = "Lobby not found!";
+                    break;
+                case 0x03:
+                    _errorMessage = "Game already started!";
+                    break;
+                case 0x04:
+                    _errorMessage = "Invalid username!";
+                    break;
+                case 0x0A:
+                    _errorMessage = "Already in a lobby!";
+                    break;
+                default:
+                    _errorMessage = "Server error occurred!";
+                    break;
                 }
                 _errorMessageTime = std::chrono::steady_clock::now();
                 _statusText->setString(_errorMessage);
@@ -558,7 +583,7 @@ void LobbyBrowserMenu::handleNetworkMessages() {
 void LobbyBrowserMenu::updateCreateLobbyDialog() {
     _maxPlayersText->setString(std::to_string(_newLobbyMaxPlayers));
     _lobbyNameInputText->setString(_newLobbyName);
-    
+
     // Update outline based on typing state
     if (_isTypingLobbyName) {
         _lobbyNameInputBox->setOutlineThickness(3);
@@ -592,17 +617,19 @@ void LobbyBrowserMenu::render() {
     _window.draw(*_bgSprite2);
 
     _window.draw(*_titleText);
-    
+
     // Show status or error message
     auto now = std::chrono::steady_clock::now();
     if (!_errorMessage.empty() &&
-        std::chrono::duration_cast<std::chrono::seconds>(now - _errorMessageTime).count() < 5) {
+        std::chrono::duration_cast<std::chrono::seconds>(now -
+                                                         _errorMessageTime)
+                .count() < 5) {
         _statusText->setString(_errorMessage);
         _statusText->setFillColor(render::Color(255, 100, 100));
     } else if (_errorMessage.empty()) {
         _statusText->setFillColor(render::Color(255, 200, 100));
     }
-    
+
     _window.draw(*_statusText);
 
     _window.draw(*_createLobbyButton);
@@ -617,7 +644,8 @@ void LobbyBrowserMenu::render() {
     float lobbySpacing = 70;
 
     for (size_t i = 0; i < _lobbyTexts.size(); ++i) {
-        float yPos = lobbyStartY + i * lobbySpacing - _scrollOffset * lobbySpacing;
+        float yPos =
+            lobbyStartY + i * lobbySpacing - _scrollOffset * lobbySpacing;
         if (yPos >= 180 && yPos <= _windowSize.y - 50) {
             _window.draw(*_lobbyTexts[i]);
             if (i < _lobbyJoinButtons.size()) {
@@ -648,8 +676,9 @@ LobbyBrowserResult LobbyBrowserMenu::run() {
 
         // Check if we successfully joined a lobby
         if (_joinedSuccessfully) {
-            std::cout << "[LobbyBrowser] Successfully joined lobby, transitioning..."
-                      << std::endl;
+            std::cout
+                << "[LobbyBrowser] Successfully joined lobby, transitioning..."
+                << std::endl;
             return LobbyBrowserResult::JoinedLobby;
         }
 
@@ -686,10 +715,11 @@ LobbyBrowserResult LobbyBrowserMenu::run() {
 
                     if (_showCreateDialog) {
                         // Handle dialog interactions
-                        
+
                         // Check if lobby name input box is clicked
-                        if (mouseX >= centerX - 200 && mouseX <= centerX + 200 &&
-                            mouseY >= centerY - 65 && mouseY <= centerY - 15) {
+                        if (mouseX >= centerX - 200 &&
+                            mouseX <= centerX + 200 && mouseY >= centerY - 65 &&
+                            mouseY <= centerY - 15) {
                             _isTypingLobbyName = true;
                             updateCreateLobbyDialog();
                         } else {
@@ -717,34 +747,41 @@ LobbyBrowserResult LobbyBrowserMenu::run() {
 
                         // Confirm button
                         if (mouseX >= centerX - 200 && mouseX <= centerX - 20 &&
-                            mouseY >= centerY + 120 && mouseY <= centerY + 180) {
+                            mouseY >= centerY + 120 &&
+                            mouseY <= centerY + 180) {
                             createLobby();
                         }
 
                         // Cancel button
                         if (mouseX >= centerX + 20 && mouseX <= centerX + 200 &&
-                            mouseY >= centerY + 120 && mouseY <= centerY + 180) {
+                            mouseY >= centerY + 120 &&
+                            mouseY <= centerY + 180) {
                             _showCreateDialog = false;
                         }
                     } else {
                         // Main menu interactions
-                        
+
                         // Create Lobby button
-                        if (mouseX >= centerX - 380 && mouseX <= centerX - 130 &&
-                            mouseY >= 110 && mouseY <= 170) {
+                        if (mouseX >= centerX - 380 &&
+                            mouseX <= centerX - 130 && mouseY >= 110 &&
+                            mouseY <= 170) {
                             showCreateLobbyDialog();
                         }
 
                         // Refresh button
-                        if (mouseX >= centerX - 125 && mouseX <= centerX + 125 &&
-                            mouseY >= 110 && mouseY <= 170) {
+                        if (mouseX >= centerX - 125 &&
+                            mouseX <= centerX + 125 && mouseY >= 110 &&
+                            mouseY <= 170) {
                             requestLobbyList();
                         }
 
                         // Back button - disconnect and return to menu
-                        if (mouseX >= centerX + 130 && mouseX <= centerX + 380 &&
-                            mouseY >= 110 && mouseY <= 170) {
-                            std::cout << "[LobbyBrowser] Disconnecting from server..." << std::endl;
+                        if (mouseX >= centerX + 130 &&
+                            mouseX <= centerX + 380 && mouseY >= 110 &&
+                            mouseY <= 170) {
+                            std::cout
+                                << "[LobbyBrowser] Disconnecting from server..."
+                                << std::endl;
                             _networkManager.disconnect();
                             return LobbyBrowserResult::BackToMenu;
                         }
@@ -754,11 +791,12 @@ LobbyBrowserResult LobbyBrowserMenu::run() {
                             float yPos = 200 + i * 70 - _scrollOffset * 70;
                             if (yPos >= 180 && yPos <= _windowSize.y - 50) {
                                 if (mouseX >= centerX + 200 &&
-                                    mouseX <= centerX + 350 && mouseY >= yPos - 5 &&
-                                    mouseY <= yPos + 45) {
+                                    mouseX <= centerX + 350 &&
+                                    mouseY >= yPos - 5 && mouseY <= yPos + 45) {
                                     // Check if lobby is joinable
-                                    if (_lobbies[i].status != 2 && 
-                                        _lobbies[i].player_count < _lobbies[i].max_players) {
+                                    if (_lobbies[i].status != 2 &&
+                                        _lobbies[i].player_count <
+                                            _lobbies[i].max_players) {
                                         joinLobby(_lobbies[i].lobby_id);
                                     }
                                 }
@@ -772,7 +810,8 @@ LobbyBrowserResult LobbyBrowserMenu::run() {
                 if (_showCreateDialog) {
                     // Handle dialog keyboard input
                     if (_isTypingLobbyName) {
-                        if (event.key.code == render::Key::Backspace && !_newLobbyName.empty()) {
+                        if (event.key.code == render::Key::Backspace &&
+                            !_newLobbyName.empty()) {
                             _newLobbyName.pop_back();
                             updateCreateLobbyDialog();
                         } else if (event.key.code == render::Key::Enter) {
@@ -780,19 +819,26 @@ LobbyBrowserResult LobbyBrowserMenu::run() {
                         } else if (event.key.code == render::Key::Escape) {
                             _isTypingLobbyName = false;
                             updateCreateLobbyDialog();
-                        } else if (event.key.code >= render::Key::A && event.key.code <= render::Key::Z) {
+                        } else if (event.key.code >= render::Key::A &&
+                                   event.key.code <= render::Key::Z) {
                             if (_newLobbyName.length() < 32) {
-                                char c = 'A' + (static_cast<int>(event.key.code) - static_cast<int>(render::Key::A));
+                                char c =
+                                    'A' + (static_cast<int>(event.key.code) -
+                                           static_cast<int>(render::Key::A));
                                 _newLobbyName += c;
                                 updateCreateLobbyDialog();
                             }
-                        } else if (event.key.code >= render::Key::Num0 && event.key.code <= render::Key::Num9) {
+                        } else if (event.key.code >= render::Key::Num0 &&
+                                   event.key.code <= render::Key::Num9) {
                             if (_newLobbyName.length() < 32) {
-                                char c = '0' + (static_cast<int>(event.key.code) - static_cast<int>(render::Key::Num0));
+                                char c =
+                                    '0' + (static_cast<int>(event.key.code) -
+                                           static_cast<int>(render::Key::Num0));
                                 _newLobbyName += c;
                                 updateCreateLobbyDialog();
                             }
-                        } else if (event.key.code == render::Key::Space && _newLobbyName.length() < 32) {
+                        } else if (event.key.code == render::Key::Space &&
+                                   _newLobbyName.length() < 32) {
                             _newLobbyName += ' ';
                             updateCreateLobbyDialog();
                         }
@@ -802,10 +848,12 @@ LobbyBrowserResult LobbyBrowserMenu::run() {
                             _showCreateDialog = false;
                         } else if (event.key.code == render::Key::Enter) {
                             createLobby();
-                        } else if (event.key.code == render::Key::Left && _newLobbyMaxPlayers > 2) {
+                        } else if (event.key.code == render::Key::Left &&
+                                   _newLobbyMaxPlayers > 2) {
                             _newLobbyMaxPlayers--;
                             updateCreateLobbyDialog();
-                        } else if (event.key.code == render::Key::Right && _newLobbyMaxPlayers < 4) {
+                        } else if (event.key.code == render::Key::Right &&
+                                   _newLobbyMaxPlayers < 4) {
                             _newLobbyMaxPlayers++;
                             updateCreateLobbyDialog();
                         }
@@ -818,7 +866,8 @@ LobbyBrowserResult LobbyBrowserMenu::run() {
                     }
 
                     // Scroll with arrow keys
-                    if (event.key.code == render::Key::Up && _scrollOffset > 0) {
+                    if (event.key.code == render::Key::Up &&
+                        _scrollOffset > 0) {
                         _scrollOffset--;
                         updateButtonScale();
                     }
@@ -840,7 +889,6 @@ LobbyBrowserResult LobbyBrowserMenu::run() {
                     }
                 }
             }
-
         }
 
         render();

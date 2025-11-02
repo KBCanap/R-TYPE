@@ -26,7 +26,7 @@ class LevelSelectionMenu {
     void render();
     void updateButtonColors();
     bool isMouseOverButton(int buttonIndex,
-                            const render::Vector2f &mousePos) const;
+                           const render::Vector2f &mousePos) const;
 
     render::IRenderWindow &_window;
     AudioManager &_audioManager;

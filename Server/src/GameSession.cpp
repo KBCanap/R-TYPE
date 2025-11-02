@@ -269,8 +269,10 @@ std::vector<LobbyInfo> GameSession::getAllLobbies() const {
     lobbies.reserve(_lobbies.size());
 
     for (const auto &[id, lobby] : _lobbies) {
-        // Only include lobbies that are waiting or ready (not in-game or closing)
-        if (lobby.status == LobbyStatus::WAITING || lobby.status == LobbyStatus::READY) {
+        // Only include lobbies that are waiting or ready (not in-game or
+        // closing)
+        if (lobby.status == LobbyStatus::WAITING ||
+            lobby.status == LobbyStatus::READY) {
             lobbies.push_back(lobby.toLobbyInfo());
         }
     }
@@ -331,7 +333,8 @@ bool GameSession::canStartGame(uint16_t lobby_id) const {
     }
 
     // Lobby must not already be in game
-    if (lobby.status == LobbyStatus::IN_GAME || lobby.status == LobbyStatus::CLOSING) {
+    if (lobby.status == LobbyStatus::IN_GAME ||
+        lobby.status == LobbyStatus::CLOSING) {
         return false;
     }
 
@@ -354,22 +357,19 @@ bool GameSession::startGame(uint16_t lobby_id) {
     return true;
 }
 
-uint16_t GameSession::getNextLobbyId() {
-    return _next_lobby_id++;
-}
+uint16_t GameSession::getNextLobbyId() { return _next_lobby_id++; }
 
-std::optional<LobbyPlayer*> GameSession::findPlayerInLobby(uint16_t lobby_id, 
-                                                            ClientId client_id) {
+std::optional<LobbyPlayer *>
+GameSession::findPlayerInLobby(uint16_t lobby_id, ClientId client_id) {
     auto it = _lobbies.find(lobby_id);
     if (it == _lobbies.end()) {
         return std::nullopt;
     }
 
     Lobby &lobby = it->second;
-    auto player_it = std::find_if(lobby.players.begin(), lobby.players.end(),
-                                   [client_id](const LobbyPlayer &p) {
-                                       return p.client_id == client_id;
-                                   });
+    auto player_it = std::find_if(
+        lobby.players.begin(), lobby.players.end(),
+        [client_id](const LobbyPlayer &p) { return p.client_id == client_id; });
 
     if (player_it != lobby.players.end()) {
         return &(*player_it);
@@ -378,18 +378,17 @@ std::optional<LobbyPlayer*> GameSession::findPlayerInLobby(uint16_t lobby_id,
     return std::nullopt;
 }
 
-std::optional<const LobbyPlayer*> GameSession::findPlayerInLobby(uint16_t lobby_id,
-                                                                  ClientId client_id) const {
+std::optional<const LobbyPlayer *>
+GameSession::findPlayerInLobby(uint16_t lobby_id, ClientId client_id) const {
     auto it = _lobbies.find(lobby_id);
     if (it == _lobbies.end()) {
         return std::nullopt;
     }
 
     const Lobby &lobby = it->second;
-    auto player_it = std::find_if(lobby.players.begin(), lobby.players.end(),
-                                   [client_id](const LobbyPlayer &p) {
-                                       return p.client_id == client_id;
-                                   });
+    auto player_it = std::find_if(
+        lobby.players.begin(), lobby.players.end(),
+        [client_id](const LobbyPlayer &p) { return p.client_id == client_id; });
 
     if (player_it != lobby.players.end()) {
         return &(*player_it);

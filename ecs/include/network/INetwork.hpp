@@ -195,8 +195,9 @@ class INetwork {
      * @param username Player username (optional, defaults to "Player")
      * @return ConnectionResult with success status and player ID
      */
-    virtual ConnectionResult connectTCP(const std::string &host, uint16_t port,
-                                        const std::string &username = "Player") = 0;
+    virtual ConnectionResult
+    connectTCP(const std::string &host, uint16_t port,
+               const std::string &username = "Player") = 0;
 
     /**
      * @brief Disconnect from server

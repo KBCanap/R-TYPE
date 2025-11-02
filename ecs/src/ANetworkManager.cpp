@@ -66,18 +66,24 @@ ConnectionResult ANetworkManager::connectTCP(const std::string &host,
 
     std::vector<uint8_t> connect_msg;
     connect_msg.push_back(0x01); // MSG_TYPE: TCP_CONNECT
-    connect_msg.push_back(static_cast<uint8_t>((data_length >> 16) & 0xFF)); // DATA_LENGTH[0]
-    connect_msg.push_back(static_cast<uint8_t>((data_length >> 8) & 0xFF));  // DATA_LENGTH[1]
-    connect_msg.push_back(static_cast<uint8_t>(data_length & 0xFF));         // DATA_LENGTH[2]
-    connect_msg.push_back(static_cast<uint8_t>((username_length >> 8) & 0xFF)); // USERNAME_LENGTH[0]
-    connect_msg.push_back(static_cast<uint8_t>(username_length & 0xFF));        // USERNAME_LENGTH[1]
+    connect_msg.push_back(
+        static_cast<uint8_t>((data_length >> 16) & 0xFF)); // DATA_LENGTH[0]
+    connect_msg.push_back(
+        static_cast<uint8_t>((data_length >> 8) & 0xFF)); // DATA_LENGTH[1]
+    connect_msg.push_back(
+        static_cast<uint8_t>(data_length & 0xFF)); // DATA_LENGTH[2]
+    connect_msg.push_back(static_cast<uint8_t>((username_length >> 8) &
+                                               0xFF)); // USERNAME_LENGTH[0]
+    connect_msg.push_back(
+        static_cast<uint8_t>(username_length & 0xFF)); // USERNAME_LENGTH[1]
 
     // Add username bytes
     for (char c : actual_username) {
         connect_msg.push_back(static_cast<uint8_t>(c));
     }
 
-    std::cout << "Sending TCP_CONNECT with username: " << actual_username << std::endl;
+    std::cout << "Sending TCP_CONNECT with username: " << actual_username
+              << std::endl;
     if (!sendRawTCP(connect_msg)) {
         result.error_message = "Failed to send TCP_CONNECT";
         disconnect();

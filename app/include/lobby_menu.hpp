@@ -15,10 +15,10 @@
 #include <vector>
 
 enum class LobbyResult {
-    GameStarting,   // Game is starting, proceed to game
-    LeftLobby,      // User left the lobby, return to browser
-    Disconnect,     // Connection error/window closed
-    Error           // An error occurred
+    GameStarting, // Game is starting, proceed to game
+    LeftLobby,    // User left the lobby, return to browser
+    Disconnect,   // Connection error/window closed
+    Error         // An error occurred
 };
 
 struct PlayerDisplayInfo {
@@ -71,7 +71,7 @@ class LobbyMenu {
     bool _waitingForLeaveAck;
     bool _leftSuccessfully;
     bool _gameStarting;
-    
+
     uint16_t _lobbyId;
     uint8_t _myPlayerId;
     std::string _lobbyName;

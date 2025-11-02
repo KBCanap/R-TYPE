@@ -1,7 +1,7 @@
 #include "../include/components.hpp"
 #include <cmath>
-#include <sol/sol.hpp>
 #include <iostream>
+#include <sol/sol.hpp>
 
 namespace component {
 

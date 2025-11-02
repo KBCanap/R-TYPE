@@ -258,9 +258,9 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo &outConnectionInfo) {
                             outConnectionInfo.username = "Player";
                         }
 
-                        std::cout
-                            << "[ConnectionMenu] Multiplayer selected with username: "
-                            << outConnectionInfo.username << std::endl;
+                        std::cout << "[ConnectionMenu] Multiplayer selected "
+                                     "with username: "
+                                  << outConnectionInfo.username << std::endl;
 
                         return ConnectionMenuResult::Multiplayer;
                     }
@@ -294,25 +294,32 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo &outConnectionInfo) {
             if (event.type == render::EventType::KeyPressed) {
                 // Handle username input
                 if (_isTypingUsername) {
-                    if (event.key.code == render::Key::Backspace && !_username.empty()) {
+                    if (event.key.code == render::Key::Backspace &&
+                        !_username.empty()) {
                         _username.pop_back();
                         _usernameInputText->setString(_username);
                     } else if (event.key.code == render::Key::Enter) {
                         _isTypingUsername = false;
                         _usernameInputBox->setOutlineThickness(2);
-                    } else if (event.key.code >= render::Key::A && event.key.code <= render::Key::Z) {
+                    } else if (event.key.code >= render::Key::A &&
+                               event.key.code <= render::Key::Z) {
                         if (_username.length() < 20) {
-                            char c = 'A' + (static_cast<int>(event.key.code) - static_cast<int>(render::Key::A));
+                            char c = 'A' + (static_cast<int>(event.key.code) -
+                                            static_cast<int>(render::Key::A));
                             _username += c;
                             _usernameInputText->setString(_username);
                         }
-                    } else if (event.key.code >= render::Key::Num0 && event.key.code <= render::Key::Num9) {
+                    } else if (event.key.code >= render::Key::Num0 &&
+                               event.key.code <= render::Key::Num9) {
                         if (_username.length() < 20) {
-                            char c = '0' + (static_cast<int>(event.key.code) - static_cast<int>(render::Key::Num0));
+                            char c =
+                                '0' + (static_cast<int>(event.key.code) -
+                                       static_cast<int>(render::Key::Num0));
                             _username += c;
                             _usernameInputText->setString(_username);
                         }
-                    } else if (event.key.code == render::Key::Space && _username.length() < 20) {
+                    } else if (event.key.code == render::Key::Space &&
+                               _username.length() < 20) {
                         _username += ' ';
                         _usernameInputText->setString(_username);
                     }
@@ -339,9 +346,9 @@ ConnectionMenuResult ConnectionMenu::run(ConnectionInfo &outConnectionInfo) {
                     } else {
                         outConnectionInfo.username = "Player";
                     }
-                    std::cout
-                        << "[ConnectionMenu] Multiplayer selected (key) with username: "
-                        << outConnectionInfo.username << std::endl;
+                    std::cout << "[ConnectionMenu] Multiplayer selected (key) "
+                                 "with username: "
+                              << outConnectionInfo.username << std::endl;
                     return ConnectionMenuResult::Multiplayer;
                 }
                 if (event.key.code == render::Key::Num3) {

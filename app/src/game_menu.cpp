@@ -222,7 +222,7 @@ MenuAction VictoryMenu::handleEvents(const render::Event &event) {
 
     // Keyboard input disabled - only mouse input allowed
     if (event.type == render::EventType::MouseButtonPressed &&
-               event.mouseButton.button == render::Mouse::Left) {
+        event.mouseButton.button == render::Mouse::Left) {
         render::Vector2f mousePos(static_cast<float>(event.mouseButton.x),
                                   static_cast<float>(event.mouseButton.y));
 
@@ -304,6 +304,6 @@ void VictoryMenu::setButtonText(const std::string &text) {
         render::FloatRect text_bounds = _replayText->getLocalBounds();
         float y_offset = (text == "Next Stage") ? -10.0f : 20.0f;
         _replayText->setPosition((window_size.x - text_bounds.width) / 2.0f,
-                                  window_size.y / 2.0f + y_offset);
+                                 window_size.y / 2.0f + y_offset);
     }
 }

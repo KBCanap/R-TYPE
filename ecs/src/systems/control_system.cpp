@@ -14,8 +14,10 @@ void control_system(registry &r,
                     sparse_array<component::controllable> &controllables,
                     sparse_array<component::velocity> &velocities,
                     sparse_array<component::input> &inputs, float /*dt*/) {
-    sparse_array<component::animation> &animations = r.get_components<component::animation>();
-    sparse_array<component::drawable> &drawables = r.get_components<component::drawable>();
+    sparse_array<component::animation> &animations =
+        r.get_components<component::animation>();
+    sparse_array<component::drawable> &drawables =
+        r.get_components<component::drawable>();
 
     struct InputMapping {
         bool component::input::*input_ptr;

@@ -250,7 +250,6 @@ std::string Protocol::parseUsername(const std::vector<uint8_t> &data) {
     memcpy(&username_len, data.data(), sizeof(uint16_t));
     username_len = ntohs(username_len);
 
-
     std::cout << "USERNAME LENGTH: " << username_len << std::endl;
     if (data.size() < 2 + username_len)
         return "";

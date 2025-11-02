@@ -6,9 +6,9 @@
 */
 
 #include "../include/components.hpp"
-#include <sol/sol.hpp>
 #include <cmath>
 #include <iostream>
+#include <sol/sol.hpp>
 
 namespace component {
 

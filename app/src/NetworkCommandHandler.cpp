@@ -45,9 +45,9 @@ void NetworkCommandHandler::onCreateEntity(
     }
 
     // Position check print for create entity
-    std::cout << "[CREATE] Entity NET_ID=" << cmd.net_id 
-              << " Type=" << static_cast<int>(cmd.entity_type)
-              << " Position=(" << cmd.position_x << ", " << cmd.position_y << ")" << std::endl;
+    std::cout << "[CREATE] Entity NET_ID=" << cmd.net_id
+              << " Type=" << static_cast<int>(cmd.entity_type) << " Position=("
+              << cmd.position_x << ", " << cmd.position_y << ")" << std::endl;
 
     registry_.add_component<component::network_entity>(
         new_entity, component::network_entity(cmd.net_id, 0, false));
@@ -71,8 +71,8 @@ void NetworkCommandHandler::onUpdateEntity(
     entity ent = *opt_entity;
 
     // Position check print for update entity
-    std::cout << "[UPDATE] Entity NET_ID=" << cmd.net_id 
-              << " Position=(" << cmd.position_x << ", " << cmd.position_y << ")"
+    std::cout << "[UPDATE] Entity NET_ID=" << cmd.net_id << " Position=("
+              << cmd.position_x << ", " << cmd.position_y << ")"
               << " Health=" << cmd.health << std::endl;
 
     auto &positions = registry_.get_components<component::position>();
@@ -86,9 +86,10 @@ void NetworkCommandHandler::onUpdateEntity(
 
         positions[ent]->x = pixel_x;
         positions[ent]->y = pixel_y;
-        
+
         // Additional position verification after conversion
-        std::cout << "[UPDATE] Converted to pixels: (" << pixel_x << ", " << pixel_y << ")" << std::endl;
+        std::cout << "[UPDATE] Converted to pixels: (" << pixel_x << ", "
+                  << pixel_y << ")" << std::endl;
     }
 
     if (ent < healths.size() && healths[ent]) {
@@ -173,8 +174,9 @@ entity NetworkCommandHandler::createPlayerEntity(
     float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
 
     // Position check print for player creation
-    std::cout << "[CREATE PLAYER] Normalized pos=(" << cmd.position_x << ", " << cmd.position_y 
-              << ") Pixel pos=(" << pixel_x << ", " << pixel_y << ")" << std::endl;
+    std::cout << "[CREATE PLAYER] Normalized pos=(" << cmd.position_x << ", "
+              << cmd.position_y << ") Pixel pos=(" << pixel_x << ", " << pixel_y
+              << ")" << std::endl;
 
     auto player_opt = player_manager_.createPlayer(pixel_x, pixel_y);
 
@@ -202,8 +204,9 @@ entity NetworkCommandHandler::createEnemyEntity(
     float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
 
     // Position check print for enemy creation
-    std::cout << "[CREATE ENEMY] Normalized pos=(" << cmd.position_x << ", " << cmd.position_y 
-              << ") Pixel pos=(" << pixel_x << ", " << pixel_y << ")" << std::endl;
+    std::cout << "[CREATE ENEMY] Normalized pos=(" << cmd.position_x << ", "
+              << cmd.position_y << ") Pixel pos=(" << pixel_x << ", " << pixel_y
+              << ")" << std::endl;
 
     registry_.add_component<component::position>(
         enemy, component::position(pixel_x, pixel_y));
@@ -245,8 +248,9 @@ entity NetworkCommandHandler::createBossEntity(
     float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
 
     // Position check print for boss creation
-    std::cout << "[CREATE BOSS] Normalized pos=(" << cmd.position_x << ", " << cmd.position_y 
-              << ") Pixel pos=(" << pixel_x << ", " << pixel_y << ")" << std::endl;
+    std::cout << "[CREATE BOSS] Normalized pos=(" << cmd.position_x << ", "
+              << cmd.position_y << ") Pixel pos=(" << pixel_x << ", " << pixel_y
+              << ")" << std::endl;
 
     registry_.add_component<component::position>(
         boss, component::position(pixel_x, pixel_y));
@@ -287,8 +291,9 @@ entity NetworkCommandHandler::createProjectileEntity(
     float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
 
     // Position check print for projectile creation
-    std::cout << "[CREATE PROJECTILE] Normalized pos=(" << cmd.position_x << ", " << cmd.position_y 
-              << ") Pixel pos=(" << pixel_x << ", " << pixel_y << ")" << std::endl;
+    std::cout << "[CREATE PROJECTILE] Normalized pos=(" << cmd.position_x
+              << ", " << cmd.position_y << ") Pixel pos=(" << pixel_x << ", "
+              << pixel_y << ")" << std::endl;
 
     registry_.add_component<component::position>(
         projectile, component::position(pixel_x, pixel_y));
