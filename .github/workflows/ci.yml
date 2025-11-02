@@ -61,6 +61,7 @@ jobs:
           libflac-dev \
           libvorbis-dev \
           libsfml-dev
+          liblua-dev
     - name: Configure CMake (Debug with Tests)
       run: cmake --preset linux-config-dev
     - name: Build
