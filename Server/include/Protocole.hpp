@@ -43,7 +43,8 @@ class Protocol {
 
     // Join/Create Lobby Messages
     std::string createCreateLobby(const std::string &lobby_name,
-                                  uint8_t max_players);
+                                  uint8_t max_players,
+                                  uint8_t level_id = 1);
     std::string createCreateLobbyAck(uint16_t lobby_id);
     std::string createJoinLobby(uint16_t lobby_id);
     std::string createJoinLobbyAck(uint16_t lobby_id, uint8_t your_player_id,

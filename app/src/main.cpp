@@ -266,13 +266,14 @@ int main(int argc, char **argv) {
 
                         if (lobbyResult == LobbyResult::GameStarting) {
                             std::cout
-                                << "[Main] 🎮 Starting MULTIPLAYER game..."
+                                << "[Main] Starting MULTIPLAYER game..."
                                 << std::endl;
 
                             // Launch multiplayer game with network manager
                             Game game(reg, *window, audioManager, keyBindings,
                                       networkManager.get());
                             game.run();
+                            game.cleanup();  // Clean up entities like in solo mode
 
                             std::cout << "[Main] Game ended, returning to main "
                                          "menu..."

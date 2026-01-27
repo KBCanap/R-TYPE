@@ -16,6 +16,7 @@ struct ClientMessage {
     std::string client_endpoint;
     std::string message;
     uint32_t client_id;
+    bool is_disconnect = false;  // True if this is a disconnect notification
 };
 
 /**

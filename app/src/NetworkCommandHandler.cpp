@@ -65,7 +65,33 @@ void NetworkCommandHandler::onUpdateEntity(
     const network::UpdateEntityCommand &cmd) {
     auto opt_entity = findEntityByNetId(cmd.net_id);
     if (!opt_entity) {
-        return;
+        // Entity doesn't exist yet, create it based on the update
+        // Determine type from context (player NET_IDs are typically < 1010)
+        network::CreateEntityCommand create_cmd;
+        create_cmd.net_id = cmd.net_id;
+        create_cmd.health = cmd.health;
+        create_cmd.position_x = cmd.position_x;
+        create_cmd.position_y = cmd.position_y;
+
+        // Heuristic: low net_ids are players, higher are enemies/projectiles
+        // This is a workaround - ideally server should send entity type
+        if (cmd.net_id < 1010) {
+            create_cmd.entity_type = network::EntityType::PLAYER;
+        } else if (cmd.health == 0) {
+            create_cmd.entity_type = network::EntityType::PROJECTILE;
+        } else {
+            create_cmd.entity_type = network::EntityType::ENEMY;
+        }
+
+        std::cout << "[UPDATE->CREATE] Creating missing entity NET_ID=" << cmd.net_id
+                  << " Type=" << static_cast<int>(create_cmd.entity_type) << std::endl;
+
+        onCreateEntity(create_cmd);
+        opt_entity = findEntityByNetId(cmd.net_id);
+        if (!opt_entity) {
+            std::cerr << "[UPDATE] Failed to create entity NET_ID=" << cmd.net_id << std::endl;
+            return;
+        }
     }
 
     entity ent = *opt_entity;
@@ -290,10 +316,13 @@ entity NetworkCommandHandler::createProjectileEntity(
     float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
     float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
 
+    bool is_friendly =
+        (cmd.entity_type == network::EntityType::ALLIED_PROJECTILE);
+
     // Position check print for projectile creation
-    std::cout << "[CREATE PROJECTILE] Normalized pos=(" << cmd.position_x
-              << ", " << cmd.position_y << ") Pixel pos=(" << pixel_x << ", "
-              << pixel_y << ")" << std::endl;
+    std::cout << "[CREATE PROJECTILE] " << (is_friendly ? "PLAYER" : "ENEMY")
+              << " Normalized pos=(" << cmd.position_x << ", " << cmd.position_y
+              << ") Pixel pos=(" << pixel_x << ", " << pixel_y << ")" << std::endl;
 
     registry_.add_component<component::position>(
         projectile, component::position(pixel_x, pixel_y));
@@ -301,18 +330,29 @@ entity NetworkCommandHandler::createProjectileEntity(
     registry_.add_component<component::velocity>(
         projectile, component::velocity(0.0f, 0.0f));
 
-    bool is_friendly =
-        (cmd.entity_type == network::EntityType::ALLIED_PROJECTILE);
-
     std::string texture_path = "assets/sprites/r-typesheet1.gif";
-    render::IntRect sprite_rect = render::IntRect(60, 353, 12, 12);
-    std::string tag = is_friendly ? "allied_projectile" : "projectile";
+    render::IntRect sprite_rect;
+    std::string tag;
+    float damage;
 
+    if (is_friendly) {
+        // Player projectile: same sprite as solo mode (scale 1.0)
+        sprite_rect = render::IntRect(60, 353, 12, 12);
+        tag = "allied_projectile";
+        damage = 20.0f;  // Same as solo mode
+    } else {
+        // Enemy projectile: sprite from enemy_manager.cpp (solo mode)
+        sprite_rect = render::IntRect(249, 103, 16, 12);
+        tag = "projectile";
+        damage = 25.0f;  // Same as solo mode enemy damage
+    }
+
+    // Scale 1.0 like solo mode
     registry_.add_component<component::drawable>(
-        projectile, component::drawable(texture_path, sprite_rect, 2.0f, tag));
+        projectile, component::drawable(texture_path, sprite_rect, 1.0f, tag));
 
     registry_.add_component<component::projectile>(
-        projectile, component::projectile(25.0f, 500.0f, is_friendly, "bullet",
+        projectile, component::projectile(damage, 500.0f, is_friendly, "bullet",
                                           5.0f, false, 1));
 
     registry_.add_component<component::health>(projectile,

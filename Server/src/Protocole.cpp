@@ -91,19 +91,17 @@ std::string Protocol::createGameStart(uint16_t udp_port, uint16_t server_id,
                                       uint32_t server_ip) {
     std::vector<uint8_t> data;
 
-    uint16_t port_network = htons(udp_port);
-    data.push_back(static_cast<uint8_t>(port_network >> 8));
-    data.push_back(static_cast<uint8_t>(port_network & 0xFF));
+    // Manual byte packing in big-endian order (no htons/htonl needed)
+    data.push_back(static_cast<uint8_t>(udp_port >> 8));
+    data.push_back(static_cast<uint8_t>(udp_port & 0xFF));
 
-    uint16_t server_id_network = htons(server_id);
-    data.push_back(static_cast<uint8_t>(server_id_network >> 8));
-    data.push_back(static_cast<uint8_t>(server_id_network & 0xFF));
+    data.push_back(static_cast<uint8_t>(server_id >> 8));
+    data.push_back(static_cast<uint8_t>(server_id & 0xFF));
 
-    uint32_t ip_network = htonl(server_ip);
-    data.push_back(static_cast<uint8_t>((ip_network >> 24) & 0xFF));
-    data.push_back(static_cast<uint8_t>((ip_network >> 16) & 0xFF));
-    data.push_back(static_cast<uint8_t>((ip_network >> 8) & 0xFF));
-    data.push_back(static_cast<uint8_t>(ip_network & 0xFF));
+    data.push_back(static_cast<uint8_t>((server_ip >> 24) & 0xFF));
+    data.push_back(static_cast<uint8_t>((server_ip >> 16) & 0xFF));
+    data.push_back(static_cast<uint8_t>((server_ip >> 8) & 0xFF));
+    data.push_back(static_cast<uint8_t>(server_ip & 0xFF));
 
     return createMessage(MessageType::TCP_GAME_START, data);
 }
@@ -144,7 +142,8 @@ std::string Protocol::createLobbyInfoResponse(const LobbyInfo &lobby) {
 
 // Join/Create Lobby Messages
 std::string Protocol::createCreateLobby(const std::string &lobby_name,
-                                        uint8_t max_players) {
+                                        uint8_t max_players,
+                                        uint8_t level_id) {
     std::vector<uint8_t> data;
 
     data.push_back(max_players);
@@ -161,6 +160,9 @@ std::string Protocol::createCreateLobby(const std::string &lobby_name,
     while (data.size() < 3 + MAX_LOBBY_NAME_LENGTH) {
         data.push_back(0);
     }
+
+    // Add level_id (1=Level1, 2=Level2, 99=Endless)
+    data.push_back(level_id);
 
     return createMessage(MessageType::CREATE_LOBBY, data);
 }

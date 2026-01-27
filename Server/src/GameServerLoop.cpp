@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <set>
 
 GameServerLoop *GameServerLoop::instance = nullptr;
 
@@ -91,6 +92,8 @@ void GameServerLoop::run() {
         if (!_in_game && _udp_server->getCurrentClientCount() == _max_clients) {
             _in_game = true;
             _game_logic->start();
+            // CRITICAL: Reset _last_tick here so the first delta isn't huge from waiting time
+            _last_tick = std::chrono::steady_clock::now();
             std::cout << "[GameServerLoop] All " << _max_clients
                       << " clients connected, game started!" << std::endl;
         }
@@ -110,8 +113,21 @@ void GameServerLoop::run() {
             _last_tick = now;
 
             broadcastEntityUpdates();
+
+            // Check if all players are dead (game over)
+            if (_game_logic->isGameOver()) {
+                std::cout << "[GameServerLoop] All players dead - Game Over!" << std::endl;
+                _running = false;
+            }
         } else {
             processMessages();
+
+            // Timeout if no clients connect within 30 seconds
+            auto elapsed = std::chrono::steady_clock::now() - _last_tick;
+            if (std::chrono::duration<float>(elapsed).count() > 30.0f) {
+                std::cout << "[GameServerLoop] Timeout waiting for clients" << std::endl;
+                _running = false;
+            }
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -182,6 +198,22 @@ void GameServerLoop::processMessages() {
                 std::cout << "[GameServerLoop] Sent GAME_STATE with "
                           << entities.size() << " entities to client "
                           << msg.client_id << std::endl;
+
+                // Broadcast ENTITY_CREATE for new player to all OTHER clients
+                Entity new_player_entity = {net_id, EntityType::PLAYER, 100,
+                                            spawn_x, spawn_y};
+                std::string create_msg = _protocol.createEntityCreate(
+                    new_player_entity, _sequence_num++);
+
+                auto all_clients = _udp_server->getConnectedClients();
+                for (uint32_t client_id : all_clients) {
+                    if (client_id != msg.client_id) {
+                        _udp_server->sendToClient(client_id, create_msg);
+                        std::cout << "[GameServerLoop] Sent ENTITY_CREATE for "
+                                     "new player to client "
+                                  << client_id << std::endl;
+                    }
+                }
             }
         } else if (parsed.type == PLAYER_INPUT && parsed.data.size() >= 2) {
             std::cout << "PLAYER INPUT [ " << PLAYER_INPUT << " ]\n";
@@ -246,17 +278,45 @@ void GameServerLoop::broadcastEntityUpdates() {
         return;
     }
 
-    auto deltas = _game_logic->getDeltaSnapshot(0);
+    // 1. FIRST: Broadcast newly created entities (enemies, projectiles)
+    // This MUST come before updates to avoid the client creating duplicates via heuristic
+    auto new_entities = _game_logic->getNewEntities();
+    std::set<uint> new_entity_ids;  // Track IDs to exclude from updates
 
-    if (deltas.empty()) {
-        return;
+    for (const auto &new_ent : new_entities) {
+        new_entity_ids.insert(new_ent.net_id);
+
+        EntityType type = EntityType::ENEMY;
+        if (new_ent.entity_type == "enemy") {
+            type = EntityType::ENEMY;
+        } else if (new_ent.entity_type == "projectile") {
+            type = EntityType::PROJECTILE;
+        } else if (new_ent.entity_type == "allied_projectile") {
+            type = EntityType::ALLIED_PROJECTILE;
+        } else if (new_ent.entity_type == "boss") {
+            type = EntityType::ENEMY;
+        }
+
+        Entity ent = {new_ent.net_id, type, static_cast<uint32_t>(new_ent.health),
+                      new_ent.x, new_ent.y};
+        std::string create_msg = _protocol.createEntityCreate(ent, _sequence_num++);
+
+        std::cout << "[BROADCAST] Creating entity NET_ID=" << new_ent.net_id
+                  << " Type=" << new_ent.entity_type << " Pos=(" << new_ent.x
+                  << ", " << new_ent.y << ")" << std::endl;
+
+        for (uint32_t client_id : clients) {
+            _udp_server->sendToClient(client_id, create_msg);
+        }
     }
+
+    // 2. SECOND: Send entity updates (excluding newly created entities)
+    auto deltas = _game_logic->getDeltaSnapshot(0);
 
     static int update_counter = 0;
     update_counter++;
 
-    if (update_counter % 60 ==
-        0) { // Print every 60 updates (~1 second at 60Hz)
+    if (update_counter % 60 == 0) {
         std::cout << "\n[BROADCAST] Sending " << deltas.size()
                   << " entity updates:" << std::endl;
 
@@ -269,8 +329,14 @@ void GameServerLoop::broadcastEntityUpdates() {
         }
     }
 
+    // Filter out newly created entities from updates (they already have their position from CREATE)
     std::vector<Entity> entities;
     for (const auto &snap : deltas) {
+        // Skip entities that were just created this tick
+        if (new_entity_ids.count(snap.net_id) > 0) {
+            continue;
+        }
+
         EntityType type = EntityType::ENEMY;
 
         if (snap.entity_type == "player") {
@@ -279,6 +345,8 @@ void GameServerLoop::broadcastEntityUpdates() {
             type = EntityType::ENEMY;
         } else if (snap.entity_type == "projectile") {
             type = EntityType::PROJECTILE;
+        } else if (snap.entity_type == "allied_projectile") {
+            type = EntityType::ALLIED_PROJECTILE;
         } else if (snap.entity_type == "boss") {
             type = EntityType::ENEMY;
         }
@@ -288,12 +356,29 @@ void GameServerLoop::broadcastEntityUpdates() {
                             snap.pos.y});
     }
 
-    std::string update_msg =
-        _protocol.createEntityUpdate(entities, _sequence_num++);
+    if (!entities.empty()) {
+        std::string update_msg =
+            _protocol.createEntityUpdate(entities, _sequence_num++);
 
-    for (uint32_t client_id : clients) {
-        _udp_server->sendToClient(client_id, update_msg);
+        for (uint32_t client_id : clients) {
+            _udp_server->sendToClient(client_id, update_msg);
+        }
     }
 
     _game_logic->markEntitiesSynced();
+
+    // 3. THIRD: Broadcast destroyed entities
+    auto destroyed = _game_logic->getDestroyedEntities();
+    if (!destroyed.empty()) {
+        std::cout << "[BROADCAST] Destroying " << destroyed.size() << " entities: ";
+        for (uint id : destroyed) {
+            std::cout << id << " ";
+        }
+        std::cout << std::endl;
+
+        std::string destroy_msg = _protocol.createEntityDestroy(destroyed, _sequence_num++);
+        for (uint32_t client_id : clients) {
+            _udp_server->sendToClient(client_id, destroy_msg);
+        }
+    }
 }

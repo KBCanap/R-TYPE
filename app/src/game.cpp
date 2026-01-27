@@ -862,9 +862,8 @@ void Game::sendPlayerInput(float dt) {
         if (playerInput->right)
             direction |= 0x08;
 
-        if (direction != 0) {
-            _networkManager->sendPlayerInput(direction);
-        }
+        // Always send direction (even 0) so server knows when to stop
+        _networkManager->sendPlayerInput(direction);
 
         if (playerInput->fire) {
             _networkManager->sendPlayerFire();

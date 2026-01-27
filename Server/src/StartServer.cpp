@@ -100,6 +100,14 @@ void StartServer::lobbyLoop() {
 }
 
 void StartServer::processMessage(const ClientMessage &message) {
+    // Handle disconnect notifications
+    if (message.is_disconnect) {
+        std::cout << "[Client " << message.client_id << "] TCP Disconnected"
+                  << std::endl;
+        handleClientDisconnect(message.client_id);
+        return;
+    }
+
     std::cout << "[Client " << message.client_id << "] Received message"
               << std::endl;
 
@@ -492,6 +500,8 @@ uint16_t StartServer::allocateUdpPort() {
         }
     }
 
+    // Mark port as allocated (value is not used, just need the key)
+    _udp_port_allocations[port] = 0;
     return port;
 }
 

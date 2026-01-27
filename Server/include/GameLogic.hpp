@@ -86,6 +86,8 @@ struct Enemy {
     int enemy_type; // 0=straight, 1=zigzag, 2=boss
     float pattern_timer;
     int score_value;
+    float shoot_timer = 0.0f;
+    float shoot_interval = 2.0f;  // Shoot every 2 seconds
 };
 
 struct Boss {
@@ -161,6 +163,22 @@ class GameLogic {
     // Getters
     uint getCurrentTick() const { return _current_tick; }
     uint generateNetId();
+    std::vector<uint> getDestroyedEntities();  // Returns and clears destroyed entity net_ids
+
+    // Game state checks
+    bool isGameOver() const { return _client_to_entity.empty() && _running; }
+    bool hasPlayers() const { return !_client_to_entity.empty(); }
+
+    // New entity info for network broadcasting
+    struct NewEntityInfo {
+        uint net_id;
+        std::string entity_type;
+        float x, y;
+        int health;
+    };
+
+    // Returns newly created entities for broadcasting and clears the list
+    std::vector<NewEntityInfo> getNewEntities();
 
   private:
     std::shared_ptr<registry> _registry;
@@ -181,11 +199,15 @@ class GameLogic {
     float _game_time;
     float _enemy_spawn_timer;
     float _enemy_spawn_interval;
+    float _accumulator;    // For fixed timestep
+    float _debug_timer;    // For debug output
     int _total_score;
     bool _boss_spawned;
     entity _boss;
     std::vector<entity> _enemies;
     std::vector<entity> _projectiles;
+    std::vector<uint> _destroyed_net_ids;  // Net IDs of recently destroyed entities
+    std::vector<NewEntityInfo> _new_entities;  // New entities waiting to be broadcast
 
     // Random number generation
     std::mt19937 _rng;
@@ -200,6 +222,9 @@ class GameLogic {
     // Game logic
     void spawnEnemy();
     void spawnBoss();
+    void spawnProjectile(float x, float y, bool is_player_projectile, int damage);
+    void processPlayerShooting(float dt);
+    void processEnemyShooting(float dt);
     void cleanupDeadEntities();
     entity findEntityByNetId(uint net_id);
 

@@ -107,7 +107,7 @@ rebuild_cache/fast: rebuild_cache
 
 # Special rule for the target list_install_components
 list_install_components:
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Available install components are: \"Runtime\" \"Unspecified\""
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Available install components are: \"Runtime\" \"Unspecified\" \"bin\" \"devel\""
 .PHONY : list_install_components
 
 # Special rule for the target list_install_components
@@ -178,6 +178,7 @@ preinstall/fast:
 
 # clear depends
 depend:
+	cd /home/ariles/delivery/R-TYPE && $(CMAKE_COMMAND) -P /home/ariles/delivery/R-TYPE/CMakeFiles/VerifyGlobs.cmake
 	cd /home/ariles/delivery/R-TYPE && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
@@ -583,25 +584,25 @@ src/systems/weapon_system.o: src/systems/weapon_system.cpp.o
 .PHONY : src/systems/weapon_system.o
 
 # target to build an object file
-src/systems.cpp.o:
-	cd /home/dylanadghar/delivery/tek_3/r-type/test/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems.cpp.o
-.PHONY : src/systems.cpp.o
+src/systems/weapon_system.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/weapon_system.cpp.o
+.PHONY : src/systems/weapon_system.cpp.o
 
 src/systems/weapon_system.i: src/systems/weapon_system.cpp.i
 .PHONY : src/systems/weapon_system.i
 
 # target to preprocess a source file
-src/systems.cpp.i:
-	cd /home/dylanadghar/delivery/tek_3/r-type/test/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems.cpp.i
-.PHONY : src/systems.cpp.i
+src/systems/weapon_system.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/weapon_system.cpp.i
+.PHONY : src/systems/weapon_system.cpp.i
 
 src/systems/weapon_system.s: src/systems/weapon_system.cpp.s
 .PHONY : src/systems/weapon_system.s
 
 # target to generate assembly for a file
-src/systems.cpp.s:
-	cd /home/dylanadghar/delivery/tek_3/r-type/test/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems.cpp.s
-.PHONY : src/systems.cpp.s
+src/systems/weapon_system.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/weapon_system.cpp.s
+.PHONY : src/systems/weapon_system.cpp.s
 
 src/weapon.o: src/weapon.cpp.o
 .PHONY : src/weapon.o
@@ -707,6 +708,7 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
+	cd /home/ariles/delivery/R-TYPE && $(CMAKE_COMMAND) -P /home/ariles/delivery/R-TYPE/CMakeFiles/VerifyGlobs.cmake
 	cd /home/ariles/delivery/R-TYPE && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

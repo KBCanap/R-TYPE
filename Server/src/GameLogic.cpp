@@ -6,8 +6,9 @@
 
 GameLogic::GameLogic(std::shared_ptr<registry> reg)
     : _registry(reg), _running(false), _current_tick(0), _game_time(0.0f),
-      _enemy_spawn_timer(0.0f), _enemy_spawn_interval(2.0f), _total_score(0),
-      _boss_spawned(false), _boss(0), _next_net_id(1000) {
+      _enemy_spawn_timer(0.0f), _enemy_spawn_interval(2.0f), _accumulator(0.0f),
+      _debug_timer(0.0f), _total_score(0), _boss_spawned(false), _boss(0),
+      _next_net_id(1000) {
     _last_update = std::chrono::steady_clock::now();
     _rng.seed(std::random_device{}());
     registerSystems();
@@ -18,16 +19,16 @@ GameLogic::~GameLogic() { stop(); }
 void GameLogic::start() {
     _running = true;
     _last_update = std::chrono::steady_clock::now();
+    _game_time = 0.0f;
+    _enemy_spawn_timer = 0.0f;
+    _current_tick = 0;
+    _accumulator = 0.0f;   // Reset accumulator to avoid initial burst
+    _debug_timer = 0.0f;
 
-    spawnEnemy();
-    spawnEnemy();
-    spawnEnemy();
-    spawnEnemy();
-    spawnEnemy();
-    spawnEnemy();
-    spawnEnemy();
+    // Don't spawn enemies at start - let the spawn timer handle it like solo mode
+    // Solo mode uses _enemySpawnTimer which starts at 0, so first enemy spawns after interval
 
-    std::cout << "[GameLogic] Started" << std::endl;
+    std::cout << "[GameLogic] Started - enemies will spawn via timer like solo mode" << std::endl;
 }
 
 void GameLogic::stop() {
@@ -106,19 +107,20 @@ void GameLogic::update(float deltaTime) {
         return;
 
     static const float FIXED_TIMESTEP = 1.0f / 60.0f;
-    static float accumulator = 0.0f;
-    static float debug_timer = 0.0f;
     static const float DEBUG_INTERVAL = 1.0f;
 
-    accumulator += deltaTime;
-    debug_timer += deltaTime;
+    // Use member variables instead of static to properly reset between games
+    _accumulator += deltaTime;
+    _debug_timer += deltaTime;
 
-    while (accumulator >= FIXED_TIMESTEP) {
+    while (_accumulator >= FIXED_TIMESTEP) {
         _current_tick++;
         _game_time += FIXED_TIMESTEP;
 
         processEvents();
         _registry->run_systems(FIXED_TIMESTEP);
+        processPlayerShooting(FIXED_TIMESTEP);
+        processEnemyShooting(FIXED_TIMESTEP);
 
         if (!_boss_spawned && _total_score >= 5000) {
             spawnBoss();
@@ -133,12 +135,12 @@ void GameLogic::update(float deltaTime) {
         }
 
         cleanupDeadEntities();
-        accumulator -= FIXED_TIMESTEP;
+        _accumulator -= FIXED_TIMESTEP;
     }
 
-    // *** ADD DEBUG OUTPUT HERE ***
-    if (debug_timer >= DEBUG_INTERVAL) {
-        debug_timer = 0.0f;
+    // Debug output every second
+    if (_debug_timer >= DEBUG_INTERVAL) {
+        _debug_timer = 0.0f;
         printEntityPositions();
     }
 
@@ -180,7 +182,7 @@ void GameLogic::handlePlayerAction(entity player, InputEvent action) {
     auto &input_states = _registry->get_components<InputState>();
     auto &network_comps = _registry->get_components<NetworkComponent>();
 
-    auto input_opt = input_states[player];
+    auto &input_opt = input_states[player];  // Reference to avoid copy
     if (!input_opt)
         return;
 
@@ -221,7 +223,7 @@ void GameLogic::handlePlayerAction(entity player, InputEvent action) {
         break;
     }
 
-    auto net_opt = network_comps[player];
+    auto &net_opt = network_comps[player];  // Reference to avoid copy
     if (net_opt) {
         net_opt.value().needs_update = true;
     }
@@ -236,8 +238,9 @@ entity GameLogic::createPlayer(uint client_id, uint net_id, float x, float y) {
     _registry->add_component(player, PlayerComponent{client_id, true, 0.0f});
     _registry->add_component(player, Health{100, 100, 0.0f});
     _registry->add_component(player, Score{0});
-    _registry->add_component(player, Weapon{0.25f, 0.0f, 0, 10});
-    _registry->add_component(player, Hitbox{32.0f, 32.0f, 0.0f, 0.0f});
+    // fire_rate = 8.0 means 8 shots/sec like solo mode (fire_timer resets to 1/fire_rate = 0.125s)
+    _registry->add_component(player, Weapon{8.0f, 0.0f, 0, 20});
+    _registry->add_component(player, Hitbox{66.0f, 34.0f, 15.0f, 0.0f});  // Same as solo mode
     _registry->add_component(player, NetworkComponent{net_id, true, "player"});
 
     _client_to_entity.insert({client_id, player});
@@ -267,6 +270,18 @@ entity GameLogic::getPlayerEntity(uint client_id) {
 
 uint GameLogic::generateNetId() { return _next_net_id++; }
 
+std::vector<uint> GameLogic::getDestroyedEntities() {
+    std::vector<uint> result = std::move(_destroyed_net_ids);
+    _destroyed_net_ids.clear();
+    return result;
+}
+
+std::vector<GameLogic::NewEntityInfo> GameLogic::getNewEntities() {
+    std::vector<NewEntityInfo> result = std::move(_new_entities);
+    _new_entities.clear();
+    return result;
+}
+
 void GameLogic::spawnEnemy() {
     entity enemy = _registry->spawn_entity();
 
@@ -275,16 +290,20 @@ void GameLogic::spawnEnemy() {
 
     int enemy_type = type_dist(_rng);
     float spawn_y = y_dist(_rng);
+    uint net_id = generateNetId();
 
     _registry->add_component(enemy, Position{0.95f, spawn_y});
-    _registry->add_component(enemy, Velocity{-0.01f, 0.0f});
+    // Speed: 150 pixels/sec on 800px screen = 0.1875 normalized/sec (like solo mode)
+    _registry->add_component(enemy, Velocity{-0.1875f, 0.0f});
     _registry->add_component(enemy, Enemy{enemy_type, 0.0f, 100});
-    _registry->add_component(enemy, Health{30, 30, 0.0f});
-    _registry->add_component(enemy, Hitbox{40.0f, 40.0f, 0.0f, 0.0f});
-    _registry->add_component(enemy,
-                             NetworkComponent{generateNetId(), true, "enemy"});
+    _registry->add_component(enemy, Health{25, 25, 0.0f});  // 25 HP like solo mode
+    _registry->add_component(enemy, Hitbox{50.0f, 58.0f, 0.0f, 0.0f});  // Same as solo (50x58)
+    _registry->add_component(enemy, NetworkComponent{net_id, true, "enemy"});
 
     _enemies.push_back(enemy);
+
+    // Store new entity info for broadcasting ENTITY_CREATE
+    _new_entities.push_back({net_id, "enemy", 0.95f, spawn_y, 25});
 }
 
 void GameLogic::spawnBoss() {
@@ -307,35 +326,174 @@ void GameLogic::spawnBoss() {
     std::cout << "[GameLogic] Boss spawned!" << std::endl;
 }
 
+void GameLogic::spawnProjectile(float x, float y, bool is_player_projectile, int damage) {
+    entity proj = _registry->spawn_entity();
+
+    // Projectile velocity: player shoots right, enemies shoot left
+    float proj_vx = is_player_projectile ? 1.0f : -0.8f;  // Normalized speed
+    uint net_id = generateNetId();
+
+    _registry->add_component(proj, Position{x, y});
+    _registry->add_component(proj, Velocity{proj_vx, 0.0f});
+    _registry->add_component(proj, Projectile{is_player_projectile, damage, 3.0f});  // 3 sec lifetime
+    _registry->add_component(proj, Hitbox{8.0f, 8.0f, 0.0f, 0.0f});
+
+    // Use different entity_type string based on projectile owner
+    std::string proj_type = is_player_projectile ? "allied_projectile" : "projectile";
+    _registry->add_component(proj, NetworkComponent{net_id, true, proj_type});
+
+    _projectiles.push_back(proj);
+
+    // Store new entity info for broadcasting ENTITY_CREATE
+    _new_entities.push_back({net_id, proj_type, x, y, 0});
+}
+
+void GameLogic::processPlayerShooting(float dt) {
+    auto &inputs = _registry->get_components<InputState>();
+    auto &positions = _registry->get_components<Position>();
+    auto &weapons = _registry->get_components<Weapon>();
+    auto &players = _registry->get_components<PlayerComponent>();
+    auto &network_comps = _registry->get_components<NetworkComponent>();
+
+    for (size_t i = 0; i < players.size(); ++i) {
+        auto &player_opt = players[i];
+        if (!player_opt || !player_opt.value().is_active)
+            continue;
+
+        auto &input_opt = inputs[i];
+        auto &pos_opt = positions[i];
+        auto &weapon_opt = weapons[i];
+
+        if (!input_opt || !pos_opt || !weapon_opt)
+            continue;
+
+        InputState &input = input_opt.value();
+        Weapon &weapon = weapon_opt.value();
+
+        // Decrease weapon timer
+        if (weapon.fire_timer > 0.0f) {
+            weapon.fire_timer -= dt;
+        }
+
+        // Check if player wants to shoot and weapon is ready
+        if (input.shoot && weapon.fire_timer <= 0.0f) {
+            Position &pos = pos_opt.value();
+
+            // Spawn projectile slightly in front of player (20 damage like solo)
+            spawnProjectile(pos.x + 0.05f, pos.y, true, 20);
+
+            // Reset fire timer based on fire rate
+            weapon.fire_timer = 1.0f / weapon.fire_rate;
+
+            // Reset shoot flag - client must send another fire event to shoot again
+            input.shoot = false;
+
+            // Mark for network update
+            auto &net_opt = network_comps[i];
+            if (net_opt) {
+                net_opt.value().needs_update = true;
+            }
+        }
+    }
+}
+
+void GameLogic::processEnemyShooting(float dt) {
+    auto &enemies = _registry->get_components<Enemy>();
+    auto &positions = _registry->get_components<Position>();
+
+    for (size_t i = 0; i < enemies.size(); ++i) {
+        auto &enemy_opt = enemies[i];
+        auto &pos_opt = positions[i];
+
+        if (!enemy_opt || !pos_opt)
+            continue;
+
+        Enemy &enemy = enemy_opt.value();
+        Position &pos = pos_opt.value();
+
+        // Update shoot timer
+        enemy.shoot_timer += dt;
+
+        // Only shoot if visible on screen (x < 0.9) and timer expired
+        if (pos.x < 0.9f && enemy.shoot_timer >= enemy.shoot_interval) {
+            enemy.shoot_timer = 0.0f;
+
+            // Spawn enemy projectile (shoots left, 25 damage like solo mode)
+            spawnProjectile(pos.x - 0.02f, pos.y, false, 25);
+        }
+    }
+}
+
 void GameLogic::cleanupDeadEntities() {
     auto &healths = _registry->get_components<Health>();
     auto &network_comps = _registry->get_components<NetworkComponent>();
-
-    _enemies.erase(std::remove_if(_enemies.begin(), _enemies.end(),
-                                  [&](entity ent) {
-                                      auto health_opt = healths[ent];
-                                      return !health_opt ||
-                                             health_opt.value().current_hp <= 0;
-                                  }),
-                   _enemies.end());
-
     auto &positions = _registry->get_components<Position>();
-    auto &projectiles = _registry->get_components<Projectile>();
+    auto &players = _registry->get_components<PlayerComponent>();
+    auto &projectile_comps = _registry->get_components<Projectile>();
 
-    _projectiles.erase(std::remove_if(_projectiles.begin(), _projectiles.end(),
-                                      [&](entity ent) {
-                                          auto pos_opt = positions[ent];
-                                          auto proj_opt = projectiles[ent];
-                                          if (!pos_opt || !proj_opt)
-                                              return true;
-                                          return pos_opt.value().x < -50.0f ||
-                                                 pos_opt.value().x > 850.0f ||
-                                                 pos_opt.value().y < -50.0f ||
-                                                 pos_opt.value().y > 650.0f ||
-                                                 proj_opt.value().lifetime <=
-                                                     0.0f;
-                                      }),
-                       _projectiles.end());
+    std::vector<entity> to_kill;
+
+    // Cleanup dead players
+    for (auto it = _client_to_entity.begin(); it != _client_to_entity.end(); ) {
+        entity ent = it->second;
+        auto &health_opt = healths[ent];
+        if (health_opt && health_opt.value().current_hp <= 0) {
+            std::cout << "[GameLogic] Player " << it->first << " died!" << std::endl;
+            to_kill.push_back(ent);
+            it = _client_to_entity.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    // Cleanup enemies by HP or position (off-screen left)
+    for (auto it = _enemies.begin(); it != _enemies.end(); ) {
+        entity ent = *it;
+        auto &health_opt = healths[ent];
+        auto &pos_opt = positions[ent];
+
+        bool should_remove = !health_opt || !pos_opt ||
+                            health_opt.value().current_hp <= 0 ||
+                            pos_opt.value().x <= 0.0f;  // Remove when at or past left edge
+
+        if (should_remove) {
+            to_kill.push_back(ent);
+            it = _enemies.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    // Cleanup projectiles by position or lifetime
+    for (auto it = _projectiles.begin(); it != _projectiles.end(); ) {
+        entity ent = *it;
+        auto &pos_opt = positions[ent];
+        auto &proj_opt = projectile_comps[ent];
+
+        bool should_remove = !pos_opt || !proj_opt ||
+                            pos_opt.value().x < -0.1f ||
+                            pos_opt.value().x > 1.1f ||
+                            pos_opt.value().y < -0.1f ||
+                            pos_opt.value().y > 1.1f ||
+                            proj_opt.value().lifetime <= 0.0f;
+
+        if (should_remove) {
+            to_kill.push_back(ent);
+            it = _projectiles.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    // Store net_ids and kill all marked entities
+    for (entity ent : to_kill) {
+        auto &net_opt = network_comps[ent];
+        if (net_opt) {
+            _destroyed_net_ids.push_back(net_opt.value().net_id);
+            std::cout << "[GameLogic] Destroying entity NET_ID=" << net_opt.value().net_id << std::endl;
+        }
+        _registry->kill_entity(ent);
+    }
 }
 
 // Snapshot management
@@ -455,15 +613,15 @@ entity GameLogic::findEntityByNetId(uint net_id) {
 void GameLogic::inputSystem(registry &reg, sparse_array<InputState> &inputs,
                             sparse_array<Velocity> &velocities,
                             sparse_array<PlayerComponent> &players, float dt) {
-    const float MOVE_SPEED = 300.0f;
+    const float MOVE_SPEED = 0.5f;  // Normalized units per second
 
     for (size_t i = 0; i < players.size(); ++i) {
-        auto player_opt = players[i];
+        auto &player_opt = players[i];  // Reference to avoid copy
         if (!player_opt || !player_opt.value().is_active)
             continue;
 
-        auto vel_opt = velocities[i];
-        auto input_opt = inputs[i];
+        auto &vel_opt = velocities[i];  // Reference to avoid copy
+        auto &input_opt = inputs[i];    // Reference to avoid copy
 
         if (vel_opt && input_opt) {
             Velocity &vel = vel_opt.value();
@@ -495,19 +653,25 @@ void GameLogic::inputSystem(registry &reg, sparse_array<InputState> &inputs,
 
 void GameLogic::movementSystem(registry &reg, sparse_array<Position> &positions,
                                sparse_array<Velocity> &velocities, float dt) {
+    auto &players = reg.get_components<PlayerComponent>();
+
     for (size_t i = 0; i < positions.size() && i < velocities.size(); ++i) {
-        auto pos_opt = positions[i];
-        auto vel_opt = velocities[i];
+        auto &pos_opt = positions[i];  // Reference to avoid copy
+        auto &vel_opt = velocities[i];
 
         if (pos_opt && vel_opt) {
             Position &pos = pos_opt.value();
             Velocity &vel = vel_opt.value();
 
-            pos.x += 300;
-            pos.y += 150;
+            pos.x += vel.vx * dt;
+            pos.y += vel.vy * dt;
 
-            pos.x = std::max(0.0f, std::min(pos.x, 1.0f));
-            pos.y = std::max(0.0f, std::min(pos.y, 1.0f));
+            // Only clamp players to screen bounds, not projectiles/enemies
+            bool is_player = (i < players.size()) && players[i].has_value();
+            if (is_player) {
+                pos.x = std::max(0.0f, std::min(pos.x, 1.0f));
+                pos.y = std::max(0.0f, std::min(pos.y, 1.0f));
+            }
         }
     }
 }
@@ -517,14 +681,22 @@ void GameLogic::weaponSystem(registry &reg, sparse_array<Weapon> &weapons,
                              sparse_array<InputState> &inputs,
                              sparse_array<PlayerComponent> &players,
                              float game_time) {
-    // TODO: Add projectiles logic
+    // Update weapon cooldowns
+    for (size_t i = 0; i < weapons.size(); ++i) {
+        auto &weapon_opt = weapons[i];
+        if (weapon_opt) {
+            if (weapon_opt.value().fire_timer > 0.0f) {
+                weapon_opt.value().fire_timer -= game_time;
+            }
+        }
+    }
 }
 
 void GameLogic::projectileSystem(registry &reg,
                                  sparse_array<Projectile> &projectiles,
                                  sparse_array<Position> &positions, float dt) {
     for (size_t i = 0; i < projectiles.size(); ++i) {
-        auto proj_opt = projectiles[i];
+        auto &proj_opt = projectiles[i];  // Reference to avoid copy
         if (proj_opt) {
             proj_opt.value().lifetime -= dt;
         }
@@ -537,14 +709,185 @@ void GameLogic::collisionSystem(
     sparse_array<PlayerComponent> &players, sparse_array<Enemy> &enemies,
     sparse_array<Health> &healths, sparse_array<Score> &scores,
     sparse_array<NetworkComponent> &network_comps, float dt) {
-    // TODO: Add collision logic
+
+    // Check all projectiles for collisions
+    for (size_t proj_idx = 0; proj_idx < projectiles.size(); ++proj_idx) {
+        auto &proj_opt = projectiles[proj_idx];
+        auto &proj_pos_opt = positions[proj_idx];
+        auto &proj_hitbox_opt = hitboxes[proj_idx];
+
+        if (!proj_opt || !proj_pos_opt)
+            continue;
+
+        Projectile &proj = proj_opt.value();
+        Position &proj_pos = proj_pos_opt.value();
+
+        float proj_width = proj_hitbox_opt ? proj_hitbox_opt.value().width : 8.0f;
+        float proj_height = proj_hitbox_opt ? proj_hitbox_opt.value().height : 8.0f;
+
+        // Check collision with all potential targets
+        for (size_t target_idx = 0; target_idx < positions.size(); ++target_idx) {
+            if (target_idx == proj_idx)
+                continue;
+
+            auto &target_pos_opt = positions[target_idx];
+            auto &target_hitbox_opt = hitboxes[target_idx];
+            auto &target_health_opt = healths[target_idx];
+
+            if (!target_pos_opt || !target_hitbox_opt || !target_health_opt)
+                continue;
+
+            Position &target_pos = target_pos_opt.value();
+            Hitbox &target_hitbox = target_hitbox_opt.value();
+
+            // Determine if target is player or enemy
+            bool target_is_player = players[target_idx].has_value();
+            bool target_is_enemy = enemies[target_idx].has_value();
+
+            // Player projectiles hit enemies, enemy projectiles hit players
+            bool valid_hit = (proj.is_player_projectile && target_is_enemy) ||
+                            (!proj.is_player_projectile && target_is_player);
+
+            if (!valid_hit)
+                continue;
+
+            // Simple AABB collision (normalized coordinates)
+            // Convert hitbox to normalized space (assume hitbox is in pixels, divide by screen size ~800x600)
+            float target_w = target_hitbox.width / 800.0f;
+            float target_h = target_hitbox.height / 600.0f;
+            float proj_w = proj_width / 800.0f;
+            float proj_h = proj_height / 600.0f;
+
+            bool collision =
+                proj_pos.x < target_pos.x + target_w &&
+                proj_pos.x + proj_w > target_pos.x &&
+                proj_pos.y < target_pos.y + target_h &&
+                proj_pos.y + proj_h > target_pos.y;
+
+            if (collision) {
+                // Apply damage
+                Health &target_health = target_health_opt.value();
+                target_health.current_hp -= proj.damage;
+
+                std::cout << "[COLLISION] Projectile hit! Target idx=" << target_idx
+                          << " is_player=" << target_is_player
+                          << " HP now=" << target_health.current_hp << std::endl;
+
+                // Mark for network update
+                auto &target_net_opt = network_comps[target_idx];
+                if (target_net_opt) {
+                    target_net_opt.value().needs_update = true;
+                }
+
+                // Award score if enemy killed by player projectile
+                if (proj.is_player_projectile && target_is_enemy && target_health.current_hp <= 0) {
+                    auto &enemy_opt = enemies[target_idx];
+                    if (enemy_opt) {
+                        // Find a player to award score to
+                        for (size_t p_idx = 0; p_idx < players.size(); ++p_idx) {
+                            auto &p_opt = players[p_idx];
+                            auto &score_opt = scores[p_idx];
+                            if (p_opt && score_opt) {
+                                score_opt.value().current_score += enemy_opt.value().score_value;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Mark projectile for removal by setting lifetime to 0
+                proj.lifetime = 0.0f;
+                break;  // Projectile can only hit one target
+            }
+        }
+    }
+
+    // Check player-enemy contact collisions (50 damage to both, like solo mode)
+    const int CONTACT_DAMAGE = 50;
+
+    for (size_t player_idx = 0; player_idx < players.size(); ++player_idx) {
+        auto &player_opt = players[player_idx];
+        if (!player_opt || !player_opt.value().is_active)
+            continue;
+
+        auto &player_pos_opt = positions[player_idx];
+        auto &player_hitbox_opt = hitboxes[player_idx];
+        auto &player_health_opt = healths[player_idx];
+
+        if (!player_pos_opt || !player_hitbox_opt || !player_health_opt)
+            continue;
+
+        // Skip if player has invulnerability
+        if (player_health_opt.value().invulnerability_timer > 0.0f)
+            continue;
+
+        Position &player_pos = player_pos_opt.value();
+        Hitbox &player_hitbox = player_hitbox_opt.value();
+
+        // Convert hitbox to normalized space
+        float player_w = player_hitbox.width / 800.0f;
+        float player_h = player_hitbox.height / 600.0f;
+
+        for (size_t enemy_idx = 0; enemy_idx < enemies.size(); ++enemy_idx) {
+            auto &enemy_opt = enemies[enemy_idx];
+            if (!enemy_opt)
+                continue;
+
+            auto &enemy_pos_opt = positions[enemy_idx];
+            auto &enemy_hitbox_opt = hitboxes[enemy_idx];
+            auto &enemy_health_opt = healths[enemy_idx];
+
+            if (!enemy_pos_opt || !enemy_hitbox_opt || !enemy_health_opt)
+                continue;
+
+            Position &enemy_pos = enemy_pos_opt.value();
+            Hitbox &enemy_hitbox = enemy_hitbox_opt.value();
+
+            // Convert hitbox to normalized space
+            float enemy_w = enemy_hitbox.width / 800.0f;
+            float enemy_h = enemy_hitbox.height / 600.0f;
+
+            // AABB collision check
+            bool collision =
+                player_pos.x < enemy_pos.x + enemy_w &&
+                player_pos.x + player_w > enemy_pos.x &&
+                player_pos.y < enemy_pos.y + enemy_h &&
+                player_pos.y + player_h > enemy_pos.y;
+
+            if (collision) {
+                // Apply damage to both
+                player_health_opt.value().current_hp -= CONTACT_DAMAGE;
+                enemy_health_opt.value().current_hp -= CONTACT_DAMAGE;
+
+                // Give player brief invulnerability to prevent multiple hits
+                player_health_opt.value().invulnerability_timer = 0.5f;
+
+                std::cout << "[COLLISION] Player-Enemy contact! Player HP="
+                          << player_health_opt.value().current_hp
+                          << " Enemy HP=" << enemy_health_opt.value().current_hp
+                          << std::endl;
+
+                // Mark for network update
+                auto &player_net_opt = network_comps[player_idx];
+                if (player_net_opt) {
+                    player_net_opt.value().needs_update = true;
+                }
+                auto &enemy_net_opt = network_comps[enemy_idx];
+                if (enemy_net_opt) {
+                    enemy_net_opt.value().needs_update = true;
+                }
+
+                break;  // Only one contact collision per player per tick
+            }
+        }
+    }
 }
 
 void GameLogic::healthSystem(registry &reg, sparse_array<Health> &healths,
                              sparse_array<NetworkComponent> &network_comps,
                              float dt) {
     for (size_t i = 0; i < healths.size(); ++i) {
-        auto health_opt = healths[i];
+        auto &health_opt = healths[i];  // Reference to avoid copy
         if (health_opt) {
             if (health_opt.value().invulnerability_timer > 0.0f) {
                 health_opt.value().invulnerability_timer -= dt;
@@ -552,8 +895,9 @@ void GameLogic::healthSystem(registry &reg, sparse_array<Health> &healths,
 
             if (health_opt.value().current_hp <= 0) {
                 // Mark for network update before death
-                if (network_comps[i]) {
-                    network_comps[i].value().needs_update = true;
+                auto &net_opt = network_comps[i];  // Reference to avoid copy
+                if (net_opt) {
+                    net_opt.value().needs_update = true;
                 }
             }
         }
@@ -564,12 +908,12 @@ void GameLogic::enemyAISystem(registry &reg, sparse_array<Enemy> &enemies,
                               sparse_array<Position> &positions,
                               sparse_array<Velocity> &velocities, float dt) {
     for (size_t i = 0; i < enemies.size(); ++i) {
-        auto enemy_opt = enemies[i];
+        auto &enemy_opt = enemies[i];  // Reference to avoid copy
         if (!enemy_opt)
             continue;
 
-        auto pos_opt = positions[i];
-        auto vel_opt = velocities[i];
+        auto &pos_opt = positions[i];  // Reference to avoid copy
+        auto &vel_opt = velocities[i]; // Reference to avoid copy
 
         if (pos_opt && vel_opt) {
             Enemy &enemy = enemy_opt.value();
@@ -578,7 +922,7 @@ void GameLogic::enemyAISystem(registry &reg, sparse_array<Enemy> &enemies,
             enemy.pattern_timer += dt;
 
             if (enemy.enemy_type == 1) { // Zigzag pattern
-                vel.vy = std::sin(enemy.pattern_timer * 3.0f) * 100.0f;
+                vel.vy = std::sin(enemy.pattern_timer * 3.0f) * 0.3f;  // Normalized amplitude
             }
         }
     }
