@@ -20,7 +20,7 @@
 
 class GameServerLoop {
   public:
-    GameServerLoop(uint16_t port = 4242, uint32_t max_clients = 4);
+    GameServerLoop(uint16_t port = 4242, uint32_t max_clients = 4, uint8_t level_id = 1);
     ~GameServerLoop();
 
     void start();
@@ -38,7 +38,9 @@ class GameServerLoop {
 
     uint16_t _port;
     uint32_t _max_clients;
+    uint8_t _level_id;
     bool _in_game;
+    bool _victory_sent;
     std::chrono::time_point<std::chrono::steady_clock> _last_tick;
     uint32_t _sequence_num;
     std::atomic<bool> _running;

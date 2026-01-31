@@ -18,16 +18,15 @@ void ai_input_system(registry &r, sparse_array<component::ai_input> &ai_inputs,
     sparse_array<component::gravity> &gravities = r.get_components<component::gravity>();
     sparse_array<component::hitbox> &hitboxes = r.get_components<component::hitbox>();
 
-    // Track landing state for enemies (Mario platformer)
     static std::vector<bool> was_on_ground;
     static std::vector<int> landing_count;
 
-    // Track entities to kill (off-screen)
     std::vector<size_t> entities_to_kill;
 
     for (size_t i = 0; i < ai_inputs.size(); ++i) {
         std::optional<component::ai_input> &ai_input = ai_inputs[i];
-        if (!ai_input) continue;
+        if (!ai_input)
+            continue;
 
         // Check if this is a stunned enemy (Mario platformer)
         auto stunned = (i < stunneds.size()) ? stunneds[i] : std::nullopt;
@@ -82,20 +81,17 @@ void ai_input_system(registry &r, sparse_array<component::ai_input> &ai_inputs,
         bool should_fire = (ai_input->fire_timer >= ai_input->fire_interval);
 
         ai_input->fire = should_fire;
-        ai_input->fire_timer *= (1 - should_fire);  // Reset to 0 if firing
+        ai_input->fire_timer *= (1 - should_fire); // Reset to 0 if firing
 
         // Check movement pattern
         bool has_components = (i < positions.size()) && positions[i] &&
-                             (i < velocities.size()) && velocities[i];
+                              (i < velocities.size()) && velocities[i];
         bool has_movement = (ai_input->movement_pattern.base_speed != 0.0f);
 
         if (has_components & has_movement) {
-            // For platformer enemies (with gravity), only control horizontal movement
             if (gravity && drawable && drawable->tag == "enemy") {
-                // Only set horizontal velocity, let gravity handle vertical
                 velocities[i]->vx = ai_input->movement_pattern.base_speed;
             } else {
-                // Normal R-Type enemies - full pattern control
                 ai_input->movement_pattern.apply_pattern(
                     velocities[i]->vx, velocities[i]->vy,
                     positions[i]->x, positions[i]->y, dt);

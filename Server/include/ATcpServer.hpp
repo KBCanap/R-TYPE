@@ -96,11 +96,20 @@ class ATcpServer : public ITcpServer {
 
     /**
      * @brief Unregister a client (thread-safe)
+     * Also enqueues a disconnect notification message
      */
     void unregisterClient(uint32_t client_id) {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = clients_.find(client_id);
         if (it != clients_.end()) {
+            // Create disconnect notification before removing client
+            ClientMessage disconnect_msg;
+            disconnect_msg.client_id = client_id;
+            disconnect_msg.client_endpoint = it->second->endpoint;
+            disconnect_msg.message = "";
+            disconnect_msg.is_disconnect = true;
+            messages_.emplace_back(disconnect_msg);
+
             it->second->is_connected = false;
             clients_.erase(client_id);
         }

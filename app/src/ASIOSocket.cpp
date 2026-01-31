@@ -15,7 +15,6 @@ bool ASIOTCPSocket::connect(const std::string &host, uint16_t port) {
         asio::connect(socket_, endpoints);
         return true;
     } catch (const std::exception &e) {
-        std::cerr << "TCP connect error: " << e.what() << std::endl;
         return false;
     }
 }
@@ -35,7 +34,6 @@ size_t ASIOTCPSocket::send(const std::vector<uint8_t> &data) {
     try {
         return asio::write(socket_, asio::buffer(data));
     } catch (const std::exception &e) {
-        std::cerr << "TCP send error: " << e.what() << std::endl;
         return 0;
     }
 }
@@ -73,7 +71,6 @@ bool ASIOUDPSocket::open() {
         socket_.open(asio::ip::udp::v4());
         return true;
     } catch (const std::exception &e) {
-        std::cerr << "UDP open error: " << e.what() << std::endl;
         return false;
     }
 }
@@ -97,7 +94,6 @@ bool ASIOUDPSocket::setRemoteEndpoint(const std::string &host, uint16_t port) {
         remote_endpoint_ = *endpoints.begin();
         return true;
     } catch (const std::exception &e) {
-        std::cerr << "UDP set endpoint error: " << e.what() << std::endl;
         return false;
     }
 }
@@ -106,40 +102,17 @@ size_t ASIOUDPSocket::sendTo(const std::vector<uint8_t> &data) {
     try {
         return socket_.send_to(asio::buffer(data), remote_endpoint_);
     } catch (const std::exception &e) {
-        std::cerr << "UDP send error: " << e.what() << std::endl;
         return 0;
     }
 }
 
 void ASIOUDPSocket::asyncReceive(std::vector<uint8_t> &buffer,
                                  std::function<void(bool, size_t)> callback) {
-    std::cout << "[ASIOUDPSocket] Starting asyncReceive with buffer size: "
-              << buffer.size() << std::endl;
-
     socket_.async_receive(
         asio::buffer(buffer),
         [callback](std::error_code ec, std::size_t bytes_transferred) {
-            if (!ec) {
-                std::cout << "[ASIOUDPSocket] Received UDP packet: "
-                          << bytes_transferred << " bytes" << std::endl;
-
-                // Afficher les premiers bytes pour debug
-                if (bytes_transferred > 0) {
-                    std::cout << "[ASIOUDPSocket] First bytes: ";
-                    // Note: On ne peut pas accéder au buffer ici, il faudrait
-                    // le passer
-                    std::cout << std::endl;
-                }
-            } else {
-                std::cerr << "[ASIOUDPSocket] UDP receive error: "
-                          << ec.message() << " (code: " << ec.value() << ")"
-                          << std::endl;
-            }
-
             callback(!ec, bytes_transferred);
         });
-
-    std::cout << "[ASIOUDPSocket] async_receive call completed" << std::endl;
 }
 
 ASIOContext::ASIOContext() {}

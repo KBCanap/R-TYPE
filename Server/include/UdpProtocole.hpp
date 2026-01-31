@@ -24,8 +24,10 @@ struct Entity {
     uint32_t net_id;
     EntityType type;
     uint32_t health;
+    uint32_t shield;
     float position_x;
     float position_y;
+    uint32_t score;
 };
 
 class UdpProtocole {
@@ -44,6 +46,7 @@ class UdpProtocole {
                                     uint32_t sequence_num);
     std::string createGameState(const std::vector<Entity> &entities,
                                 uint32_t sequence_num);
+    std::string createVictory(uint32_t sequence_num);
 
     static uint32_t extractHealth24bit(const uint8_t *data);
     static void packHealth24bit(uint8_t *dest, uint32_t health);

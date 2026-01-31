@@ -5,16 +5,16 @@
 ** render_system
 */
 
-#include "../../include/systems.hpp"
 #include "../../app/include/settings.hpp"
+#include "../../include/systems.hpp"
 #include "../include/render/IRenderWindow.hpp"
 #include <memory>
 
 namespace systems {
 
 static void draw_sprite_with_shader(render::IRenderWindow &window,
-                                     render::ISprite &sprite,
-                                     render::IShader *shader) {
+                                    render::ISprite &sprite,
+                                    render::IShader *shader) {
     if (shader) {
         window.draw(sprite, *shader);
     } else {
@@ -23,8 +23,8 @@ static void draw_sprite_with_shader(render::IRenderWindow &window,
 }
 
 static void draw_shape_with_shader(render::IRenderWindow &window,
-                                    render::IShape &shape,
-                                    render::IShader *shader) {
+                                   render::IShape &shape,
+                                   render::IShader *shader) {
     if (shader) {
         window.draw(shape, *shader);
     } else {
@@ -33,10 +33,10 @@ static void draw_shape_with_shader(render::IRenderWindow &window,
 }
 
 static void render_background(component::background &bg,
-                               render::IRenderWindow &window,
-                               render::IShader *shader,
-                               float dt) {
-    if (!bg.texture) return;
+                              render::IRenderWindow &window,
+                              render::IShader *shader, float dt) {
+    if (!bg.texture)
+        return;
 
     bg.offset_x -= bg.scroll_speed * dt;
 
@@ -47,8 +47,23 @@ static void render_background(component::background &bg,
         bg.offset_x += static_cast<float>(window_size.x);
     }
 
-    float scale_x = static_cast<float>(window_size.x) / texture_size.x;
-    float scale_y = static_cast<float>(window_size.y) / texture_size.y;
+    // Calculate scale to maintain aspect ratio
+    // For very wide textures (like level 2), scale by height only
+    float scale_x, scale_y;
+
+    float texture_ratio = static_cast<float>(texture_size.x) / texture_size.y;
+    float window_ratio = static_cast<float>(window_size.x) / window_size.y;
+
+    if (texture_ratio > window_ratio * 2.0f) {
+        // Very wide texture (like spritesheet) - scale by height and maintain
+        // aspect ratio
+        scale_y = static_cast<float>(window_size.y) / texture_size.y;
+        scale_x = scale_y;
+    } else {
+        // Normal texture - scale to fill window
+        scale_x = static_cast<float>(window_size.x) / texture_size.x;
+        scale_y = static_cast<float>(window_size.y) / texture_size.y;
+    }
 
     std::unique_ptr<render::ISprite> sprite1 = window.createSprite();
     sprite1->setTexture(*bg.texture);
@@ -63,26 +78,31 @@ static void render_background(component::background &bg,
     draw_sprite_with_shader(window, *sprite2, shader);
 }
 
-static bool load_sprite_texture(component::drawable &draw, render::IRenderWindow &window) {
-    if (draw.texture || draw.texture_path.empty()) return true;
+static bool load_sprite_texture(component::drawable &draw,
+                                render::IRenderWindow &window) {
+    if (draw.texture || draw.texture_path.empty())
+        return true;
 
     draw.texture = std::shared_ptr<render::ITexture>(window.createTexture());
-    if (!draw.texture->loadFromFile(draw.texture_path)) return false;
+    if (!draw.texture->loadFromFile(draw.texture_path))
+        return false;
 
     draw.sprite = std::shared_ptr<render::ISprite>(window.createSprite());
     draw.sprite->setTexture(*draw.texture);
     return true;
 }
 
-static void setup_sprite_texture_rect(render::ISprite &sprite,
-                                       const component::drawable &draw,
-                                       const sparse_array<component::animation> &animations,
-                                       size_t entity_idx) {
-    bool has_animation = (entity_idx < animations.size()) && animations[entity_idx] &&
-                        !animations[entity_idx]->frames.empty();
+static void setup_sprite_texture_rect(
+    render::ISprite &sprite, const component::drawable &draw,
+    const sparse_array<component::animation> &animations, size_t entity_idx) {
+    bool has_animation = (entity_idx < animations.size()) &&
+                         animations[entity_idx] &&
+                         !animations[entity_idx]->frames.empty();
 
     if (has_animation) {
-        sprite.setTextureRect(animations[entity_idx]->frames[animations[entity_idx]->current_frame]);
+        sprite.setTextureRect(
+            animations[entity_idx]
+                ->frames[animations[entity_idx]->current_frame]);
         return;
     }
 
@@ -97,8 +117,10 @@ static void render_sprite(component::drawable &draw,
                           render::IShader *shader,
                           const sparse_array<component::animation> &animations,
                           size_t entity_idx) {
-    if (!load_sprite_texture(draw, window)) return;
-    if (!draw.sprite) return;
+    if (!load_sprite_texture(draw, window))
+        return;
+    if (!draw.sprite)
+        return;
 
     draw.sprite->setPosition(pos.x, pos.y);
     draw.sprite->setScale(draw.scale, draw.scale);
@@ -111,7 +133,8 @@ static void render_shape(const component::drawable &draw,
                          const component::position &pos,
                          render::IRenderWindow &window,
                          render::IShader *shader) {
-    std::unique_ptr<render::IShape> shape = window.createRectangleShape(render::Vector2f(draw.size, draw.size));
+    std::unique_ptr<render::IShape> shape =
+        window.createRectangleShape(render::Vector2f(draw.size, draw.size));
     shape->setPosition(pos.x, pos.y);
     shape->setFillColor(draw.color);
     draw_shape_with_shader(window, *shape, shader);
@@ -129,7 +152,8 @@ void render_system(registry &r, sparse_array<component::position> &positions,
 
     for (size_t i = 0; i < backgrounds.size(); ++i) {
         std::optional<component::background> &bg = backgrounds[i];
-        if (!bg) continue;
+        if (!bg)
+            continue;
         render_background(*bg, window, colorblindShader, dt);
     }
 
@@ -137,11 +161,13 @@ void render_system(registry &r, sparse_array<component::position> &positions,
         std::optional<component::animation> &anim = animations[i];
         std::optional<component::drawable> &drawable = drawables[i];
 
-        if (!anim || !drawable || !anim->playing || anim->frames.empty()) continue;
+        if (!anim || !drawable || !anim->playing || anim->frames.empty())
+            continue;
 
         anim->current_time += dt;
 
-        if (anim->current_time < anim->frame_duration) continue;
+        if (anim->current_time < anim->frame_duration)
+            continue;
 
         anim->current_time = 0;
 
@@ -149,13 +175,16 @@ void render_system(registry &r, sparse_array<component::position> &positions,
         int direction = anim->reverse ? -1 : 1;
         int next_frame = static_cast<int>(anim->current_frame) + direction;
 
-        bool at_boundary = (next_frame < 0) || (next_frame >= static_cast<int>(frame_count));
+        bool at_boundary =
+            (next_frame < 0) || (next_frame >= static_cast<int>(frame_count));
 
         if (at_boundary) {
             if (anim->loop) {
-                next_frame = (next_frame < 0) ? (static_cast<int>(frame_count) - 1) : 0;
+                next_frame =
+                    (next_frame < 0) ? (static_cast<int>(frame_count) - 1) : 0;
             } else {
-                next_frame = (next_frame < 0) ? 0 : (static_cast<int>(frame_count) - 1);
+                next_frame =
+                    (next_frame < 0) ? 0 : (static_cast<int>(frame_count) - 1);
                 anim->playing = false;
 
                 if (anim->destroy_on_finish) {
@@ -171,7 +200,8 @@ void render_system(registry &r, sparse_array<component::position> &positions,
         std::optional<component::position> &pos = positions[i];
         std::optional<component::drawable> &draw = drawables[i];
 
-        if (!pos || !draw) continue;
+        if (!pos || !draw)
+            continue;
 
         // Change color for stunned enemies (Mario platformer)
         render::Color original_color = draw->color;

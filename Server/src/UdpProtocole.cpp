@@ -84,6 +84,10 @@ std::string UdpProtocole::createEntityCreate(const Entity &entity,
     std::memcpy(ptr, &health_network, 4);
     ptr += 4;
 
+    uint32_t shield_network = htonl(entity.shield);
+    std::memcpy(ptr, &shield_network, 4);
+    ptr += 4;
+
     uint32_t pos_x_network = htonf(entity.position_x);
     std::memcpy(ptr, &pos_x_network, 4);
     ptr += 4;
@@ -105,8 +109,16 @@ UdpProtocole::createEntityUpdate(const std::vector<Entity> &entities,
         std::memcpy(ptr, &net_id_network, 4);
         ptr += 4;
 
+        // Entity type (1 byte)
+        *ptr = static_cast<uint8_t>(entity.type);
+        ptr += 1;
+
         uint32_t health_network = htonl(entity.health);
         std::memcpy(ptr, &health_network, 4);
+        ptr += 4;
+
+        uint32_t shield_network = htonl(entity.shield);
+        std::memcpy(ptr, &shield_network, 4);
         ptr += 4;
 
         uint32_t pos_x_network = htonf(entity.position_x);
@@ -115,6 +127,10 @@ UdpProtocole::createEntityUpdate(const std::vector<Entity> &entities,
 
         uint32_t pos_y_network = htonf(entity.position_y);
         std::memcpy(ptr, &pos_y_network, 4);
+        ptr += 4;
+
+        uint32_t score_network = htonl(entity.score);
+        std::memcpy(ptr, &score_network, 4);
         ptr += 4;
     }
 
@@ -157,6 +173,10 @@ std::string UdpProtocole::createGameState(const std::vector<Entity> &entities,
         std::memcpy(ptr, &health_network, 4);
         ptr += 4;
 
+        uint32_t shield_network = htonl(entity.shield);
+        std::memcpy(ptr, &shield_network, 4);
+        ptr += 4;
+
         uint32_t pos_x_network = htonf(entity.position_x);
         std::memcpy(ptr, &pos_x_network, 4);
         ptr += 4;
@@ -167,6 +187,12 @@ std::string UdpProtocole::createGameState(const std::vector<Entity> &entities,
     }
 
     return createMessage(UdpMessageType::GAME_STATE, sequence_num, data);
+}
+
+std::string UdpProtocole::createVictory(uint32_t sequence_num) {
+    // Empty payload - just the message type
+    std::vector<uint8_t> data;
+    return createMessage(UdpMessageType::VICTORY, sequence_num, data);
 }
 
 uint32_t UdpProtocole::extractHealth24bit(const uint8_t *data) {

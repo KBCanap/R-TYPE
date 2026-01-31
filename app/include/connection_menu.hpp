@@ -21,6 +21,7 @@ enum class ConnectionMenuResult {
 struct ConnectionInfo {
     std::string serverHost;
     uint16_t serverPort;
+    std::string username;
 };
 
 class ConnectionMenu {
@@ -53,6 +54,13 @@ class ConnectionMenu {
     std::unique_ptr<render::IText> _multiplayerButtonText;
     std::unique_ptr<render::IShape> _backButton;
     std::unique_ptr<render::IText> _backButtonText;
+
+    // Username input
+    std::unique_ptr<render::IText> _usernameLabel;
+    std::unique_ptr<render::IShape> _usernameInputBox;
+    std::unique_ptr<render::IText> _usernameInputText;
+    std::string _username;
+    bool _isTypingUsername;
 
     std::string _serverHost;
     std::string _serverPort;

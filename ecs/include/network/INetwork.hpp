@@ -22,14 +22,39 @@ enum class ConnectionState {
 
 /**
  * @enum MessageType
- * @brief TCP message types from RFC
+ * @brief TCP message types from RFC (extended with lobby system)
  */
 enum class MessageType : uint8_t {
+    // Connection Messages
     TCP_CONNECT = 0x01,
     TCP_CONNECT_ACK = 0x02,
     TCP_CONNECT_NAK = 0x03,
     TCP_READY = 0x04,
     TCP_GAME_START = 0x05,
+
+    // Lobby Navigation Messages
+    LOBBY_LIST_REQUEST = 0x10,
+    LOBBY_LIST_RESPONSE = 0x11,
+    LOBBY_INFO_REQUEST = 0x12,
+    LOBBY_INFO_RESPONSE = 0x13,
+
+    // Join/Create Lobby
+    CREATE_LOBBY = 0x14,
+    CREATE_LOBBY_ACK = 0x15,
+    JOIN_LOBBY = 0x16,
+    JOIN_LOBBY_ACK = 0x17,
+    JOIN_LOBBY_NAK = 0x18,
+    LEAVE_LOBBY = 0x19,
+    LEAVE_LOBBY_ACK = 0x1A,
+
+    // Lobby Player Management
+    PLAYER_JOINED = 0x1B,
+    PLAYER_LEFT = 0x1C,
+
+    // Game Session Management
+    GAME_CANCELLED = 0x1D,
+
+    // Errors
     TCP_ERROR = 0xFF
 };
 
@@ -44,7 +69,8 @@ enum class UDPMessageType : uint8_t {
     ENTITY_UPDATE = 0x11,
     ENTITY_DESTROY = 0x12,
     GAME_STATE = 0x13,
-    PLAYER_INPUT = 0x20
+    PLAYER_INPUT = 0x20,
+    VICTORY = 0x30
 };
 
 /**
@@ -53,10 +79,17 @@ enum class UDPMessageType : uint8_t {
  */
 enum class EntityType : uint8_t {
     PLAYER = 0x01,
-    ENEMY = 0x02,
+    ENEMY = 0x02,               // Level 1 standard enemy (r-typesheet9.gif)
     PROJECTILE = 0x03,
     ALLIED_PROJECTILE = 0x04,
-    BOSS = 0x05
+    BOSS = 0x05,                // Level 1 boss (r-typesheet17.gif)
+    POWERUP_SHIELD = 0x06,      // Shield power-up
+    POWERUP_SPREAD = 0x07,      // Spread power-up
+    ENEMY_LEVEL2 = 0x08,        // Level 2 standard enemy (r-typesheet5.gif)
+    ENEMY_LEVEL2_SPREAD = 0x09, // Level 2 spread enemy (r-typesheet11.gif)
+    BOSS_LEVEL2_PART1 = 0x0A,   // Level 2 boss left part (r-typesheet38.gif)
+    BOSS_LEVEL2_PART2 = 0x0B,   // Level 2 boss center part (r-typesheet38.gif)
+    BOSS_LEVEL2_PART3 = 0x0C    // Level 2 boss right part (r-typesheet38.gif)
 };
 
 /**
@@ -121,6 +154,7 @@ struct EntityData {
     uint32_t net_id;
     EntityType entity_type;
     uint32_t health;
+    uint32_t shield;
     float position_x;
     float position_y;
 };
@@ -131,9 +165,12 @@ struct EntityData {
  */
 struct EntityUpdateData {
     uint32_t net_id;
+    EntityType entity_type;
     uint32_t health;
+    uint32_t shield;
     float position_x;
     float position_y;
+    uint32_t score;
 };
 
 /**
@@ -167,10 +204,12 @@ class INetwork {
      * @brief Connect to TCP server
      * @param host Server hostname or IP
      * @param port Server TCP port
+     * @param username Player username (optional, defaults to "Player")
      * @return ConnectionResult with success status and player ID
      */
-    virtual ConnectionResult connectTCP(const std::string &host,
-                                        uint16_t port) = 0;
+    virtual ConnectionResult
+    connectTCP(const std::string &host, uint16_t port,
+               const std::string &username = "Player") = 0;
 
     /**
      * @brief Disconnect from server

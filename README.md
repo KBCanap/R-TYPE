@@ -14,10 +14,13 @@ We implemented a multi-threaded server using [Asio](https://think-async.com/Asio
 > If it's below 3.20, consider upgrading via your package manager or [CMake downloads](https://cmake.org/download/).
 - **Windows**: [Visual Studio 2022 Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (workload *Desktop development with C++*)
 - **Linux**: `g++` or `clang++`, `make` (package `build-essential` on Debian/Ubuntu)
+- **SFML** \<=2.6.1
 
 All third-party libraries (Asio, SFML) are automatically fetched with [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake).
 
-> ⚠️ **Note**: You do **not** need to install SFML/Asio manually.
+> ⚠️ **Note**: You don’t need to install SFML or Asio manually, but system libraries are not handled automatically. CMake will let you know if any dependencies are missing and guide you through installing them.
+
+> ⚠️ **Note**: On window, we recommand using vcpkg to install system libraries dependencies. You may take a look CMakePresets.json to se if the path in toolchainFile is correct for your vcpkg installation.
 
 ##  Compilation
 
@@ -46,9 +49,7 @@ cmake --preset win-config-release
 cmake --build --preset win-build-release
 ```
 
- **Binaries will be generated in:**
-- **Dev**: `build/win/bin/Debug/` (with tests)
-- **Release**: `build/win-release/bin/Release/` (production)
+ > **Note**: The binaries are generated at the root of the repository
 
 ###  Linux (Makefiles + g++)
 
@@ -67,75 +68,33 @@ cmake --build --preset linux-build-dev
 cmake --preset linux-config-release
 
 # Build Release
-cmake --build --preset linux-release
-
-# Build Debug
-cmake --build --preset linux-debug
+cmake --build --preset linux-build-release
 
 ```
 > [!TIP]
 > To speed up the compilation of the build on linux if you have a multicore cpu, you can add `-- -j$(nproc)`
-> Like this: `cmake --build --preset linux-release -- -j$(nproc)`
+> Like this: `cmake --build --preset linux-build-release -- -j$(nproc)`
 
 > [!NOTE]
 > You can still use the default `cmake` command
 > For Linux: To configure the Makefile, run: `cmake -B build -S .`
 > Then to compile `cd build && make -j$(nproc)` like for cmake **-j** is an option for multicore compilation
 
- **Binaries will be generated in:**
-- **Dev**: `build/dev/bin/`
-- **Release**: `build/linux/bin/`
+ > **Note**: The binaries are generated at the root of the repository
 
 ## ▶️ Running
 
 ### Start the server:
 
-**Windows:**
-```powershell
-# Dev build (with tests)
-./build/win/bin/Debug/r-type_server.exe
-
-# Release build (production)
-./build/win-release/bin/Release/r-type_server.exe
-```
-
-**Linux:**
 ```bash
-# Dev build (with tests)
-./build/dev/bin/r-type_server
-
-# Release build (production)
-./build/linux/bin/r-type_server
+./r-type_server [-p <tcp_port>] [-u <udp_port>]
 ```
 
 ### Start the client (in another terminal):
 
-**Windows:**
-```powershell
-# Dev build (with tests)
-./build/win/bin/Debug/r-type_client.exe
-
-# Release build (production)
-./build/win-release/bin/Release/r-type_client.exe
-```
-
-**Linux:**
 ```bash
-# Dev build (with tests)
-./build/dev/bin/r-type_client
-
-# Release build (production)
-./build/linux/bin/r-type_client
+./r-type_client [-i <server_ip>] [-p <tcp_port>] [-h]
 ```
 
 > [!WARNING]
-> For the client to work you need to have the [assets](./assets/) folder within the same folder as the r-type_client binary
-
-## 📂 Binary Locations Summary
-
-| Platform | Configuration | Path |
-|----------|---------------|------|
-| Windows  | Dev (Debug + Tests) | `build/win/bin/Debug/` |
-| Windows  | Release (Production) | `build/win-release/bin/Release/` |
-| Linux    | Dev (Debug + Tests) | `build/dev/bin/` |
-| Linux    | Release (Production) | `build/linux/bin/` |
+> For the client to work you need to have the [assets](./assets/) folder within the same folder as the r-type_app binary

@@ -148,3 +148,54 @@ float PlayerManager::getRelativeX(float relativeX) const {
 float PlayerManager::getRelativeY(float relativeY) const {
     return relativeY * static_cast<float>(_window.getSize().y);
 }
+
+void PlayerManager::updateShieldVisual(const std::optional<entity> &player,
+                                       std::optional<entity> &shield_entity) {
+    if (!player)
+        return;
+
+    auto &shields = _registry.get_components<component::shield>();
+    auto &positions = _registry.get_components<component::position>();
+    auto &player_pos = positions[*player];
+
+    if (!player_pos)
+        return;
+
+    // Check if player has shield component with current_shield > 0
+    bool has_shield = (*player < shields.size()) && shields[*player] &&
+                      (shields[*player]->current_shield > 0);
+
+    if (has_shield) {
+        // Create shield entity if it doesn't exist
+        if (!shield_entity) {
+            shield_entity = _registry.spawn_entity();
+
+            // Shield sprite from r-typesheet2.gif at coordinates 533,550 to
+            // 546,588 Width: 546 - 533 = 13, Height: 588 - 550 = 38
+            _registry.add_component<component::drawable>(
+                *shield_entity,
+                component::drawable("assets/sprites/r-typesheet2.gif",
+                                    render::IntRect(533, 550, 13, 38), 2.0f,
+                                    "shield"));
+
+            _registry.add_component<component::position>(
+                *shield_entity, component::position(0, 0));
+        }
+
+        // Update shield position to be in front of player
+        auto &shield_positions =
+            _registry.get_components<component::position>();
+        auto &shield_pos = shield_positions[*shield_entity];
+        if (shield_pos) {
+            shield_pos->x =
+                player_pos->x - -60.0f; // Position shield in front of player
+            shield_pos->y = player_pos->y - 20.0f; // Center it vertically
+        }
+    } else {
+        // Destroy shield entity if player has no shield
+        if (shield_entity) {
+            _registry.kill_entity(*shield_entity);
+            shield_entity = std::nullopt;
+        }
+    }
+}

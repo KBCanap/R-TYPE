@@ -16,12 +16,15 @@ class EnemyManager {
     EnemyManager(registry &reg, render::IRenderWindow &win);
 
     entity spawnEnemy();
+    entity spawnEnemyLevel2();
+    entity spawnEnemyLevel2Spread();
     void updateEnemyPositions(std::vector<entity> &enemies);
     void cleanupOffscreenEnemies(std::vector<entity> &enemies);
 
     component::weapon createEnemySingleWeapon();
     component::weapon createEnemyBurstWeapon();
     component::weapon createEnemySpreadWeapon();
+    component::weapon createEnemyWaveWeapon();
 
     static constexpr int NUM_ENEMY_WEAPON_TYPES = 3;
 

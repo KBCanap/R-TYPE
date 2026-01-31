@@ -15,10 +15,9 @@
 class KeyBindings;
 
 namespace systems {
-// Helper functions (defined in systems/common.cpp)
-bool is_enemy_tag(const std::string& tag);
-void create_explosion(registry &r, float x, float y);
 
+bool is_enemy_tag(const std::string &tag);
+void create_explosion(registry &r, float x, float y);
 void update_key_state(const render::Event &event);
 
 void position_system(registry &r, sparse_array<component::position> &positions,
@@ -71,7 +70,7 @@ void score_system(registry &r, sparse_array<component::score> &scores,
 void health_system(registry &r, sparse_array<component::health> &healths,
                    float dt);
 
-// Mario platformer-specific systems
+// Mario platformer systems
 void gravity_system(registry &r, sparse_array<component::gravity> &gravities,
                     sparse_array<component::velocity> &velocities, float dt);
 

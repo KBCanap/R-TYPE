@@ -26,6 +26,7 @@ struct CreateEntityCommand {
     uint32_t net_id;
     EntityType entity_type;
     uint32_t health;
+    uint32_t shield;
     float position_x;
     float position_y;
 };
@@ -36,9 +37,12 @@ struct CreateEntityCommand {
  */
 struct UpdateEntityCommand {
     uint32_t net_id;
+    EntityType entity_type;
     uint32_t health;
+    uint32_t shield;
     float position_x;
     float position_y;
+    uint32_t score;
 };
 
 /**

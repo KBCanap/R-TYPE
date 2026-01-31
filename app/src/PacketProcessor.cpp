@@ -128,51 +128,38 @@ EntityData
 PacketProcessor::parseEntityCreate(const std::vector<uint8_t> &data) {
     EntityData entity;
 
-    if (data.size() < 17) {
-        std::cerr << "[PacketProcessor] ENTITY_CREATE data too small: "
-                  << data.size() << " (expected 17)" << std::endl;
+    if (data.size() < 21) {
         return entity;
     }
 
     size_t offset = 0;
 
-    // NET_ID (4 bytes)
-    entity.net_id = (static_cast<uint32_t>(data[offset]) << 24) |
-                    (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                    (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                    static_cast<uint32_t>(data[offset + 3]);
+    uint32_t net_id_network;
+    std::memcpy(&net_id_network, &data[offset], 4);
+    entity.net_id = ntohl(net_id_network);
     offset += 4;
 
-    // ENTITY_TYPE (1 byte)
     entity.entity_type = static_cast<EntityType>(data[offset]);
     offset += 1;
 
-    // HEALTH (4 bytes) - CHANGEMENT ICI pour compatibilit� serveur
-    entity.health = (static_cast<uint32_t>(data[offset]) << 24) |
-                    (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                    (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                    static_cast<uint32_t>(data[offset + 3]);
+    uint32_t health_network;
+    std::memcpy(&health_network, &data[offset], 4);
+    entity.health = ntohl(health_network);
     offset += 4;
 
-    // POSITION_X (4 bytes)
-    uint32_t pos_x_raw = (static_cast<uint32_t>(data[offset]) << 24) |
-                         (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                         (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                         static_cast<uint32_t>(data[offset + 3]);
-    entity.position_x = networkToFloat(pos_x_raw);
+    uint32_t shield_network;
+    std::memcpy(&shield_network, &data[offset], 4);
+    entity.shield = ntohl(shield_network);
     offset += 4;
 
-    // POSITION_Y (4 bytes)
-    uint32_t pos_y_raw = (static_cast<uint32_t>(data[offset]) << 24) |
-                         (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                         (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                         static_cast<uint32_t>(data[offset + 3]);
-    entity.position_y = networkToFloat(pos_y_raw);
+    uint32_t pos_x_network;
+    std::memcpy(&pos_x_network, &data[offset], 4);
+    entity.position_x = networkToFloat(pos_x_network);
+    offset += 4;
 
-    std::cout << "[PacketProcessor] Parsed entity - NET_ID: " << entity.net_id
-              << " Type: " << static_cast<int>(entity.entity_type)
-              << " Health: " << entity.health << " Pos: (" << entity.position_x
-              << ", " << entity.position_y << ")" << std::endl;
+    uint32_t pos_y_network;
+    std::memcpy(&pos_y_network, &data[offset], 4);
+    entity.position_y = networkToFloat(pos_y_network);
 
     return entity;
 }
@@ -181,40 +168,49 @@ std::vector<EntityUpdateData>
 PacketProcessor::parseEntityUpdate(const std::vector<uint8_t> &data) {
     std::vector<EntityUpdateData> updates;
 
-    if (data.size() % 16 != 0) {
+    // ENTITY_UPDATE_SIZE = 25 bytes per entity
+    if (data.size() % 25 != 0) {
         return updates;
     }
 
-    size_t num_entities = data.size() / 16;
+    size_t num_entities = data.size() / 25;
 
     for (size_t i = 0; i < num_entities; ++i) {
-        size_t offset = i * 16;
+        size_t offset = i * 25;
         EntityUpdateData update;
 
-        update.net_id = (static_cast<uint32_t>(data[offset]) << 24) |
-                        (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                        (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                        static_cast<uint32_t>(data[offset + 3]);
+        uint32_t net_id_network;
+        std::memcpy(&net_id_network, &data[offset], 4);
+        update.net_id = ntohl(net_id_network);
         offset += 4;
 
-        update.health = (static_cast<uint32_t>(data[offset]) << 24) |
-                        (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                        (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                        static_cast<uint32_t>(data[offset + 3]);
+        // Entity type (1 byte)
+        update.entity_type = static_cast<EntityType>(data[offset]);
+        offset += 1;
+
+        uint32_t health_network;
+        std::memcpy(&health_network, &data[offset], 4);
+        update.health = ntohl(health_network);
         offset += 4;
 
-        uint32_t pos_x_raw = (static_cast<uint32_t>(data[offset]) << 24) |
-                             (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                             (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                             static_cast<uint32_t>(data[offset + 3]);
-        update.position_x = networkToFloat(pos_x_raw);
+        uint32_t shield_network;
+        std::memcpy(&shield_network, &data[offset], 4);
+        update.shield = ntohl(shield_network);
         offset += 4;
 
-        uint32_t pos_y_raw = (static_cast<uint32_t>(data[offset]) << 24) |
-                             (static_cast<uint32_t>(data[offset + 1]) << 16) |
-                             (static_cast<uint32_t>(data[offset + 2]) << 8) |
-                             static_cast<uint32_t>(data[offset + 3]);
-        update.position_y = networkToFloat(pos_y_raw);
+        uint32_t pos_x_network;
+        std::memcpy(&pos_x_network, &data[offset], 4);
+        update.position_x = networkToFloat(pos_x_network);
+        offset += 4;
+
+        uint32_t pos_y_network;
+        std::memcpy(&pos_y_network, &data[offset], 4);
+        update.position_y = networkToFloat(pos_y_network);
+        offset += 4;
+
+        uint32_t score_network;
+        std::memcpy(&score_network, &data[offset], 4);
+        update.score = ntohl(score_network);
 
         updates.push_back(update);
     }
@@ -257,14 +253,14 @@ PacketProcessor::parseGameState(const std::vector<uint8_t> &data) {
                             (static_cast<uint32_t>(data[2]) << 8) |
                             static_cast<uint32_t>(data[3]);
 
-    if (data.size() < 4 + entity_count * 17) {
+    if (data.size() < 4 + entity_count * 21) {
         return entities;
     }
 
     for (uint32_t i = 0; i < entity_count; ++i) {
-        size_t offset = 4 + i * 17;
+        size_t offset = 4 + i * 21;
         std::vector<uint8_t> entity_data(data.begin() + offset,
-                                         data.begin() + offset + 17);
+                                         data.begin() + offset + 21);
         EntityData entity = parseEntityCreate(entity_data);
         entities.push_back(entity);
     }
