@@ -87,6 +87,7 @@ class LobbyBrowserMenu {
     // Create lobby dialog
     std::string _newLobbyName;
     int _newLobbyMaxPlayers;
+    int _selectedLevelId;  // 1=Level1, 2=Level2, 99=Endless
     bool _isTypingLobbyName;
 
     // Dialog UI elements
@@ -105,6 +106,14 @@ class LobbyBrowserMenu {
     std::unique_ptr<render::IText> _confirmButtonText;
     std::unique_ptr<render::IShape> _cancelButton;
     std::unique_ptr<render::IText> _cancelButtonText;
+
+    // Level selection UI elements
+    std::unique_ptr<render::IText> _levelLabel;
+    std::unique_ptr<render::IText> _levelText;
+    std::unique_ptr<render::IShape> _decreaseLevelButton;
+    std::unique_ptr<render::IText> _decreaseLevelButtonText;
+    std::unique_ptr<render::IShape> _increaseLevelButton;
+    std::unique_ptr<render::IText> _increaseLevelButtonText;
 
     std::string _errorMessage;
     std::chrono::steady_clock::time_point _errorMessageTime;

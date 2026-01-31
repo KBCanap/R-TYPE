@@ -199,6 +199,11 @@ set(SERVER_SOURCES
     Server/src/GameServerLoop.cpp
     Server/src/UdpProtocole.cpp
     Server/src/GameLogic.cpp
+    Server/src/GameLogicPlayer.cpp
+    Server/src/GameLogicEntities.cpp
+    Server/src/GameLogicCombat.cpp
+    Server/src/GameLogicSystems.cpp
+    Server/src/GameLogicSnapshot.cpp
     ecs/src/registery.cpp
 )
 

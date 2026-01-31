@@ -6,6 +6,7 @@
 */
 
 #include "../../include/systems.hpp"
+#include "../../include/GameConstants.hpp"
 #include <algorithm>
 #include <vector>
 
@@ -295,7 +296,7 @@ static void process_player_enemy_collisions(
     std::vector<size_t> &entities_to_kill,
     std::vector<std::pair<float, float>> &explosion_positions) {
 
-    const int COLLISION_DAMAGE = 50;
+    const int COLLISION_DAMAGE = game::CONTACT_DAMAGE;
     size_t max_entities = std::min(positions.size(), drawables.size());
 
     for (size_t player_idx = 0; player_idx < max_entities; ++player_idx) {

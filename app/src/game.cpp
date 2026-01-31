@@ -491,6 +491,9 @@ void Game::render(float dt) {
             renderPlayerInfo(*my_entity);
         }
 
+        // Render score in multiplayer (tracked from destroyed enemies)
+        renderScore(_networkCommandHandler->getScore());
+
     } else if (_player) {
         renderPlayerInfo(*_player);
 
@@ -795,6 +798,17 @@ void Game::updateMultiplayer(float dt) {
         }
     }
 
+    // Update shield visual for multiplayer player
+    if (_networkCommandHandler) {
+        uint32_t my_net_id = _networkCommandHandler->getAssignedPlayerNetId();
+        if (my_net_id != 0) {
+            auto my_entity = _networkCommandHandler->findEntityByNetId(my_net_id);
+            if (my_entity) {
+                _playerManager.updateShieldVisual(my_entity, _playerShield);
+            }
+        }
+    }
+
     checkGameEndConditions();
 }
 
@@ -807,7 +821,9 @@ void Game::checkGameEndConditions() {
                 _networkCommandHandler->findEntityByNetId(my_net_id);
 
             if (!my_entity) {
-                if (!_gameOver) {
+                // Only trigger game over if the entity was created before but now doesn't exist
+                // This prevents false game over when waiting for initial GAME_STATE
+                if (_networkCommandHandler->hasPlayerEntityBeenCreated() && !_gameOver) {
                     _gameOver = true;
                     _gameOverMenu.setVisible(true);
                     _audioManager.loadMusic(MusicType::GAME_OVER,
@@ -815,6 +831,17 @@ void Game::checkGameEndConditions() {
                     _audioManager.playMusic(MusicType::GAME_OVER, false);
                 }
             } else {
+                // Check for victory message from server
+                if (_networkCommandHandler->hasVictory() && !_victory) {
+                    _victory = true;
+                    _victoryMenu.setButtonText("Main Menu");
+                    _victoryMenu.setVisible(true);
+                    std::cout << "[GAME] Victory! Level complete." << std::endl;
+                }
+            }
+
+            // Continue processing player entity
+            if (my_entity) {
                 _player = my_entity;
 
                 auto &inputs = _registry.get_components<component::input>();

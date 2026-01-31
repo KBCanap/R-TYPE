@@ -63,7 +63,8 @@ std::optional<uint16_t> GameSession::getClientLobby(ClientId client_id) const {
 
 std::optional<uint16_t> GameSession::createLobby(ClientId creator_id,
                                                  const std::string &lobby_name,
-                                                 uint8_t max_players) {
+                                                 uint8_t max_players,
+                                                 uint8_t level_id) {
     // Validate client exists
     if (_clients.find(creator_id) == _clients.end()) {
         std::cerr << "Client " << creator_id << " not found" << std::endl;
@@ -89,9 +90,9 @@ std::optional<uint16_t> GameSession::createLobby(ClientId creator_id,
         return std::nullopt;
     }
 
-    // Create lobby
+    // Create lobby with level_id
     uint16_t lobby_id = getNextLobbyId();
-    Lobby lobby(lobby_id, lobby_name, max_players);
+    Lobby lobby(lobby_id, lobby_name, max_players, level_id);
 
     // Add creator as first player (player_id = 1)
     std::string username = _clients[creator_id];
@@ -104,7 +105,8 @@ std::optional<uint16_t> GameSession::createLobby(ClientId creator_id,
 
     std::cout << "Lobby " << lobby_id << " created by client " << creator_id
               << " (name: " << lobby_name
-              << ", max: " << static_cast<int>(max_players) << ")" << std::endl;
+              << ", max: " << static_cast<int>(max_players)
+              << ", level: " << static_cast<int>(level_id) << ")" << std::endl;
 
     return lobby_id;
 }

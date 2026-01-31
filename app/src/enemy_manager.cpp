@@ -7,6 +7,7 @@
 
 #include "../include/enemy_manager.hpp"
 #include "entity.hpp"
+#include "lua_compat_fix.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <iostream>

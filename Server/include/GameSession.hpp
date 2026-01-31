@@ -47,14 +47,15 @@ struct Lobby {
     uint8_t max_players;
     LobbyStatus status;
     std::vector<LobbyPlayer> players;
+    uint8_t level_id;  // 1=Level1, 2=Level2, 99=Endless
 
     Lobby()
         : lobby_id(0), lobby_name(""), max_players(4),
-          status(LobbyStatus::WAITING) {}
+          status(LobbyStatus::WAITING), level_id(1) {}
 
-    Lobby(uint16_t id, const std::string &name, uint8_t max)
+    Lobby(uint16_t id, const std::string &name, uint8_t max, uint8_t level = 1)
         : lobby_id(id), lobby_name(name), max_players(max),
-          status(LobbyStatus::WAITING) {}
+          status(LobbyStatus::WAITING), level_id(level) {}
 
     bool isFull() const { return players.size() >= max_players; }
 
@@ -119,7 +120,8 @@ class GameSession {
     // Lobby Creation & Destruction
     std::optional<uint16_t> createLobby(ClientId creator_id,
                                         const std::string &lobby_name,
-                                        uint8_t max_players);
+                                        uint8_t max_players,
+                                        uint8_t level_id = 1);
     bool deleteLobby(uint16_t lobby_id);
 
     // Lobby Operations

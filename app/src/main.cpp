@@ -265,13 +265,18 @@ int main(int argc, char **argv) {
                                   << std::endl;
 
                         if (lobbyResult == LobbyResult::GameStarting) {
+                            uint8_t gameLevel = lobbyMenu.getGameLevel();
                             std::cout
-                                << "[Main] Starting MULTIPLAYER game..."
-                                << std::endl;
+                                << "[Main] Starting MULTIPLAYER game on "
+                                << (gameLevel == 99
+                                        ? "ENDLESS MODE"
+                                        : "Level " + std::to_string(gameLevel))
+                                << "..." << std::endl;
 
                             // Launch multiplayer game with network manager
                             Game game(reg, *window, audioManager, keyBindings,
                                       networkManager.get());
+                            game.setLevel(gameLevel);  // Set level from lobby
                             game.run();
                             game.cleanup();  // Clean up entities like in solo mode
 

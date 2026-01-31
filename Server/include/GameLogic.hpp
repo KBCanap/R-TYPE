@@ -67,6 +67,8 @@ struct Health {
 
 struct Score {
     int current_score;
+    float survival_time;
+    float last_time_point_awarded;
 };
 
 struct Weapon {
@@ -74,6 +76,8 @@ struct Weapon {
     float fire_timer;
     int weapon_type;
     int damage;
+    int projectile_count = 1;   // For spread weapon
+    float spread_angle = 0.0f;  // For spread weapon (degrees)
 };
 
 struct Projectile {
@@ -93,6 +97,23 @@ struct Enemy {
 struct Boss {
     int phase;
     float phase_timer;
+    int boss_type = 1;        // 1 or 2
+    float shoot_timer = 0.0f;
+    int projectile_count = 5; // For spread attack
+    float spread_angle = 15.0f;
+};
+
+// Power-up types
+enum class PowerUpType : uint8_t { SHIELD = 0, SPREAD = 1 };
+
+struct PowerUp {
+    PowerUpType type;
+    float lifetime = 30.0f;  // Power-up disappears after 30 seconds
+};
+
+struct Shield {
+    int current_shield;
+    int max_shield;
 };
 
 struct Hitbox {
@@ -123,6 +144,7 @@ struct EntitySnapshot {
     Position pos;
     Velocity vel;
     int health;
+    int shield;
     int score;
     uint tick;
 };
@@ -138,7 +160,7 @@ struct WorldSnapshot {
  */
 class GameLogic {
   public:
-    GameLogic(std::shared_ptr<registry> reg);
+    GameLogic(std::shared_ptr<registry> reg, uint8_t level_id = 1);
     ~GameLogic();
 
     // Game loop control
@@ -168,6 +190,7 @@ class GameLogic {
     // Game state checks
     bool isGameOver() const { return _client_to_entity.empty() && _running; }
     bool hasPlayers() const { return !_client_to_entity.empty(); }
+    bool isLevelComplete() const { return _level_complete; }
 
     // New entity info for network broadcasting
     struct NewEntityInfo {
@@ -175,6 +198,7 @@ class GameLogic {
         std::string entity_type;
         float x, y;
         int health;
+        int shield;
     };
 
     // Returns newly created entities for broadcasting and clears the list
@@ -203,11 +227,25 @@ class GameLogic {
     float _debug_timer;    // For debug output
     int _total_score;
     bool _boss_spawned;
+    bool _boss_active;
     entity _boss;
+    std::vector<entity> _boss_parts;  // For Level 2 boss (3 parts)
     std::vector<entity> _enemies;
     std::vector<entity> _projectiles;
+    std::vector<entity> _powerups;
     std::vector<uint> _destroyed_net_ids;  // Net IDs of recently destroyed entities
     std::vector<NewEntityInfo> _new_entities;  // New entities waiting to be broadcast
+
+    // Level system
+    uint8_t _level_id;
+    bool _endless_mode;
+    bool _level_complete;  // True when boss defeated in non-endless mode
+    int _next_boss_threshold;
+    int _boss_count;
+
+    // Power-up spawning
+    float _powerup_spawn_timer;
+    float _powerup_spawn_interval;
 
     // Random number generation
     std::mt19937 _rng;
@@ -221,10 +259,21 @@ class GameLogic {
 
     // Game logic
     void spawnEnemy();
+    void spawnEnemyLevel1();
+    void spawnEnemyLevel2();
     void spawnBoss();
+    void spawnBoss1();
+    void spawnBoss2();
+    void updatePlayerScores(float dt);
+    void updateTotalScore();
+    void checkBossSpawn();
     void spawnProjectile(float x, float y, bool is_player_projectile, int damage);
+    void spawnProjectileAtAngle(float x, float y, float angle, bool is_player_projectile, int damage);
+    void spawnPowerUp();
     void processPlayerShooting(float dt);
     void processEnemyShooting(float dt);
+    void processBossShooting(float dt);
+    void processPowerUpCollisions();
     void cleanupDeadEntities();
     entity findEntityByNetId(uint net_id);
 

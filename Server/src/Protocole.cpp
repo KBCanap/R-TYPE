@@ -88,7 +88,7 @@ std::string Protocol::createReady() {
 }
 
 std::string Protocol::createGameStart(uint16_t udp_port, uint16_t server_id,
-                                      uint32_t server_ip) {
+                                      uint32_t server_ip, uint8_t level_id) {
     std::vector<uint8_t> data;
 
     // Manual byte packing in big-endian order (no htons/htonl needed)
@@ -102,6 +102,9 @@ std::string Protocol::createGameStart(uint16_t udp_port, uint16_t server_id,
     data.push_back(static_cast<uint8_t>((server_ip >> 16) & 0xFF));
     data.push_back(static_cast<uint8_t>((server_ip >> 8) & 0xFF));
     data.push_back(static_cast<uint8_t>(server_ip & 0xFF));
+
+    // Add level_id (1=Level1, 2=Level2, 99=Endless)
+    data.push_back(level_id);
 
     return createMessage(MessageType::TCP_GAME_START, data);
 }

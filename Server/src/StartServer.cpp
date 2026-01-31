@@ -249,9 +249,15 @@ void StartServer::handleCreateLobby(uint32_t client_id,
 
     std::string lobby_name(data.begin() + 3, data.begin() + 3 + name_len);
 
-    // Create lobby
+    // Parse level_id (after name padding: offset 3 + MAX_LOBBY_NAME_LENGTH)
+    uint8_t level_id = 1; // Default to Level 1
+    if (data.size() >= 3 + MAX_LOBBY_NAME_LENGTH + 1) {
+        level_id = data[3 + MAX_LOBBY_NAME_LENGTH];
+    }
+
+    // Create lobby with level_id
     auto lobby_id =
-        _game_session.createLobby(client_id, lobby_name, max_players);
+        _game_session.createLobby(client_id, lobby_name, max_players, level_id);
 
     if (!lobby_id.has_value()) {
         sendError(client_id, ProtocolError::INTERNAL_SERVER_ERROR);
@@ -259,7 +265,8 @@ void StartServer::handleCreateLobby(uint32_t client_id,
     }
 
     std::cout << "[Client " << client_id << "] Created lobby "
-              << lobby_id.value() << " '" << lobby_name << "'" << std::endl;
+              << lobby_id.value() << " '" << lobby_name << "' level="
+              << static_cast<int>(level_id) << std::endl;
 
     // Send acknowledgment
     std::string response = _protocol.createCreateLobbyAck(lobby_id.value());
@@ -434,9 +441,9 @@ bool StartServer::startGameInstance(uint16_t lobby_id) {
     std::cout << "Players: " << lobby->players.size() << std::endl;
     std::cout << "==============================" << std::endl;
 
-    // Send GAME_START to all players
+    // Send GAME_START to all players (including level_id)
     std::string game_start_msg =
-        _protocol.createGameStart(udp_port, server_id, server_ip);
+        _protocol.createGameStart(udp_port, server_id, server_ip, lobby->level_id);
     broadcastToLobby(lobby_id, game_start_msg);
 
     // Fork process for game instance
@@ -451,10 +458,10 @@ bool StartServer::startGameInstance(uint16_t lobby_id) {
     if (pid == 0) {
         // CHILD PROCESS - Game Instance
         std::cout << "[Game Instance " << server_id
-                  << "] Started in child process" << std::endl;
+                  << "] Started in child process (level=" << static_cast<int>(lobby->level_id) << ")" << std::endl;
 
         try {
-            GameServerLoop game_loop(udp_port, lobby->players.size());
+            GameServerLoop game_loop(udp_port, lobby->players.size(), lobby->level_id);
             game_loop.start();
 
             while (game_loop.isRunning()) {

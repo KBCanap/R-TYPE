@@ -15,7 +15,7 @@ LobbyBrowserMenu::LobbyBrowserMenu(render::IRenderWindow &win,
     : _window(win), _audioManager(audioMgr), _networkManager(netMgr),
       _scrollOffset(0), _waitingForJoinAck(false), _joinedSuccessfully(false),
       _showCreateDialog(false), _newLobbyName(""), _newLobbyMaxPlayers(4),
-      _isTypingLobbyName(false), _bgScrollSpeed(100.f) {
+      _selectedLevelId(1), _isTypingLobbyName(false), _bgScrollSpeed(100.f) {
     _baseWindowSize = _window.getSize();
     _windowSize = _baseWindowSize;
 
@@ -105,9 +105,9 @@ void LobbyBrowserMenu::createUI() {
     _backButtonText->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
 
-    // Create dialog UI elements
+    // Create dialog UI elements (taller to accommodate level selection)
     _dialogBackground =
-        _window.createRectangleShape(render::Vector2f(600, 400));
+        _window.createRectangleShape(render::Vector2f(600, 500));
     _dialogBackground->setFillColor(render::Color(30, 30, 50, 240));
     _dialogBackground->setOutlineColor(
         settings.applyColorblindFilter(render::Color::White()));
@@ -209,6 +209,49 @@ void LobbyBrowserMenu::createUI() {
     _cancelButtonText->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
 
+    // Level selection UI
+    _levelLabel = _window.createText();
+    _levelLabel->setFont(*_font);
+    _levelLabel->setString("Level:");
+    _levelLabel->setCharacterSize(24);
+    _levelLabel->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
+
+    _levelText = _window.createText();
+    _levelText->setFont(*_font);
+    _levelText->setString("Level 1");
+    _levelText->setCharacterSize(24);
+    _levelText->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
+
+    _decreaseLevelButton =
+        _window.createRectangleShape(render::Vector2f(50, 50));
+    _decreaseLevelButton->setFillColor(render::Color(180, 70, 70));
+    _decreaseLevelButton->setOutlineColor(
+        settings.applyColorblindFilter(render::Color::White()));
+    _decreaseLevelButton->setOutlineThickness(2);
+
+    _decreaseLevelButtonText = _window.createText();
+    _decreaseLevelButtonText->setFont(*_font);
+    _decreaseLevelButtonText->setString("<");
+    _decreaseLevelButtonText->setCharacterSize(32);
+    _decreaseLevelButtonText->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
+
+    _increaseLevelButton =
+        _window.createRectangleShape(render::Vector2f(50, 50));
+    _increaseLevelButton->setFillColor(render::Color(70, 180, 70));
+    _increaseLevelButton->setOutlineColor(
+        settings.applyColorblindFilter(render::Color::White()));
+    _increaseLevelButton->setOutlineThickness(2);
+
+    _increaseLevelButtonText = _window.createText();
+    _increaseLevelButtonText->setFont(*_font);
+    _increaseLevelButtonText->setString(">");
+    _increaseLevelButtonText->setCharacterSize(32);
+    _increaseLevelButtonText->setFillColor(
+        settings.applyColorblindFilter(render::Color::White()));
+
     updateButtonScale();
 }
 
@@ -258,8 +301,8 @@ void LobbyBrowserMenu::updateButtonScale() {
         }
     }
 
-    // Dialog positioning
-    _dialogBackground->setPosition(centerX - 300, centerY - 200);
+    // Dialog positioning (taller dialog for level selection)
+    _dialogBackground->setPosition(centerX - 300, centerY - 250);
 
     render::FloatRect dialogTitleBounds = _dialogTitle->getLocalBounds();
     _dialogTitle->setPosition(centerX - dialogTitleBounds.width / 2,
@@ -285,15 +328,31 @@ void LobbyBrowserMenu::updateButtonScale() {
     _increasePlayersButtonText->setPosition(
         centerX + 50 + 25 - incBounds.width / 2, centerY + 55);
 
-    _confirmButton->setPosition(centerX - 200, centerY + 120);
+    // Level selection positioning
+    _levelLabel->setPosition(centerX - 200, centerY + 110);
+
+    _decreaseLevelButton->setPosition(centerX - 100, centerY + 150);
+    render::FloatRect decLevelBounds = _decreaseLevelButtonText->getLocalBounds();
+    _decreaseLevelButtonText->setPosition(
+        centerX - 100 + 25 - decLevelBounds.width / 2, centerY + 155);
+
+    render::FloatRect levelBounds = _levelText->getLocalBounds();
+    _levelText->setPosition(centerX - levelBounds.width / 2, centerY + 158);
+
+    _increaseLevelButton->setPosition(centerX + 50, centerY + 150);
+    render::FloatRect incLevelBounds = _increaseLevelButtonText->getLocalBounds();
+    _increaseLevelButtonText->setPosition(
+        centerX + 50 + 25 - incLevelBounds.width / 2, centerY + 155);
+
+    _confirmButton->setPosition(centerX - 200, centerY + 220);
     render::FloatRect confirmBounds = _confirmButtonText->getLocalBounds();
     _confirmButtonText->setPosition(
-        centerX - 200 + 90 - confirmBounds.width / 2, centerY + 137);
+        centerX - 200 + 90 - confirmBounds.width / 2, centerY + 237);
 
-    _cancelButton->setPosition(centerX + 20, centerY + 120);
+    _cancelButton->setPosition(centerX + 20, centerY + 220);
     render::FloatRect cancelBounds = _cancelButtonText->getLocalBounds();
     _cancelButtonText->setPosition(centerX + 20 + 90 - cancelBounds.width / 2,
-                                   centerY + 137);
+                                   centerY + 237);
 
     float scaleX = static_cast<float>(_windowSize.x) / _bgTexture->getSize().x;
     float scaleY = static_cast<float>(_windowSize.y) / _bgTexture->getSize().y;
@@ -322,9 +381,11 @@ void LobbyBrowserMenu::showCreateLobbyDialog() {
     _showCreateDialog = true;
     _newLobbyName = "";
     _newLobbyMaxPlayers = 4;
+    _selectedLevelId = 1;
     _isTypingLobbyName = false;
     _lobbyNameInputText->setString("");
     _maxPlayersText->setString("4");
+    _levelText->setString("Level 1");
     updateButtonScale();
 }
 
@@ -342,8 +403,8 @@ void LobbyBrowserMenu::createLobby() {
     }
 
     std::cout << "[LobbyBrowser] Creating lobby: " << _newLobbyName << " (max "
-              << static_cast<int>(_newLobbyMaxPlayers) << " players)"
-              << std::endl;
+              << static_cast<int>(_newLobbyMaxPlayers) << " players, level "
+              << _selectedLevelId << ")" << std::endl;
 
     std::vector<uint8_t> data;
     data.push_back(static_cast<uint8_t>(_newLobbyMaxPlayers));
@@ -357,6 +418,14 @@ void LobbyBrowserMenu::createLobby() {
     for (char c : _newLobbyName) {
         data.push_back(static_cast<uint8_t>(c));
     }
+
+    // Pad to 32 bytes for lobby name
+    while (data.size() < 3 + 32) {
+        data.push_back(0);
+    }
+
+    // Add level_id (1=Level1, 2=Level2, 99=Endless)
+    data.push_back(static_cast<uint8_t>(_selectedLevelId));
 
     bool success =
         _networkManager.sendTCP(network::MessageType::CREATE_LOBBY, data);
@@ -584,6 +653,15 @@ void LobbyBrowserMenu::updateCreateLobbyDialog() {
     _maxPlayersText->setString(std::to_string(_newLobbyMaxPlayers));
     _lobbyNameInputText->setString(_newLobbyName);
 
+    // Update level text based on selection
+    if (_selectedLevelId == 1) {
+        _levelText->setString("Level 1");
+    } else if (_selectedLevelId == 2) {
+        _levelText->setString("Level 2");
+    } else if (_selectedLevelId == 99) {
+        _levelText->setString("Endless");
+    }
+
     // Update outline based on typing state
     if (_isTypingLobbyName) {
         _lobbyNameInputBox->setOutlineThickness(3);
@@ -604,6 +682,14 @@ void LobbyBrowserMenu::renderCreateLobbyDialog() {
     _window.draw(*_maxPlayersText);
     _window.draw(*_increasePlayersButton);
     _window.draw(*_increasePlayersButtonText);
+    // Level selection UI
+    _window.draw(*_levelLabel);
+    _window.draw(*_decreaseLevelButton);
+    _window.draw(*_decreaseLevelButtonText);
+    _window.draw(*_levelText);
+    _window.draw(*_increaseLevelButton);
+    _window.draw(*_increaseLevelButtonText);
+    // Confirm/Cancel buttons
     _window.draw(*_confirmButton);
     _window.draw(*_confirmButtonText);
     _window.draw(*_cancelButton);
@@ -745,17 +831,41 @@ LobbyBrowserResult LobbyBrowserMenu::run() {
                             }
                         }
 
-                        // Confirm button
+                        // Decrease level button
+                        if (mouseX >= centerX - 100 && mouseX <= centerX - 50 &&
+                            mouseY >= centerY + 150 && mouseY <= centerY + 200) {
+                            if (_selectedLevelId == 99) {
+                                _selectedLevelId = 2;
+                            } else if (_selectedLevelId > 1) {
+                                _selectedLevelId--;
+                            }
+                            updateCreateLobbyDialog();
+                            updateButtonScale();
+                        }
+
+                        // Increase level button
+                        if (mouseX >= centerX + 50 && mouseX <= centerX + 100 &&
+                            mouseY >= centerY + 150 && mouseY <= centerY + 200) {
+                            if (_selectedLevelId == 2) {
+                                _selectedLevelId = 99;  // Endless
+                            } else if (_selectedLevelId < 2) {
+                                _selectedLevelId++;
+                            }
+                            updateCreateLobbyDialog();
+                            updateButtonScale();
+                        }
+
+                        // Confirm button (moved down)
                         if (mouseX >= centerX - 200 && mouseX <= centerX - 20 &&
-                            mouseY >= centerY + 120 &&
-                            mouseY <= centerY + 180) {
+                            mouseY >= centerY + 220 &&
+                            mouseY <= centerY + 280) {
                             createLobby();
                         }
 
-                        // Cancel button
+                        // Cancel button (moved down)
                         if (mouseX >= centerX + 20 && mouseX <= centerX + 200 &&
-                            mouseY >= centerY + 120 &&
-                            mouseY <= centerY + 180) {
+                            mouseY >= centerY + 220 &&
+                            mouseY <= centerY + 280) {
                             _showCreateDialog = false;
                         }
                     } else {

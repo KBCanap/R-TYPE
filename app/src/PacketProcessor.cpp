@@ -128,7 +128,7 @@ EntityData
 PacketProcessor::parseEntityCreate(const std::vector<uint8_t> &data) {
     EntityData entity;
 
-    if (data.size() < 17) {
+    if (data.size() < 21) {
         return entity;
     }
 
@@ -147,6 +147,11 @@ PacketProcessor::parseEntityCreate(const std::vector<uint8_t> &data) {
     entity.health = ntohl(health_network);
     offset += 4;
 
+    uint32_t shield_network;
+    std::memcpy(&shield_network, &data[offset], 4);
+    entity.shield = ntohl(shield_network);
+    offset += 4;
+
     uint32_t pos_x_network;
     std::memcpy(&pos_x_network, &data[offset], 4);
     entity.position_x = networkToFloat(pos_x_network);
@@ -163,14 +168,15 @@ std::vector<EntityUpdateData>
 PacketProcessor::parseEntityUpdate(const std::vector<uint8_t> &data) {
     std::vector<EntityUpdateData> updates;
 
-    if (data.size() % 16 != 0) {
+    // ENTITY_UPDATE_SIZE = 25 bytes per entity
+    if (data.size() % 25 != 0) {
         return updates;
     }
 
-    size_t num_entities = data.size() / 16;
+    size_t num_entities = data.size() / 25;
 
     for (size_t i = 0; i < num_entities; ++i) {
-        size_t offset = i * 16;
+        size_t offset = i * 25;
         EntityUpdateData update;
 
         uint32_t net_id_network;
@@ -178,9 +184,18 @@ PacketProcessor::parseEntityUpdate(const std::vector<uint8_t> &data) {
         update.net_id = ntohl(net_id_network);
         offset += 4;
 
+        // Entity type (1 byte)
+        update.entity_type = static_cast<EntityType>(data[offset]);
+        offset += 1;
+
         uint32_t health_network;
         std::memcpy(&health_network, &data[offset], 4);
         update.health = ntohl(health_network);
+        offset += 4;
+
+        uint32_t shield_network;
+        std::memcpy(&shield_network, &data[offset], 4);
+        update.shield = ntohl(shield_network);
         offset += 4;
 
         uint32_t pos_x_network;
@@ -191,6 +206,11 @@ PacketProcessor::parseEntityUpdate(const std::vector<uint8_t> &data) {
         uint32_t pos_y_network;
         std::memcpy(&pos_y_network, &data[offset], 4);
         update.position_y = networkToFloat(pos_y_network);
+        offset += 4;
+
+        uint32_t score_network;
+        std::memcpy(&score_network, &data[offset], 4);
+        update.score = ntohl(score_network);
 
         updates.push_back(update);
     }
@@ -233,14 +253,14 @@ PacketProcessor::parseGameState(const std::vector<uint8_t> &data) {
                             (static_cast<uint32_t>(data[2]) << 8) |
                             static_cast<uint32_t>(data[3]);
 
-    if (data.size() < 4 + entity_count * 17) {
+    if (data.size() < 4 + entity_count * 21) {
         return entities;
     }
 
     for (uint32_t i = 0; i < entity_count; ++i) {
-        size_t offset = 4 + i * 17;
+        size_t offset = 4 + i * 21;
         std::vector<uint8_t> entity_data(data.begin() + offset,
-                                         data.begin() + offset + 17);
+                                         data.begin() + offset + 21);
         EntityData entity = parseEntityCreate(entity_data);
         entities.push_back(entity);
     }

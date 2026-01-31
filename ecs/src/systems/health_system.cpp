@@ -71,13 +71,23 @@ void health_system(registry &r, sparse_array<component::health> &healths,
         int damage = health->pending_damage;
         health->pending_damage = 0;
 
+        if (damage == 0)
+            continue;
+
         // Apply damage to shield first, then to health
         if (i < shields.size() && shields[i]) {
             int shield_damage = std::min(damage, shields[i]->current_shield);
-            shields[i]->current_shield -= shield_damage;
-            shields[i]->current_shield =
-                std::max(0, shields[i]->current_shield);
-            damage -= shield_damage;
+            if (shield_damage > 0) {
+                shields[i]->current_shield -= shield_damage;
+                shields[i]->current_shield =
+                    std::max(0, shields[i]->current_shield);
+                damage -= shield_damage;
+
+                // Create explosion visual effect when shield absorbs damage
+                if (i < positions.size() && positions[i]) {
+                    create_explosion(r, positions[i]->x, positions[i]->y);
+                }
+            }
         }
 
         // Apply remaining damage to health

@@ -75,6 +75,12 @@ class LobbyMenu {
     uint16_t _lobbyId;
     uint8_t _myPlayerId;
     std::string _lobbyName;
+    uint8_t _gameLevel;  // Level from TCP_GAME_START (1=Level1, 2=Level2, 99=Endless)
+
+  public:
+    uint8_t getGameLevel() const { return _gameLevel; }
+
+  private:
 
     std::string _errorMessage;
     std::chrono::steady_clock::time_point _errorMessageTime;

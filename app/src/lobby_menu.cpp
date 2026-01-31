@@ -14,7 +14,7 @@ LobbyMenu::LobbyMenu(render::IRenderWindow &win, AudioManager &audioMgr,
     : _window(win), _audioManager(audioMgr), _networkManager(netMgr),
       _isReady(false), _waitingForLeaveAck(false), _leftSuccessfully(false),
       _gameStarting(false), _lobbyId(0), _myPlayerId(0), _lobbyName("Lobby"),
-      _bgScrollSpeed(100.f) {
+      _gameLevel(1), _bgScrollSpeed(100.f) {
     _baseWindowSize = _window.getSize();
     _windowSize = _baseWindowSize;
 
@@ -333,7 +333,7 @@ void LobbyMenu::handleNetworkMessages() {
             _gameStarting = true;
             _statusText->setString("Starting game...");
 
-            // Parse game server info if needed
+            // Parse game server info
             if (msg.data.size() >= 8) {
                 uint16_t udpPort =
                     (static_cast<uint16_t>(msg.data[0]) << 8) | msg.data[1];
@@ -341,6 +341,16 @@ void LobbyMenu::handleNetworkMessages() {
                     (static_cast<uint16_t>(msg.data[2]) << 8) | msg.data[3];
                 std::cout << "[LobbyMenu] Game server - Port: " << udpPort
                           << ", Server ID: " << serverId << std::endl;
+
+                // Parse level_id (byte 8) - 1=Level1, 2=Level2, 99=Endless
+                if (msg.data.size() >= 9) {
+                    _gameLevel = msg.data[8];
+                    std::cout << "[LobbyMenu] Game level: "
+                              << (_gameLevel == 99
+                                      ? "Endless"
+                                      : "Level " + std::to_string(_gameLevel))
+                              << std::endl;
+                }
             }
         } else if (msg.msg_type == network::MessageType::TCP_ERROR) {
             std::cerr << "[LobbyMenu] Received TCP_ERROR from server!"

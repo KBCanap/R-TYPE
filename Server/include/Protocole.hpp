@@ -33,7 +33,7 @@ class Protocol {
     std::string createConnectNak(ConnectError error_code);
     std::string createReady();
     std::string createGameStart(uint16_t udp_port, uint16_t server_id,
-                                uint32_t server_ip);
+                                uint32_t server_ip, uint8_t level_id = 1);
 
     // Lobby Navigation Messages
     std::string createLobbyListRequest();
