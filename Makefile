@@ -650,6 +650,19 @@ r-type_app/fast:
 	$(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/build
 .PHONY : r-type_app/fast
 
+#=============================================================================
+# Target rules for targets named r-type_mario
+
+# Build rule for target.
+r-type_mario: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 r-type_mario
+.PHONY : r-type_mario
+
+# fast build rule for target.
+r-type_mario/fast:
+	$(MAKE) $(MAKESILENT) -f mario/CMakeFiles/r-type_mario.dir/build.make mario/CMakeFiles/r-type_mario.dir/build
+.PHONY : r-type_mario/fast
+
 Server/src/ClientState.o: Server/src/ClientState.cpp.o
 .PHONY : Server/src/ClientState.o
 
@@ -697,6 +710,126 @@ Server/src/GameLogic.s: Server/src/GameLogic.cpp.s
 Server/src/GameLogic.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogic.cpp.s
 .PHONY : Server/src/GameLogic.cpp.s
+
+Server/src/GameLogicCombat.o: Server/src/GameLogicCombat.cpp.o
+.PHONY : Server/src/GameLogicCombat.o
+
+# target to build an object file
+Server/src/GameLogicCombat.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicCombat.cpp.o
+.PHONY : Server/src/GameLogicCombat.cpp.o
+
+Server/src/GameLogicCombat.i: Server/src/GameLogicCombat.cpp.i
+.PHONY : Server/src/GameLogicCombat.i
+
+# target to preprocess a source file
+Server/src/GameLogicCombat.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicCombat.cpp.i
+.PHONY : Server/src/GameLogicCombat.cpp.i
+
+Server/src/GameLogicCombat.s: Server/src/GameLogicCombat.cpp.s
+.PHONY : Server/src/GameLogicCombat.s
+
+# target to generate assembly for a file
+Server/src/GameLogicCombat.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicCombat.cpp.s
+.PHONY : Server/src/GameLogicCombat.cpp.s
+
+Server/src/GameLogicEntities.o: Server/src/GameLogicEntities.cpp.o
+.PHONY : Server/src/GameLogicEntities.o
+
+# target to build an object file
+Server/src/GameLogicEntities.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicEntities.cpp.o
+.PHONY : Server/src/GameLogicEntities.cpp.o
+
+Server/src/GameLogicEntities.i: Server/src/GameLogicEntities.cpp.i
+.PHONY : Server/src/GameLogicEntities.i
+
+# target to preprocess a source file
+Server/src/GameLogicEntities.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicEntities.cpp.i
+.PHONY : Server/src/GameLogicEntities.cpp.i
+
+Server/src/GameLogicEntities.s: Server/src/GameLogicEntities.cpp.s
+.PHONY : Server/src/GameLogicEntities.s
+
+# target to generate assembly for a file
+Server/src/GameLogicEntities.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicEntities.cpp.s
+.PHONY : Server/src/GameLogicEntities.cpp.s
+
+Server/src/GameLogicPlayer.o: Server/src/GameLogicPlayer.cpp.o
+.PHONY : Server/src/GameLogicPlayer.o
+
+# target to build an object file
+Server/src/GameLogicPlayer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicPlayer.cpp.o
+.PHONY : Server/src/GameLogicPlayer.cpp.o
+
+Server/src/GameLogicPlayer.i: Server/src/GameLogicPlayer.cpp.i
+.PHONY : Server/src/GameLogicPlayer.i
+
+# target to preprocess a source file
+Server/src/GameLogicPlayer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicPlayer.cpp.i
+.PHONY : Server/src/GameLogicPlayer.cpp.i
+
+Server/src/GameLogicPlayer.s: Server/src/GameLogicPlayer.cpp.s
+.PHONY : Server/src/GameLogicPlayer.s
+
+# target to generate assembly for a file
+Server/src/GameLogicPlayer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicPlayer.cpp.s
+.PHONY : Server/src/GameLogicPlayer.cpp.s
+
+Server/src/GameLogicSnapshot.o: Server/src/GameLogicSnapshot.cpp.o
+.PHONY : Server/src/GameLogicSnapshot.o
+
+# target to build an object file
+Server/src/GameLogicSnapshot.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicSnapshot.cpp.o
+.PHONY : Server/src/GameLogicSnapshot.cpp.o
+
+Server/src/GameLogicSnapshot.i: Server/src/GameLogicSnapshot.cpp.i
+.PHONY : Server/src/GameLogicSnapshot.i
+
+# target to preprocess a source file
+Server/src/GameLogicSnapshot.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicSnapshot.cpp.i
+.PHONY : Server/src/GameLogicSnapshot.cpp.i
+
+Server/src/GameLogicSnapshot.s: Server/src/GameLogicSnapshot.cpp.s
+.PHONY : Server/src/GameLogicSnapshot.s
+
+# target to generate assembly for a file
+Server/src/GameLogicSnapshot.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicSnapshot.cpp.s
+.PHONY : Server/src/GameLogicSnapshot.cpp.s
+
+Server/src/GameLogicSystems.o: Server/src/GameLogicSystems.cpp.o
+.PHONY : Server/src/GameLogicSystems.o
+
+# target to build an object file
+Server/src/GameLogicSystems.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicSystems.cpp.o
+.PHONY : Server/src/GameLogicSystems.cpp.o
+
+Server/src/GameLogicSystems.i: Server/src/GameLogicSystems.cpp.i
+.PHONY : Server/src/GameLogicSystems.i
+
+# target to preprocess a source file
+Server/src/GameLogicSystems.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicSystems.cpp.i
+.PHONY : Server/src/GameLogicSystems.cpp.i
+
+Server/src/GameLogicSystems.s: Server/src/GameLogicSystems.cpp.s
+.PHONY : Server/src/GameLogicSystems.s
+
+# target to generate assembly for a file
+Server/src/GameLogicSystems.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogicSystems.cpp.s
+.PHONY : Server/src/GameLogicSystems.cpp.s
 
 Server/src/GameServerLoop.o: Server/src/GameServerLoop.cpp.o
 .PHONY : Server/src/GameServerLoop.o
@@ -982,6 +1115,7 @@ help:
 	@echo "... NightlyUpdate"
 	@echo "... ecs"
 	@echo "... r-type_app"
+	@echo "... r-type_mario"
 	@echo "... r-type_server"
 	@echo "... sfml-audio"
 	@echo "... sfml-graphics"
@@ -994,6 +1128,21 @@ help:
 	@echo "... Server/src/GameLogic.o"
 	@echo "... Server/src/GameLogic.i"
 	@echo "... Server/src/GameLogic.s"
+	@echo "... Server/src/GameLogicCombat.o"
+	@echo "... Server/src/GameLogicCombat.i"
+	@echo "... Server/src/GameLogicCombat.s"
+	@echo "... Server/src/GameLogicEntities.o"
+	@echo "... Server/src/GameLogicEntities.i"
+	@echo "... Server/src/GameLogicEntities.s"
+	@echo "... Server/src/GameLogicPlayer.o"
+	@echo "... Server/src/GameLogicPlayer.i"
+	@echo "... Server/src/GameLogicPlayer.s"
+	@echo "... Server/src/GameLogicSnapshot.o"
+	@echo "... Server/src/GameLogicSnapshot.i"
+	@echo "... Server/src/GameLogicSnapshot.s"
+	@echo "... Server/src/GameLogicSystems.o"
+	@echo "... Server/src/GameLogicSystems.i"
+	@echo "... Server/src/GameLogicSystems.s"
 	@echo "... Server/src/GameServerLoop.o"
 	@echo "... Server/src/GameServerLoop.i"
 	@echo "... Server/src/GameServerLoop.s"

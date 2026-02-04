@@ -8,6 +8,7 @@
 #include "../../app/include/settings.hpp"
 #include "../../include/systems.hpp"
 #include "../include/render/IRenderWindow.hpp"
+#include <iostream>
 #include <memory>
 
 namespace systems {
@@ -80,12 +81,32 @@ static void render_background(component::background &bg,
 
 static bool load_sprite_texture(component::drawable &draw,
                                 render::IRenderWindow &window) {
-    if (draw.texture || draw.texture_path.empty())
-        return true;
+    static bool debug_load = false;
+    if (!debug_load && !draw.texture_path.empty()) {
+        std::cout << "[Debug] load_sprite_texture - path: '" << draw.texture_path
+                  << "', texture ptr: " << draw.texture.get() << std::endl;
+        debug_load = true;
+    }
 
-    draw.texture = std::shared_ptr<render::ITexture>(window.createTexture());
-    if (!draw.texture->loadFromFile(draw.texture_path))
+    if (draw.texture) {
+        return true;  // Already loaded
+    }
+    if (draw.texture_path.empty()) {
+        // No texture path - this is a shape, not a sprite
         return false;
+    }
+
+    std::cout << "[Debug] Loading texture from: " << draw.texture_path << std::endl;
+    draw.texture = std::shared_ptr<render::ITexture>(window.createTexture());
+    if (!draw.texture->loadFromFile(draw.texture_path)) {
+        std::cerr << "[Render] Failed to load texture: " << draw.texture_path << std::endl;
+        return false;
+    }
+
+    // Debug: print texture size
+    render::Vector2u tex_size = draw.texture->getSize();
+    std::cout << "[Render] Loaded texture: " << draw.texture_path
+              << " (" << tex_size.x << "x" << tex_size.y << ")" << std::endl;
 
     draw.sprite = std::shared_ptr<render::ISprite>(window.createSprite());
     draw.sprite->setTexture(*draw.texture);
@@ -95,11 +116,12 @@ static bool load_sprite_texture(component::drawable &draw,
 static void setup_sprite_texture_rect(
     render::ISprite &sprite, const component::drawable &draw,
     const sparse_array<component::animation> &animations, size_t entity_idx) {
-    bool has_animation = (entity_idx < animations.size()) &&
-                         animations[entity_idx] &&
-                         !animations[entity_idx]->frames.empty();
+    bool has_playing_animation = (entity_idx < animations.size()) &&
+                                 animations[entity_idx] &&
+                                 animations[entity_idx]->playing &&
+                                 !animations[entity_idx]->frames.empty();
 
-    if (has_animation) {
+    if (has_playing_animation) {
         sprite.setTextureRect(
             animations[entity_idx]
                 ->frames[animations[entity_idx]->current_frame]);
@@ -117,15 +139,45 @@ static void render_sprite(component::drawable &draw,
                           render::IShader *shader,
                           const sparse_array<component::animation> &animations,
                           size_t entity_idx) {
-    if (!load_sprite_texture(draw, window))
+    static bool debug_once = false;
+    if (!debug_once && draw.tag == "enemy") {
+        std::cout << "[Debug] render_sprite called for enemy, texture_path: '"
+                  << draw.texture_path << "', texture: " << (draw.texture ? "loaded" : "null") << std::endl;
+        debug_once = true;
+    }
+
+    if (!load_sprite_texture(draw, window)) {
+        // Fallback: draw a colored rectangle if texture fails
+        std::unique_ptr<render::IShape> fallback =
+            window.createRectangleShape(render::Vector2f(20.0f * draw.scale, 20.0f * draw.scale));
+        fallback->setPosition(pos.x, pos.y);
+        fallback->setFillColor(render::Color(255, 0, 0));  // Red fallback
+        window.draw(*fallback);
         return;
+    }
     if (!draw.sprite)
         return;
 
-    draw.sprite->setPosition(pos.x, pos.y);
-    draw.sprite->setScale(draw.scale, draw.scale);
-
     setup_sprite_texture_rect(*draw.sprite, draw, animations, entity_idx);
+
+    // Apply color modulation to sprite
+    draw.sprite->setColor(draw.color);
+
+    // Get sprite width from animation frame or sprite_rect
+    float sprite_width = draw.sprite_rect.width;
+    if (entity_idx < animations.size() && animations[entity_idx] &&
+        !animations[entity_idx]->frames.empty()) {
+        sprite_width = static_cast<float>(
+            animations[entity_idx]->frames[animations[entity_idx]->current_frame].width);
+    }
+
+    // Handle flip_x by using negative scale and adjusting position
+    float scale_x = draw.flip_x ? -draw.scale : draw.scale;
+    float offset_x = draw.flip_x ? sprite_width * draw.scale : 0.0f;
+
+    draw.sprite->setPosition(pos.x + offset_x, pos.y);
+    draw.sprite->setScale(scale_x, draw.scale);
+
     draw_sprite_with_shader(window, *draw.sprite, shader);
 }
 
@@ -157,12 +209,47 @@ void render_system(registry &r, sparse_array<component::position> &positions,
         render_background(*bg, window, colorblindShader, dt);
     }
 
+    // Track which enemies have switched to stunned animation
+    static std::vector<bool> using_stunned_anim;
+
     for (size_t i = 0; i < std::min(animations.size(), drawables.size()); ++i) {
         std::optional<component::animation> &anim = animations[i];
         std::optional<component::drawable> &drawable = drawables[i];
 
         if (!anim || !drawable || !anim->playing || anim->frames.empty())
             continue;
+
+        // Handle animation switching for stunned enemies
+        auto stunned = (i < stunneds.size()) ? stunneds[i] : std::nullopt;
+        if (stunned && drawable->tag == "enemy" && !anim->frames.empty()) {
+            // Ensure tracking vector is large enough
+            if (using_stunned_anim.size() <= i) {
+                using_stunned_anim.resize(i + 1, false);
+            }
+
+            // Get frame size from current animation frames
+            int frame_w = anim->frames[0].width;
+            int frame_h = anim->frames[0].height;
+            bool should_use_stunned = stunned->stunned;
+
+            if (should_use_stunned && !using_stunned_anim[i]) {
+                // Switch to stunned animation (frames 5-8)
+                anim->frames.clear();
+                for (int f = 5; f < 9; ++f) {
+                    anim->frames.push_back(render::IntRect(f * frame_w, 0, frame_w, frame_h));
+                }
+                anim->current_frame = 0;
+                using_stunned_anim[i] = true;
+            } else if (!should_use_stunned && using_stunned_anim[i]) {
+                // Switch back to walking animation (frames 0-4)
+                anim->frames.clear();
+                for (int f = 0; f < 5; ++f) {
+                    anim->frames.push_back(render::IntRect(f * frame_w, 0, frame_w, frame_h));
+                }
+                anim->current_frame = 0;
+                using_stunned_anim[i] = false;
+            }
+        }
 
         anim->current_time += dt;
 
@@ -196,6 +283,13 @@ void render_system(registry &r, sparse_array<component::position> &positions,
         anim->current_frame = static_cast<size_t>(next_frame);
     }
 
+    static bool debug_render_loop = false;
+    if (!debug_render_loop) {
+        std::cout << "[Debug] Render loop - positions.size(): " << positions.size()
+                  << ", drawables.size(): " << drawables.size() << std::endl;
+        debug_render_loop = true;
+    }
+
     for (size_t i = 0; i < std::min(positions.size(), drawables.size()); ++i) {
         std::optional<component::position> &pos = positions[i];
         std::optional<component::drawable> &draw = drawables[i];
@@ -203,12 +297,34 @@ void render_system(registry &r, sparse_array<component::position> &positions,
         if (!pos || !draw)
             continue;
 
-        // Change color for stunned enemies (Mario platformer)
+        static bool debug_entities = false;
+        if (!debug_entities && draw->tag == "enemy") {
+            std::cout << "[Debug] Found enemy entity " << i << " - use_sprite: " << draw->use_sprite
+                      << ", texture_path: '" << draw->texture_path << "'" << std::endl;
+            debug_entities = true;
+        }
+
+        // Change color for stunned/angry enemies (Mario platformer)
+        // Only apply color modulation for non-sprite drawables
         render::Color original_color = draw->color;
         auto stunned = (i < stunneds.size()) ? stunneds[i] : std::nullopt;
-        if (stunned && stunned->stunned && draw->tag == "enemy") {
-            // Make stunned enemies gray
-            draw->color = render::Color(128, 128, 128);
+        if (stunned && draw->tag == "enemy" && !draw->use_sprite) {
+            if (stunned->stunned) {
+                // Make stunned enemies gray
+                draw->color = render::Color(128, 128, 128);
+            } else if (stunned->angry) {
+                // Make angry enemies orange
+                draw->color = render::Color(255, 165, 0);
+            }
+        }
+
+        // Show POW block cover when depleted
+        sparse_array<component::pow_block> &pow_blocks = r.get_components<component::pow_block>();
+        if (draw->tag == "pow_block" && i < pow_blocks.size() && pow_blocks[i]) {
+            if (pow_blocks[i]->hits_remaining < 0) {
+                // POW depleted - show black rectangle to cover it
+                draw->color = render::Color(0, 0, 0, 255);
+            }
         }
 
         if (draw->use_sprite) {

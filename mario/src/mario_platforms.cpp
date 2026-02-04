@@ -9,76 +9,76 @@
 #include <iostream>
 
 void MarioGame::createPlatforms() {
-    // Get window size and calculate scale factors
     render::Vector2u window_size = _window.getSize();
-    float bg_width = 256.0f;  // Original background width
-    float bg_height = 224.0f; // Original background height
+    float bg_width = 256.0f;
+    float bg_height = 224.0f;
 
     float scale_x = static_cast<float>(window_size.x) / bg_width;
     float scale_y = static_cast<float>(window_size.y) / bg_height;
 
-    // Platform data in original background coordinates
     struct PlatformData {
         float x, y, width, height;
-        const char *name;
     };
 
-    // Coordinates based on exact pixel measurements from background
     PlatformData platforms[] = {
-        // Ground floor - main section (16 pixels high)
-        {16.0f, 207.0f, 224.0f, 16.0f, "Ground - Main section (16-240)"},
-
-        // Ground floor - left edge (33 pixels high, starts at y=191)
-        {0.0f, 191.0f, 16.0f, 33.0f, "Ground - Left edge (0-16, 33px high)"},
-
-        // Ground floor - right edge (33 pixels high, starts at y=191)
-        {240.0f, 191.0f, 19.0f, 33.0f, "Ground - Right edge (240-259, 33px high)"},
-
-        // Level 1 platforms (y=159)
-        {0.0f, 159.0f, 88.0f, 10.0f, "Platform L1 - Left (0-88)"},
-        {167.0f, 159.0f, 92.0f, 10.0f, "Platform L1 - Right (167-259)"},
-
-        // Level 2 platforms (y=120)
-        {0.0f, 120.0f, 32.0f, 10.0f, "Platform L2 - Left (0-32)"},
-        {224.0f, 120.0f, 35.0f, 10.0f, "Platform L2 - Right (224-259)"},
-
-        // Level 3 platform (y=111) - center long platform
-        {56.0f, 111.0f, 144.0f, 10.0f, "Platform L3 - Center long (56-200)"},
-
-        // Level 4 platforms (y=63) - top level
-        {0.0f, 63.0f, 111.0f, 10.0f, "Platform L4 - Left (0-111)"},
-        {144.0f, 63.0f, 115.0f, 10.0f, "Platform L4 - Right (144-259)"},
+        {16.0f, 207.0f, 224.0f, 16.0f},
+        {0.0f, 191.0f, 16.0f, 33.0f},
+        {240.0f, 191.0f, 19.0f, 33.0f},
+        {0.0f, 159.0f, 88.0f, 10.0f},
+        {167.0f, 159.0f, 92.0f, 10.0f},
+        {0.0f, 120.0f, 32.0f, 10.0f},
+        {224.0f, 120.0f, 35.0f, 10.0f},
+        {56.0f, 111.0f, 144.0f, 10.0f},
+        {0.0f, 63.0f, 111.0f, 10.0f},
+        {144.0f, 63.0f, 115.0f, 10.0f},
     };
 
     for (const auto &plat : platforms) {
         auto platform = _registry.spawn_entity();
 
-        // Scale platform coordinates to match scaled background
         float scaled_x = plat.x * scale_x;
         float scaled_y = plat.y * scale_y;
         float scaled_width = plat.width * scale_x;
         float scaled_height = plat.height * scale_y;
 
-        // Position
         _registry.add_component<component::position>(
             platform, component::position(scaled_x, scaled_y));
 
-        // Hitbox
         _registry.add_component<component::hitbox>(
-            platform,
-            component::hitbox(scaled_width, scaled_height, 0.0f, 0.0f));
+            platform, component::hitbox(scaled_width, scaled_height, 0.0f, 0.0f));
 
-        // Visual representation (semi-transparent red for debugging)
-        _registry.add_component<component::drawable>(
-            platform,
-            component::drawable(render::Color(200, 50, 50, 128), scaled_height));
-
-        // Tag as platform
         _registry.add_component<component::platform_tag>(
             platform, component::platform_tag());
-
-        std::cout << "[MarioGame] Created " << plat.name << " at (" << scaled_x
-                  << ", " << scaled_y << ") with size (" << scaled_width << "x"
-                  << scaled_height << ")" << std::endl;
     }
+}
+
+void MarioGame::createPowBlock(float scale_x, float scale_y) {
+    const float pow_x = 120.0f;
+    const float pow_y = 159.0f;
+    const float pow_width = 18.0f;
+    const float pow_height = 16.0f;
+
+    _powBlock = _registry.spawn_entity();
+
+    float scaled_x = pow_x * scale_x;
+    float scaled_y = pow_y * scale_y;
+    float scaled_width = pow_width * scale_x;
+    float scaled_height = pow_height * scale_y;
+
+    _registry.add_component<component::position>(
+        *_powBlock, component::position(scaled_x, scaled_y));
+
+    _registry.add_component<component::hitbox>(
+        *_powBlock, component::hitbox(scaled_width, scaled_height, 0.0f, 0.0f));
+
+    float cover_size = std::max(scaled_width, scaled_height);
+    auto &drawable = _registry.add_component<component::drawable>(
+        *_powBlock, component::drawable(render::Color(0, 0, 0, 0), cover_size));
+    drawable->tag = "pow_block";
+
+    _registry.add_component<component::platform_tag>(
+        *_powBlock, component::platform_tag());
+
+    _registry.add_component<component::pow_block>(
+        *_powBlock, component::pow_block(3));
 }

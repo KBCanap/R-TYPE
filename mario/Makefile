@@ -107,7 +107,7 @@ rebuild_cache/fast: rebuild_cache
 
 # Special rule for the target list_install_components
 list_install_components:
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Available install components are: \"Runtime\" \"Unspecified\""
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Available install components are: \"Runtime\" \"Unspecified\" \"bin\" \"devel\""
 .PHONY : list_install_components
 
 # Special rule for the target list_install_components
@@ -178,6 +178,7 @@ preinstall/fast:
 
 # clear depends
 depend:
+	cd /home/ariles/delivery/R-TYPE && $(CMAKE_COMMAND) -P /home/ariles/delivery/R-TYPE/CMakeFiles/VerifyGlobs.cmake
 	cd /home/ariles/delivery/R-TYPE && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
@@ -545,6 +546,7 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
+	cd /home/ariles/delivery/R-TYPE && $(CMAKE_COMMAND) -P /home/ariles/delivery/R-TYPE/CMakeFiles/VerifyGlobs.cmake
 	cd /home/ariles/delivery/R-TYPE && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

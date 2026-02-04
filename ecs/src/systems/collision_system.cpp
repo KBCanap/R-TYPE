@@ -354,6 +354,7 @@ static void process_player_enemy_collisions(
                         if (enemy_stunned) {
                             enemy_stunned->stunned = true;
                             enemy_stunned->knockback_velocity = 0.0f;
+                            enemy_stunned->stun_timer = 0.0f;
                         }
                         if (enemy_vel) {
                             enemy_vel->vx = 0.0f;

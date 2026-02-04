@@ -35,18 +35,19 @@ struct drawable {
     float scale;
     std::string tag;
     std::string texture_path;
+    bool flip_x;
 
     drawable(render::Color color = render::Color::White(), float size = 50.0f)
         : color(color), size(size), texture(nullptr), sprite(nullptr),
           sprite_rect(), use_sprite(false), scale(1.0f), tag(""),
-          texture_path("") {}
+          texture_path(""), flip_x(false) {}
 
     drawable(const std::string &tex_path,
              render::IntRect rect = render::IntRect(), float scale = 2.0f,
              const std::string &tag = "")
         : color(render::Color::White()), size(50.0f), texture(nullptr),
           sprite(nullptr), sprite_rect(rect), use_sprite(true), scale(scale),
-          tag(tag), texture_path(tex_path) {}
+          tag(tag), texture_path(tex_path), flip_x(false) {}
 };
 
 struct controllable {
@@ -336,9 +337,22 @@ struct dead {
 struct enemy_stunned {
     bool stunned;
     float knockback_velocity;
+    float stun_timer;
+    float recovery_time;
+    bool angry;  // Recovered enemies move faster
 
-    enemy_stunned(bool is_stunned = false, float knockback = 0.0f)
-        : stunned(is_stunned), knockback_velocity(knockback) {}
+    enemy_stunned(bool is_stunned = false, float knockback = 0.0f,
+                  float recovery = 5.0f)
+        : stunned(is_stunned), knockback_velocity(knockback), stun_timer(0.0f),
+          recovery_time(recovery), angry(false) {}
+};
+
+struct pow_block {
+    int hits_remaining;
+    float shake_timer;
+    bool shaking;
+
+    pow_block(int hits = 3) : hits_remaining(hits), shake_timer(0.0f), shaking(false) {}
 };
 
 } // namespace component
