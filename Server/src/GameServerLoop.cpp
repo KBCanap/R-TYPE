@@ -144,31 +144,26 @@ void GameServerLoop::processMessages() {
                 for (const auto &snap : snapshot.entities) {
                     EntityType type = EntityType::PLAYER;
 
-                    if (snap.entity_type == "player") {
-                        type = EntityType::PLAYER;
-                    } else if (snap.entity_type == "enemy") {
-                        type = EntityType::ENEMY;
-                    } else if (snap.entity_type == "enemy_level2") {
-                        type = EntityType::ENEMY_LEVEL2;
-                    } else if (snap.entity_type == "enemy_level2_spread") {
-                        type = EntityType::ENEMY_LEVEL2_SPREAD;
-                    } else if (snap.entity_type == "projectile") {
-                        type = EntityType::PROJECTILE;
-                    } else if (snap.entity_type == "allied_projectile") {
-                        type = EntityType::ALLIED_PROJECTILE;
-                    } else if (snap.entity_type == "boss") {
-                        type = EntityType::BOSS;
-                    } else if (snap.entity_type == "boss_level2_part1") {
-                        type = EntityType::BOSS_LEVEL2_PART1;
-                    } else if (snap.entity_type == "boss_level2_part2") {
-                        type = EntityType::BOSS_LEVEL2_PART2;
-                    } else if (snap.entity_type == "boss_level2_part3") {
-                        type = EntityType::BOSS_LEVEL2_PART3;
-                    } else if (snap.entity_type == "powerup_shield") {
-                        type = EntityType::POWERUP_SHIELD;
-                    } else if (snap.entity_type == "powerup_spread") {
-                        type = EntityType::POWERUP_SPREAD;
-                    }
+                    //change if/else order to gain performance
+                    if (snap.entity_type == "allied_projectile") type = EntityType::ALLIED_PROJECTILE;
+                    else if (snap.entity_type == "projectile") type = EntityType::PROJECTILE;
+                    // Enemies
+                    else if (snap.entity_type == "enemy") type = EntityType::ENEMY;
+                    else if (snap.entity_type == "enemy_level2") type = EntityType::ENEMY_LEVEL2;
+                    else if (snap.entity_type == "enemy_level2_spread") type = EntityType::ENEMY_LEVEL2_SPREAD;
+
+                    // Players
+                    else if (snap.entity_type == "player") type = EntityType::PLAYER;
+
+                    // Bosses
+                    else if (snap.entity_type == "boss") type = EntityType::BOSS;
+                    else if (snap.entity_type == "boss_level2_part1") type = EntityType::BOSS_LEVEL2_PART1;
+                    else if (snap.entity_type == "boss_level2_part2") type = EntityType::BOSS_LEVEL2_PART2;
+                    else if (snap.entity_type == "boss_level2_part3") type = EntityType::BOSS_LEVEL2_PART3;
+
+                    // Powerups
+                    else if (snap.entity_type == "powerup_shield") type = EntityType::POWERUP_SHIELD;
+                    else if (snap.entity_type == "powerup_spread") type = EntityType::POWERUP_SPREAD;
 
                     entities.push_back({snap.net_id, type,
                                         static_cast<uint32_t>(snap.health),
@@ -238,30 +233,29 @@ void GameServerLoop::broadcastEntityUpdates() {
     for (const auto &new_ent : new_entities) {
         new_entity_ids.insert(new_ent.net_id);
 
+        //change if/else order to gain performance
         EntityType type = EntityType::ENEMY;
-        if (new_ent.entity_type == "enemy") {
-            type = EntityType::ENEMY;
-        } else if (new_ent.entity_type == "enemy_level2") {
-            type = EntityType::ENEMY_LEVEL2;
-        } else if (new_ent.entity_type == "enemy_level2_spread") {
-            type = EntityType::ENEMY_LEVEL2_SPREAD;
-        } else if (new_ent.entity_type == "projectile") {
-            type = EntityType::PROJECTILE;
-        } else if (new_ent.entity_type == "allied_projectile") {
-            type = EntityType::ALLIED_PROJECTILE;
-        } else if (new_ent.entity_type == "boss") {
-            type = EntityType::BOSS;
-        } else if (new_ent.entity_type == "boss_level2_part1") {
-            type = EntityType::BOSS_LEVEL2_PART1;
-        } else if (new_ent.entity_type == "boss_level2_part2") {
-            type = EntityType::BOSS_LEVEL2_PART2;
-        } else if (new_ent.entity_type == "boss_level2_part3") {
-            type = EntityType::BOSS_LEVEL2_PART3;
-        } else if (new_ent.entity_type == "powerup_shield") {
-            type = EntityType::POWERUP_SHIELD;
-        } else if (new_ent.entity_type == "powerup_spread") {
-            type = EntityType::POWERUP_SPREAD;
-        }
+        if (new_ent.entity_type == "allied_projectile") type = EntityType::ALLIED_PROJECTILE;
+        else if (new_ent.entity_type == "projectile") type = EntityType::PROJECTILE;
+        // Enemies
+        else if (new_ent.entity_type == "enemy") type = EntityType::ENEMY;
+        else if (new_ent.entity_type == "enemy_level2") type = EntityType::ENEMY_LEVEL2;
+        else if (new_ent.entity_type == "enemy_level2_spread") type = EntityType::ENEMY_LEVEL2_SPREAD;
+
+        // Players
+        else if (new_ent.entity_type == "player") type = EntityType::PLAYER;
+
+        // Powerups
+        else if (new_ent.entity_type == "powerup_shield") type = EntityType::POWERUP_SHIELD;
+        else if (new_ent.entity_type == "powerup_spread") type = EntityType::POWERUP_SPREAD;
+
+        // Bosses
+        else if (new_ent.entity_type == "boss") type = EntityType::BOSS;
+        else if (new_ent.entity_type == "boss_level2_part1") type = EntityType::BOSS_LEVEL2_PART1;
+        else if (new_ent.entity_type == "boss_level2_part2") type = EntityType::BOSS_LEVEL2_PART2;
+        else if (new_ent.entity_type == "boss_level2_part3") type = EntityType::BOSS_LEVEL2_PART3;
+
+
 
         Entity ent = {new_ent.net_id, type, static_cast<uint32_t>(new_ent.health),
                       static_cast<uint32_t>(new_ent.shield), new_ent.x, new_ent.y, 0};
