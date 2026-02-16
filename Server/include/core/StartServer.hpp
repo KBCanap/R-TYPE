@@ -8,9 +8,9 @@
 #ifndef STARTSERVER_HPP_
 #define STARTSERVER_HPP_
 
-#include "GameSession.hpp"
-#include "Protocole.hpp"
-#include "TcpServer.hpp"
+#include "gamelogic/GameSession.hpp"
+#include "network/protocol/Protocole.hpp"
+#include "network/tcp/TcpServer.hpp"
 #include <atomic>
 #include <cstdint>
 #include <memory>

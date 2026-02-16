@@ -5,7 +5,7 @@
 ** Implementation of game session management
 */
 
-#include "GameSession.hpp"
+#include "gamelogic/GameSession.hpp"
 #include <algorithm>
 #include <iostream>
 

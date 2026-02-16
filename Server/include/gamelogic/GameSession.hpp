@@ -8,7 +8,7 @@
 #ifndef GAMESESSION_HPP_
 #define GAMESESSION_HPP_
 
-#include "MessageType.hpp"
+#include "network/protocol/MessageType.hpp"
 #include <cstring>
 #include <netinet/in.h>
 #include <optional>

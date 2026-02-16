@@ -5,7 +5,7 @@
 ** Implementation of client state management
 */
 
-#include "ClientState.hpp"
+#include "network/messages/ClientState.hpp"
 
 ClientState::ClientState()
     : _state(ClientStateType::DISCONNECTED), _player_id(0) {}

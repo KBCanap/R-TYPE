@@ -172,9 +172,8 @@ set_target_properties(lua PROPERTIES
 # ==== Sol2 ====
 CPMFindPackage(
   NAME sol2
-  VERSION 3.3.0
   GITHUB_REPOSITORY ThePhD/sol2
-  GIT_TAG v3.3.0
+  GIT_TAG develop
   OPTIONS "SOL2_EXAMPLES OFF"
 )
 
@@ -188,22 +187,37 @@ add_subdirectory(app)
 # ==== Main targets ====
 # Server
 set(SERVER_SOURCES
-    Server/src/main.cpp
-    Server/src/StartServer.cpp
-    Server/src/GameSession.cpp
-    Server/src/ClientState.cpp
-    Server/src/Protocole.cpp
-    Server/src/Tcpserver.cpp
-    Server/src/UdpServer.cpp
-    Server/src/MessageQueue.cpp
-    Server/src/GameServerLoop.cpp
-    Server/src/UdpProtocole.cpp
-    Server/src/GameLogic.cpp
-    Server/src/GameLogicPlayer.cpp
-    Server/src/GameLogicEntities.cpp
-    Server/src/GameLogicCombat.cpp
-    Server/src/GameLogicSystems.cpp
-    Server/src/GameLogicSnapshot.cpp
+    # Core
+    Server/src/core/main.cpp
+    Server/src/core/StartServer.cpp
+
+    # Game Logic
+    Server/src/gamelogic/GameSession.cpp
+    Server/src/gamelogic/GameLogic.cpp
+    Server/src/gamelogic/GameLogicPlayer.cpp
+    Server/src/gamelogic/GameLogicEntities.cpp
+    Server/src/gamelogic/GameLogicCombat.cpp
+    Server/src/gamelogic/GameLogicSystems.cpp
+    Server/src/gamelogic/GameLogicSnapshot.cpp
+
+    # Server Loop
+    Server/src/serverloop/GameServerLoop.cpp
+
+    # Network - TCP
+    Server/src/network/tcp/TcpServer.cpp
+
+    # Network - UDP
+    Server/src/network/udp/UdpServer.cpp
+
+    # Network - Protocol
+    Server/src/network/protocol/Protocole.cpp
+    Server/src/network/protocol/UdpProtocole.cpp
+
+    # Network - Messages
+    Server/src/network/messages/ClientState.cpp
+    Server/src/network/messages/MessageQueue.cpp
+
+    # ECS
     ecs/src/registery.cpp
 )
 

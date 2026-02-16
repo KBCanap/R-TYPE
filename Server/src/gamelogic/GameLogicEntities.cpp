@@ -1,4 +1,4 @@
-#include "GameLogic.hpp"
+#include "gamelogic/GameLogic.hpp"
 #include <cmath>
 
 void GameLogic::spawnEnemy() {

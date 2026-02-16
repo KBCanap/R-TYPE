@@ -5,7 +5,7 @@
 ** Entry point for R-Type lobby server with multi-instance game management
 */
 
-#include "StartServer.hpp"
+#include "core/StartServer.hpp"
 #include <cstring>
 #include <iostream>
 #include <map>

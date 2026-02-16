@@ -1,6 +1,6 @@
-#include "GameServerLoop.hpp"
-#include "GameLogic.hpp"
-#include "UdpMessageType.hpp"
+#include "serverloop/GameServerLoop.hpp"
+#include "gamelogic/GameLogic.hpp"
+#include "network/protocol/UdpMessageType.hpp"
 #include <chrono>
 #include <iomanip>
 #include <iostream>

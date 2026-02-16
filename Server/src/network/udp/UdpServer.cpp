@@ -5,7 +5,7 @@
 ** UdpServer
 */
 
-#include "UdpServer.hpp"
+#include "network/udp/UdpServer.hpp"
 #include <iostream>
 
 UDPServer::UDPServer(uint16_t port, uint32_t max_clients)

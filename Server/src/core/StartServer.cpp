@@ -5,8 +5,8 @@
 ** Lobby server implementation with multi-instance game management
 */
 
-#include "StartServer.hpp"
-#include "GameServerLoop.hpp"
+#include "core/StartServer.hpp"
+#include "serverloop/GameServerLoop.hpp"
 #include <arpa/inet.h>
 #include <iostream>
 #include <sys/wait.h>

@@ -7,7 +7,7 @@
 
 #ifndef MESSAGEQUEUE_HPP_
 #define MESSAGEQUEUE_HPP_
-#include "UdpProtocole.hpp"
+#include "network/protocol/UdpProtocole.hpp"
 #include <memory>
 #include <queue>
 

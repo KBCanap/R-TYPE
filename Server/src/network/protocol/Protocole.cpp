@@ -5,7 +5,7 @@
 ** Protocol message handling implementation - Extended Lobby System
 */
 
-#include "Protocole.hpp"
+#include "network/protocol/Protocole.hpp"
 #include <arpa/inet.h>
 #include <cstring>
 #include <iostream>

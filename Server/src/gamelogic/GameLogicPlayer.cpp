@@ -1,4 +1,4 @@
-#include "GameLogic.hpp"
+#include "gamelogic/GameLogic.hpp"
 #include <algorithm>
 
 entity GameLogic::createPlayer(uint client_id, uint net_id, float x, float y) {

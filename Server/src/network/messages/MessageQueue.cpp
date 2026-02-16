@@ -5,4 +5,4 @@
 ** MessageQueue implementation
 */
 
-#include "MessageQueue.hpp"
+#include "network/messages/MessageQueue.hpp"

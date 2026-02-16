@@ -8,9 +8,9 @@
 #ifndef GAMESERVERLOOP_HPP_
 #define GAMESERVERLOOP_HPP_
 
-#include "GameLogic.hpp"
-#include "UdpProtocole.hpp"
-#include "UdpServer.hpp"
+#include "gamelogic/GameLogic.hpp"
+#include "network/protocol/UdpProtocole.hpp"
+#include "network/udp/UdpServer.hpp"
 #include <atomic>
 #include <chrono>
 #include <csignal>
