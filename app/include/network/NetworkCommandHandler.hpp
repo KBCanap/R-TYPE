@@ -4,9 +4,9 @@
 #include "../../../ecs/include/network/NetworkComponents.hpp"
 #include "../../../ecs/include/registery.hpp"
 #include "../../../ecs/include/render/IRenderWindow.hpp"
-#include "../boss_manager.hpp"
-#include "../enemy_manager.hpp"
-#include "../player_manager.hpp"
+#include "game/boss_manager.hpp"
+#include "game/enemy_manager.hpp"
+#include "game/player_manager.hpp"
 #include "PacketProcessor.hpp"
 #include <atomic>
 #include <mutex>

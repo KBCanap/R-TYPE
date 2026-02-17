@@ -7,32 +7,41 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Fichiers sources de l'application
 set(APP_SOURCES
-    src/main.cpp
-    src/menu.cpp
-    src/game_menu.cpp
-    src/audio_manager.cpp
-    src/game.cpp
-    src/tick_system.cpp
-    src/options_menu.cpp
-    src/accessibility_menu.cpp
-    src/keybindings_menu.cpp
-    src/key_bindings.cpp
-    src/player_manager.cpp
-    src/enemy_manager.cpp
-    src/boss_manager.cpp
-    src/powerup_manager.cpp
-    src/pause_menu.cpp
-    src/connection_menu.cpp
-    src/lobby_browser_menu.cpp
-    src/lobby_menu.cpp
-    src/level_selection_menu.cpp
+    # Core
+    src/core/main.cpp
+    src/core/game.cpp
+    src/core/tick_system.cpp
+
+    # UI
+    src/ui/menu.cpp
+    src/ui/game_menu.cpp
+    src/ui/connection_menu.cpp
+    src/ui/lobby_menu.cpp
+    src/ui/lobby_browser_menu.cpp
+    src/ui/level_selection_menu.cpp
+    src/ui/options_menu.cpp
+    src/ui/pause_menu.cpp
+    src/ui/accessibility_menu.cpp
+    src/ui/keybindings_menu.cpp
+    src/ui/key_bindings.cpp
+
+    # Network
+    src/network/ASIOSocket.cpp
+    src/network/NetworkManager.cpp
+    src/network/NetworkCommandHandler.cpp
+    src/network/PacketProcessor.cpp
+
+    # Game
+    src/game/player_manager.cpp
+    src/game/enemy_manager.cpp
+    src/game/boss_manager.cpp
+    src/game/powerup_manager.cpp
+    src/game/audio_manager.cpp
+
+    # Render
     src/render/RenderFactory.cpp
     src/render/sfml/SFMLRenderWindow.cpp
     src/render/sfml/SFMLRenderAudio.cpp
-    src/ASIOSocket.cpp
-    src/NetworkManager.cpp
-    src/NetworkCommandHandler.cpp
-    src/PacketProcessor.cpp
 )
 
 # Création de l'exécutable client

@@ -5,7 +5,7 @@
 ** render_system
 */
 
-#include "../../app/include/settings.hpp"
+#include "../../app/include/core/settings.hpp"
 #include "../../include/systems.hpp"
 #include "../include/render/IRenderWindow.hpp"
 #include <memory>
