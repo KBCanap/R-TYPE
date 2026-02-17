@@ -7,10 +7,10 @@
 
 #pragma once
 #include "../../ecs/include/render/IRenderWindow.hpp"
-#include "game/audio_manager.hpp"
+#include "game/AudioManager.hpp"
 #include "components.hpp"
-#include "ui/key_bindings.hpp"
-#include "options_menu.hpp"
+#include "ui/KeyBindings.hpp"
+#include "OptionsMenu.hpp"
 #include "registery.hpp"
 #include <memory>
 #include <vector>

@@ -5,7 +5,7 @@
 ** boss_manager
 */
 
-#include "game/boss_manager.hpp"
+#include "game/BossManager.hpp"
 #include <iostream>
 
 BossManager::BossManager(registry &reg, render::IRenderWindow &win)

@@ -5,7 +5,7 @@
 ** tick_system
 */
 
-#include "core/tick_system.hpp"
+#include "core/TickSystem.hpp"
 #include <algorithm>
 #include <cmath>
 #include <thread>

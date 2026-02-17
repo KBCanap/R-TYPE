@@ -5,7 +5,7 @@
 ** game_menu
 */
 
-#include "ui/game_menu.hpp"
+#include "ui/GameMenu.hpp"
 #include <stdexcept>
 
 // Helper function to check if a FloatRect contains a point

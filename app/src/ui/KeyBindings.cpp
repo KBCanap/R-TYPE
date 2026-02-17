@@ -5,7 +5,7 @@
 ** key_bindings
 */
 
-#include "ui/key_bindings.hpp"
+#include "ui/KeyBindings.hpp"
 
 std::string KeyBindings::getKeyName(render::Key key) {
     switch (key) {

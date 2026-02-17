@@ -5,7 +5,7 @@
 ** options_menu
 */
 
-#include "ui/options_menu.hpp"
+#include "ui/OptionsMenu.hpp"
 #include "core/settings.hpp"
 #include <chrono>
 #include <iostream>

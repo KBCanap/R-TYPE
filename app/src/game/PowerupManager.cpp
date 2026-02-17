@@ -5,7 +5,7 @@
 ** powerup_manager
 */
 
-#include "game/powerup_manager.hpp"
+#include "game/PowerupManager.hpp"
 
 PowerupManager::PowerupManager(registry &reg, render::IRenderWindow &win)
     : _registry(reg), _window(win) {}

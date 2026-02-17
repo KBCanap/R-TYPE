@@ -5,9 +5,9 @@
 ** menu
 */
 
-#include "ui/menu.hpp"
-#include "ui/accessibility_menu.hpp"
-#include "ui/keybindings_menu.hpp"
+#include "ui/Menu.hpp"
+#include "ui/AccessibilityMenu.hpp"
+#include "ui/KeybindingsMenu.hpp"
 #include "render/sfml/SFMLRenderWindow.hpp"
 #include <chrono>
 #include <cmath>

@@ -7,9 +7,9 @@
 
 #pragma once
 #include "../../ecs/include/render/IRenderWindow.hpp"
-#include "accessibility_menu.hpp"
-#include "game/audio_manager.hpp"
-#include "options_menu.hpp"
+#include "AccessibilityMenu.hpp"
+#include "game/AudioManager.hpp"
+#include "OptionsMenu.hpp"
 #include <memory>
 
 enum class PauseResult { None, Continue, Options, Accessibility, Quit };

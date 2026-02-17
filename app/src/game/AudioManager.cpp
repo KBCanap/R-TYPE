@@ -5,7 +5,7 @@
 ** audio_manager
 */
 
-#include "game/audio_manager.hpp"
+#include "game/AudioManager.hpp"
 #include <iostream>
 
 AudioManager::AudioManager(render::IRenderAudio &audioSystem)

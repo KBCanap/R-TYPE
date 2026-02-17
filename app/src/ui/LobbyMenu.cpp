@@ -5,7 +5,7 @@
 ** lobby_menu - Waiting room menu when in a lobby
 */
 
-#include "ui/lobby_menu.hpp"
+#include "ui/LobbyMenu.hpp"
 #include "core/settings.hpp"
 #include <iostream>
 

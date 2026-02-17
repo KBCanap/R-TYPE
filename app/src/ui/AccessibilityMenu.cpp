@@ -5,7 +5,7 @@
 ** accessibility_menu
 */
 
-#include "ui/accessibility_menu.hpp"
+#include "ui/AccessibilityMenu.hpp"
 #include "core/settings.hpp"
 #include <chrono>
 #include <iostream>

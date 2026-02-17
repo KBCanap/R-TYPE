@@ -5,7 +5,7 @@
 ** player_manager
 */
 
-#include "game/player_manager.hpp"
+#include "game/PlayerManager.hpp"
 
 PlayerManager::PlayerManager(registry &reg, render::IRenderWindow &win)
     : _registry(reg), _window(win) {}

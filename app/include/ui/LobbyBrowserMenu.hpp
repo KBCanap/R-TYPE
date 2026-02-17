@@ -8,7 +8,7 @@
 #pragma once
 #include "../../ecs/include/network/INetwork.hpp"
 #include "../../ecs/include/render/IRenderWindow.hpp"
-#include "game/audio_manager.hpp"
+#include "game/AudioManager.hpp"
 #include <chrono>
 #include <memory>
 #include <string>

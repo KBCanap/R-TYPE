@@ -5,7 +5,7 @@
 ** connection_menu
 */
 
-#include "ui/connection_menu.hpp"
+#include "ui/ConnectionMenu.hpp"
 #include "core/settings.hpp"
 #include <iostream>
 

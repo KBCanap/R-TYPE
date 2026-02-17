@@ -5,7 +5,7 @@
 ** lobby_browser_menu - Menu for creating, browsing, and joining lobbies
 */
 
-#include "ui/lobby_browser_menu.hpp"
+#include "ui/LobbyBrowserMenu.hpp"
 #include "core/settings.hpp"
 #include <iostream>
 

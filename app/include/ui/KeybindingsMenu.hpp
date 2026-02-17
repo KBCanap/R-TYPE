@@ -7,8 +7,8 @@
 
 #pragma once
 #include "../../ecs/include/render/IRenderWindow.hpp"
-#include "game/audio_manager.hpp"
-#include "ui/key_bindings.hpp"
+#include "game/AudioManager.hpp"
+#include "ui/KeyBindings.hpp"
 #include <memory>
 #include <vector>
 

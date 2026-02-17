@@ -5,7 +5,7 @@
 ** enemy_manager
 */
 
-#include "game/enemy_manager.hpp"
+#include "game/EnemyManager.hpp"
 #include "entity.hpp"
 #include "lua_compat_fix.hpp"
 #include <cmath>

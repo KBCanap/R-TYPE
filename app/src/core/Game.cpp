@@ -5,11 +5,11 @@
 ** game
 */
 
-#include "core/game.hpp"
-#include "ui/accessibility_menu.hpp"
-#include "ui/keybindings_menu.hpp"
+#include "core/Game.hpp"
+#include "ui/AccessibilityMenu.hpp"
+#include "ui/KeybindingsMenu.hpp"
 #include "network/NetworkManager.hpp"
-#include "ui/options_menu.hpp"
+#include "ui/OptionsMenu.hpp"
 #include "core/settings.hpp"
 #include "network/NetworkComponents.hpp"
 #include "network/NetworkSystem.hpp"

@@ -5,7 +5,7 @@
 ** keybindings_menu
 */
 
-#include "ui/keybindings_menu.hpp"
+#include "ui/KeybindingsMenu.hpp"
 #include <chrono>
 #include <iostream>
 

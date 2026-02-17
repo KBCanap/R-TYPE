@@ -5,14 +5,14 @@
 ** main
 */
 
-#include "game/audio_manager.hpp"
-#include "ui/connection_menu.hpp"
-#include "core/game.hpp"
-#include "ui/key_bindings.hpp"
-#include "ui/level_selection_menu.hpp"
-#include "ui/lobby_browser_menu.hpp"
-#include "ui/lobby_menu.hpp"
-#include "ui/menu.hpp"
+#include "game/AudioManager.hpp"
+#include "ui/ConnectionMenu.hpp"
+#include "core/Game.hpp"
+#include "ui/KeyBindings.hpp"
+#include "ui/LevelSelectionMenu.hpp"
+#include "ui/LobbyBrowserMenu.hpp"
+#include "ui/LobbyMenu.hpp"
+#include "ui/Menu.hpp"
 #include "network/NetworkManager.hpp"
 #include "components.hpp"
 #include "registery.hpp"

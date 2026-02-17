@@ -5,7 +5,7 @@
 ** pause_menu
 */
 
-#include "ui/pause_menu.hpp"
+#include "ui/PauseMenu.hpp"
 #include <iostream>
 
 PauseMenu::PauseMenu(render::IRenderWindow &win, AudioManager &audioMgr)
