@@ -184,59 +184,8 @@ add_subdirectory(ecs)
 # App (R-Type client with ECS)
 add_subdirectory(app)
 
-# ==== Main targets ====
 # Server
-set(SERVER_SOURCES
-    # Core
-    Server/src/core/main.cpp
-    Server/src/core/StartServer.cpp
-
-    # Game Logic
-    Server/src/gamelogic/GameSession.cpp
-    Server/src/gamelogic/GameLogic.cpp
-    Server/src/gamelogic/GameLogicPlayer.cpp
-    Server/src/gamelogic/GameLogicEntities.cpp
-    Server/src/gamelogic/GameLogicCombat.cpp
-    Server/src/gamelogic/GameLogicSystems.cpp
-    Server/src/gamelogic/GameLogicSnapshot.cpp
-
-    # Server Loop
-    Server/src/serverloop/GameServerLoop.cpp
-
-    # Network - TCP
-    Server/src/network/tcp/TcpServer.cpp
-
-    # Network - UDP
-    Server/src/network/udp/UdpServer.cpp
-
-    # Network - Protocol
-    Server/src/network/protocol/Protocole.cpp
-    Server/src/network/protocol/UdpProtocole.cpp
-
-    # Network - Messages
-    Server/src/network/messages/ClientState.cpp
-    Server/src/network/messages/MessageQueue.cpp
-
-    # ECS
-    ecs/src/registery.cpp
-)
-
-add_executable(r-type_server ${SERVER_SOURCES})
-target_include_directories(r-type_server PRIVATE
-  Server/include
-)
-target_link_libraries(r-type_server PRIVATE
-  asio_interface
-)
-
-# Warning and debug configuration
-setup_target_warnings(r-type_server)
-target_compile_definitions(r-type_server PRIVATE
-  $<$<CONFIG:Debug>:DEBUG>
-  $<$<CONFIG:Debug>:RTYPE_DEBUG>
-)
-
-# Client is now handled by the app module
+add_subdirectory(Server)
 
 # ==== Unit tests (optional) ====
 if(RTYPE_BUILD_TESTS)
@@ -273,13 +222,6 @@ if(RTYPE_BUILD_TESTS)
 
   message(STATUS "Unit tests enabled")
 endif()
-
-# ==== Optimizations by configuration (fixed for multi-config) ====
-# Avoid CMAKE_BUILD_TYPE here and use generator expressions:
-# Release: -O3 -DNDEBUG only
-target_compile_options(r-type_server PRIVATE
-  $<$<CONFIG:Release>:-O3 -DNDEBUG>
-)
 
 # ==== Installation (for packaging/deployment) ====
 include(GNUInstallDirs)
