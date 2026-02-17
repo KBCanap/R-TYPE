@@ -41,6 +41,17 @@ LobbyBrowserMenu::LobbyBrowserMenu(render::IRenderWindow &win,
         std::cerr << "Failed to load font r-type.otf" << std::endl;
     }
 
+    // Load system font for buttons (supports +, -, <, > characters)
+    _buttonFont = _window.createFont();
+    if (!_buttonFont->loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")) {
+        // Try alternative system font
+        if (!_buttonFont->loadFromFile("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf")) {
+            std::cerr << "Warning: Failed to load system font, using r-type.otf for buttons" << std::endl;
+            _buttonFont = _window.createFont();
+            _buttonFont->loadFromFile("assets/r-type.otf");
+        }
+    }
+
     createUI();
     _lastTime = std::chrono::steady_clock::now();
 
@@ -122,7 +133,7 @@ void LobbyBrowserMenu::createUI() {
 
     _lobbyNameLabel = _window.createText();
     _lobbyNameLabel->setFont(*_font);
-    _lobbyNameLabel->setString("Lobby Name:");
+    _lobbyNameLabel->setString("Lobby Name");
     _lobbyNameLabel->setCharacterSize(24);
     _lobbyNameLabel->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
@@ -143,7 +154,7 @@ void LobbyBrowserMenu::createUI() {
 
     _maxPlayersLabel = _window.createText();
     _maxPlayersLabel->setFont(*_font);
-    _maxPlayersLabel->setString("Max Players:");
+    _maxPlayersLabel->setString("Max Players");
     _maxPlayersLabel->setCharacterSize(24);
     _maxPlayersLabel->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
@@ -163,8 +174,8 @@ void LobbyBrowserMenu::createUI() {
     _decreasePlayersButton->setOutlineThickness(2);
 
     _decreasePlayersButtonText = _window.createText();
-    _decreasePlayersButtonText->setFont(*_font);
-    _decreasePlayersButtonText->setString("-");
+    _decreasePlayersButtonText->setFont(*_buttonFont);
+    _decreasePlayersButtonText->setString("<");
     _decreasePlayersButtonText->setCharacterSize(32);
     _decreasePlayersButtonText->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
@@ -177,8 +188,8 @@ void LobbyBrowserMenu::createUI() {
     _increasePlayersButton->setOutlineThickness(2);
 
     _increasePlayersButtonText = _window.createText();
-    _increasePlayersButtonText->setFont(*_font);
-    _increasePlayersButtonText->setString("+");
+    _increasePlayersButtonText->setFont(*_buttonFont);
+    _increasePlayersButtonText->setString(">");
     _increasePlayersButtonText->setCharacterSize(32);
     _increasePlayersButtonText->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
@@ -212,15 +223,15 @@ void LobbyBrowserMenu::createUI() {
     // Level selection UI
     _levelLabel = _window.createText();
     _levelLabel->setFont(*_font);
-    _levelLabel->setString("Level:");
+    _levelLabel->setString("NIVEAU");
     _levelLabel->setCharacterSize(24);
     _levelLabel->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
 
     _levelText = _window.createText();
     _levelText->setFont(*_font);
-    _levelText->setString("Level 1");
-    _levelText->setCharacterSize(24);
+    _levelText->setString("1");
+    _levelText->setCharacterSize(28);
     _levelText->setFillColor(
         settings.applyColorblindFilter(render::Color::White()));
 
@@ -232,7 +243,7 @@ void LobbyBrowserMenu::createUI() {
     _decreaseLevelButton->setOutlineThickness(2);
 
     _decreaseLevelButtonText = _window.createText();
-    _decreaseLevelButtonText->setFont(*_font);
+    _decreaseLevelButtonText->setFont(*_buttonFont);
     _decreaseLevelButtonText->setString("<");
     _decreaseLevelButtonText->setCharacterSize(32);
     _decreaseLevelButtonText->setFillColor(
@@ -246,7 +257,7 @@ void LobbyBrowserMenu::createUI() {
     _increaseLevelButton->setOutlineThickness(2);
 
     _increaseLevelButtonText = _window.createText();
-    _increaseLevelButtonText->setFont(*_font);
+    _increaseLevelButtonText->setFont(*_buttonFont);
     _increaseLevelButtonText->setString(">");
     _increaseLevelButtonText->setCharacterSize(32);
     _increaseLevelButtonText->setFillColor(
@@ -385,7 +396,7 @@ void LobbyBrowserMenu::showCreateLobbyDialog() {
     _isTypingLobbyName = false;
     _lobbyNameInputText->setString("");
     _maxPlayersText->setString("4");
-    _levelText->setString("Level 1");
+    _levelText->setString("1");
     updateButtonScale();
 }
 
@@ -655,11 +666,11 @@ void LobbyBrowserMenu::updateCreateLobbyDialog() {
 
     // Update level text based on selection
     if (_selectedLevelId == 1) {
-        _levelText->setString("Level 1");
+        _levelText->setString("1");
     } else if (_selectedLevelId == 2) {
-        _levelText->setString("Level 2");
+        _levelText->setString("2");
     } else if (_selectedLevelId == 99) {
-        _levelText->setString("Endless");
+        _levelText->setString("INF");
     }
 
     // Update outline based on typing state

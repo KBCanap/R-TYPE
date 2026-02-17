@@ -55,6 +55,7 @@ class LobbyBrowserMenu {
     network::INetwork &_networkManager;
 
     std::unique_ptr<render::IFont> _font;
+    std::unique_ptr<render::IFont> _buttonFont; // System font for buttons
     std::unique_ptr<render::ITexture> _bgTexture;
     std::unique_ptr<render::ISprite> _bgSprite1;
     std::unique_ptr<render::ISprite> _bgSprite2;
