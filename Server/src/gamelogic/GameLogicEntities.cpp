@@ -130,6 +130,49 @@ void GameLogic::spawnBoss1() {
     _new_entities.push_back({net_id, "boss", 0.85f, 0.5f, boss_hp, 0});
 }
 
+void GameLogic::spawnBossPart1(float boss_x, float boss_y, int part_hp) {
+    entity part1 = _registry->spawn_entity();
+    uint net_id1 = generateNetId();
+    _registry->add_component(part1, Position{boss_x - 0.075f, boss_y});
+    _registry->add_component(part1, Velocity{0.0f, 0.0f});
+    _registry->add_component(part1, Boss{0, 0.0f, 2, 0.0f, 0, 0.0f});
+    _registry->add_component(part1, Enemy{101, 0.0f, 100});
+    _registry->add_component(part1, Health{part_hp, part_hp, 0.0f});
+    _registry->add_component(part1, Hitbox{116.0f, 69.0f, 0.0f, 0.0f});
+    _registry->add_component(part1, NetworkComponent{net_id1, true, "boss_level2_part1"});
+    _boss_parts.push_back(part1);
+    _new_entities.push_back({net_id1, "boss_level2_part1", boss_x - 0.075f, boss_y, part_hp, 0});
+}
+
+void GameLogic::spawnBossPart2(float boss_x, float boss_y, int part_hp) {
+    entity part2 = _registry->spawn_entity();
+    uint net_id2 = generateNetId();
+    _registry->add_component(part2, Position{boss_x, boss_y - 0.025f});
+    _registry->add_component(part2, Velocity{0.0f, 0.0f});
+    _registry->add_component(part2, Boss{1, 0.0f, 2, 0.0f, 5, 30.0f});
+    _registry->add_component(part2, Enemy{101, 0.0f, 100});
+    _registry->add_component(part2, Health{part_hp, part_hp, 0.0f});
+    _registry->add_component(part2, Hitbox{98.0f, 100.0f, 0.0f, 0.0f});
+    _registry->add_component(part2, NetworkComponent{net_id2, true, "boss_level2_part2"});
+    _boss_parts.push_back(part2);
+    _boss = part2;
+    _new_entities.push_back({net_id2, "boss_level2_part2", boss_x, boss_y - 0.025f, part_hp, 0});
+}
+
+void GameLogic::spawnBossPart3(float boss_x, float boss_y, int part_hp) {
+    entity part3 = _registry->spawn_entity();
+    uint net_id3 = generateNetId();
+    _registry->add_component(part3, Position{boss_x + 0.075f, boss_y});
+    _registry->add_component(part3, Velocity{0.0f, 0.0f});
+    _registry->add_component(part3, Boss{2, 0.0f, 2, 0.0f, 0, 0.0f});
+    _registry->add_component(part3, Enemy{101, 0.0f, 100});
+    _registry->add_component(part3, Health{part_hp, part_hp, 0.0f});
+    _registry->add_component(part3, Hitbox{99.0f, 83.0f, 0.0f, 0.0f});
+    _registry->add_component(part3, NetworkComponent{net_id3, true, "boss_level2_part3"});
+    _boss_parts.push_back(part3);
+    _new_entities.push_back({net_id3, "boss_level2_part3", boss_x + 0.075f, boss_y, part_hp, 0});
+}
+
 void GameLogic::spawnBoss2() {
     if (_boss_active)
         return;
@@ -143,42 +186,9 @@ void GameLogic::spawnBoss2() {
 
     _boss_parts.clear();
 
-    entity part1 = _registry->spawn_entity();
-    uint net_id1 = generateNetId();
-    _registry->add_component(part1, Position{boss_x - 0.075f, boss_y});
-    _registry->add_component(part1, Velocity{0.0f, 0.0f});
-    _registry->add_component(part1, Boss{0, 0.0f, 2, 0.0f, 0, 0.0f});
-    _registry->add_component(part1, Enemy{101, 0.0f, 100});
-    _registry->add_component(part1, Health{part_hp, part_hp, 0.0f});
-    _registry->add_component(part1, Hitbox{116.0f, 69.0f, 0.0f, 0.0f});
-    _registry->add_component(part1, NetworkComponent{net_id1, true, "boss_level2_part1"});
-    _boss_parts.push_back(part1);
-    _new_entities.push_back({net_id1, "boss_level2_part1", boss_x - 0.075f, boss_y, part_hp, 0});
-
-    entity part2 = _registry->spawn_entity();
-    uint net_id2 = generateNetId();
-    _registry->add_component(part2, Position{boss_x, boss_y - 0.025f});
-    _registry->add_component(part2, Velocity{0.0f, 0.0f});
-    _registry->add_component(part2, Boss{1, 0.0f, 2, 0.0f, 5, 30.0f});
-    _registry->add_component(part2, Enemy{101, 0.0f, 100});
-    _registry->add_component(part2, Health{part_hp, part_hp, 0.0f});
-    _registry->add_component(part2, Hitbox{98.0f, 100.0f, 0.0f, 0.0f});
-    _registry->add_component(part2, NetworkComponent{net_id2, true, "boss_level2_part2"});
-    _boss_parts.push_back(part2);
-    _boss = part2;
-    _new_entities.push_back({net_id2, "boss_level2_part2", boss_x, boss_y - 0.025f, part_hp, 0});
-
-    entity part3 = _registry->spawn_entity();
-    uint net_id3 = generateNetId();
-    _registry->add_component(part3, Position{boss_x + 0.075f, boss_y});
-    _registry->add_component(part3, Velocity{0.0f, 0.0f});
-    _registry->add_component(part3, Boss{2, 0.0f, 2, 0.0f, 0, 0.0f});
-    _registry->add_component(part3, Enemy{101, 0.0f, 100});
-    _registry->add_component(part3, Health{part_hp, part_hp, 0.0f});
-    _registry->add_component(part3, Hitbox{99.0f, 83.0f, 0.0f, 0.0f});
-    _registry->add_component(part3, NetworkComponent{net_id3, true, "boss_level2_part3"});
-    _boss_parts.push_back(part3);
-    _new_entities.push_back({net_id3, "boss_level2_part3", boss_x + 0.075f, boss_y, part_hp, 0});
+    spawnBossPart1(boss_x, boss_y, part_hp);
+    spawnBossPart2(boss_x, boss_y, part_hp);
+    spawnBossPart3(boss_x, boss_y, part_hp);
 
     _boss_active = true;
     _boss_spawned = true;

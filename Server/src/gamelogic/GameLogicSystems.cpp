@@ -89,12 +89,25 @@ void GameLogic::projectileSystem(registry &reg,
     }
 }
 
-void GameLogic::collisionSystem(
+int GameLogic::applyDamageWithShield(registry &reg, size_t entity_idx, int damage) {
+    auto &shields = reg.get_components<Shield>();
+    auto &shield_opt = shields[entity_idx];
+
+    int remaining_damage = damage;
+    if (shield_opt && shield_opt.value().current_shield > 0) {
+        int shield_damage = std::min(remaining_damage, shield_opt.value().current_shield);
+        shield_opt.value().current_shield -= shield_damage;
+        remaining_damage -= shield_damage;
+    }
+    return remaining_damage;
+}
+
+void GameLogic::processProjectileCollisions(
     registry &reg, sparse_array<Position> &positions,
     sparse_array<Hitbox> &hitboxes, sparse_array<Projectile> &projectiles,
     sparse_array<PlayerComponent> &players, sparse_array<Enemy> &enemies,
     sparse_array<Health> &healths, sparse_array<Score> &scores,
-    sparse_array<NetworkComponent> &network_comps, float dt) {
+    sparse_array<NetworkComponent> &network_comps) {
 
     for (size_t proj_idx = 0; proj_idx < projectiles.size(); ++proj_idx) {
         auto &proj_opt = projectiles[proj_idx];
@@ -155,13 +168,7 @@ void GameLogic::collisionSystem(
                 int remaining_damage = proj.damage;
 
                 if (target_is_player) {
-                    auto &shields = reg.get_components<Shield>();
-                    auto &shield_opt = shields[target_idx];
-                    if (shield_opt && shield_opt.value().current_shield > 0) {
-                        int shield_damage = std::min(remaining_damage, shield_opt.value().current_shield);
-                        shield_opt.value().current_shield -= shield_damage;
-                        remaining_damage -= shield_damage;
-                    }
+                    remaining_damage = applyDamageWithShield(reg, target_idx, remaining_damage);
                 }
 
                 target_health.current_hp -= remaining_damage;
@@ -191,6 +198,13 @@ void GameLogic::collisionSystem(
             }
         }
     }
+}
+
+void GameLogic::processContactCollisions(
+    registry &reg, sparse_array<Position> &positions,
+    sparse_array<Hitbox> &hitboxes, sparse_array<PlayerComponent> &players,
+    sparse_array<Enemy> &enemies, sparse_array<Health> &healths,
+    sparse_array<NetworkComponent> &network_comps) {
 
     const int CONTACT_DAMAGE = game::CONTACT_DAMAGE;
 
@@ -240,15 +254,7 @@ void GameLogic::collisionSystem(
                 player_pos.y + player_h > enemy_pos.y;
 
             if (collision) {
-                int remaining_damage = CONTACT_DAMAGE;
-                auto &shields = reg.get_components<Shield>();
-                auto &shield_opt = shields[player_idx];
-
-                if (shield_opt && shield_opt.value().current_shield > 0) {
-                    int shield_damage = std::min(remaining_damage, shield_opt.value().current_shield);
-                    shield_opt.value().current_shield -= shield_damage;
-                    remaining_damage -= shield_damage;
-                }
+                int remaining_damage = applyDamageWithShield(reg, player_idx, CONTACT_DAMAGE);
 
                 player_health_opt.value().current_hp -= remaining_damage;
                 enemy_health_opt.value().current_hp -= CONTACT_DAMAGE;
@@ -268,6 +274,20 @@ void GameLogic::collisionSystem(
             }
         }
     }
+}
+
+void GameLogic::collisionSystem(
+    registry &reg, sparse_array<Position> &positions,
+    sparse_array<Hitbox> &hitboxes, sparse_array<Projectile> &projectiles,
+    sparse_array<PlayerComponent> &players, sparse_array<Enemy> &enemies,
+    sparse_array<Health> &healths, sparse_array<Score> &scores,
+    sparse_array<NetworkComponent> &network_comps, float dt) {
+
+    processProjectileCollisions(reg, positions, hitboxes, projectiles, players,
+                                enemies, healths, scores, network_comps);
+
+    processContactCollisions(reg, positions, hitboxes, players, enemies,
+                            healths, network_comps);
 }
 
 void GameLogic::healthSystem(registry &reg, sparse_array<Health> &healths,

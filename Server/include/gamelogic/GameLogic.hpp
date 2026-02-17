@@ -277,6 +277,50 @@ class GameLogic {
     void cleanupDeadEntities();
     entity findEntityByNetId(uint net_id);
 
+    // Helper methods for collision system
+    static void processProjectileCollisions(
+        registry &reg, sparse_array<Position> &positions,
+        sparse_array<Hitbox> &hitboxes, sparse_array<Projectile> &projectiles,
+        sparse_array<PlayerComponent> &players, sparse_array<Enemy> &enemies,
+        sparse_array<Health> &healths, sparse_array<Score> &scores,
+        sparse_array<NetworkComponent> &network_comps);
+
+    static void processContactCollisions(
+        registry &reg, sparse_array<Position> &positions,
+        sparse_array<Hitbox> &hitboxes, sparse_array<PlayerComponent> &players,
+        sparse_array<Enemy> &enemies, sparse_array<Health> &healths,
+        sparse_array<NetworkComponent> &network_comps);
+
+    static int applyDamageWithShield(registry &reg, size_t entity_idx, int damage);
+
+    // Helper methods for boss shooting
+    void processBossLevel2Shooting(float dt);
+    void processBossLevel1Shooting(float dt);
+    void updateBossPartsMovement(float dt);
+    void cleanupDeadBossParts();
+    void processSingleBossPartShooting(entity part, float dt);
+    void processFullBossPartsShooting(float dt);
+
+    // Helper methods for powerup collisions
+    bool checkPowerUpPlayerCollision(const Position &pu_pos, const Hitbox &pu_hitbox,
+                                     const Position &player_pos, const Hitbox &player_hitbox);
+    void applyPowerUpToPlayer(entity player_ent, PowerUpType type);
+
+    // Helper methods for cleanup
+    void cleanupDeadPlayers();
+    void cleanupDeadEnemies();
+    void cleanupOutOfBoundsProjectiles();
+    void cleanupDeadBoss();
+
+    // Helper methods for boss spawning
+    void spawnBossPart1(float boss_x, float boss_y, int part_hp);
+    void spawnBossPart2(float boss_x, float boss_y, int part_hp);
+    void spawnBossPart3(float boss_x, float boss_y, int part_hp);
+
+    // Helper methods for player shooting
+    void fireSpreadWeapon(const Position &pos, const Weapon &weapon);
+    void fireSingleWeapon(const Position &pos, int damage);
+
     // Systems
     static void inputSystem(registry &reg, sparse_array<InputState> &inputs,
                             sparse_array<Velocity> &velocities,

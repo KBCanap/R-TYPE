@@ -96,6 +96,20 @@ void GameLogic::updateTotalScore() {
     }
 }
 
+void GameLogic::fireSpreadWeapon(const Position &pos, const Weapon &weapon) {
+    float angle_step = weapon.spread_angle / (weapon.projectile_count - 1);
+    float start_angle = -weapon.spread_angle / 2.0f;
+
+    for (int j = 0; j < weapon.projectile_count; ++j) {
+        float angle = start_angle + j * angle_step;
+        spawnProjectileAtAngle(pos.x + 0.05f, pos.y, angle, true, weapon.damage);
+    }
+}
+
+void GameLogic::fireSingleWeapon(const Position &pos, int damage) {
+    spawnProjectile(pos.x + 0.05f, pos.y, true, damage);
+}
+
 void GameLogic::processPlayerShooting(float dt) {
     auto &inputs = _registry->get_components<InputState>();
     auto &positions = _registry->get_components<Position>();
@@ -126,15 +140,9 @@ void GameLogic::processPlayerShooting(float dt) {
             Position &pos = pos_opt.value();
 
             if (weapon.projectile_count > 1 && weapon.spread_angle > 0.0f) {
-                float angle_step = weapon.spread_angle / (weapon.projectile_count - 1);
-                float start_angle = -weapon.spread_angle / 2.0f;
-
-                for (int j = 0; j < weapon.projectile_count; ++j) {
-                    float angle = start_angle + j * angle_step;
-                    spawnProjectileAtAngle(pos.x + 0.05f, pos.y, angle, true, weapon.damage);
-                }
+                fireSpreadWeapon(pos, weapon);
             } else {
-                spawnProjectile(pos.x + 0.05f, pos.y, true, weapon.damage);
+                fireSingleWeapon(pos, weapon.damage);
             }
 
             weapon.fire_timer = 1.0f / weapon.fire_rate;
