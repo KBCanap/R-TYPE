@@ -22,7 +22,7 @@ set(MARIO_SOURCES
     src/mario_enemies.cpp
 
     # Shared app sources
-    ../app/src/audio_manager.cpp
+    ../app/src/game/AudioManager.cpp
     ../app/src/render/RenderFactory.cpp
     ../app/src/render/sfml/SFMLRenderWindow.cpp
     ../app/src/render/sfml/SFMLRenderAudio.cpp

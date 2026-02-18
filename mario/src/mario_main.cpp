@@ -5,7 +5,7 @@
 ** mario_main - Mario Bros prototype test
 */
 
-#include "audio_manager.hpp"
+#include "game/AudioManager.hpp"
 #include "mario_game.hpp"
 #include "registery.hpp"
 #include "render/RenderFactory.hpp"
