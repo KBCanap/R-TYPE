@@ -184,6 +184,9 @@ add_subdirectory(ecs)
 # App (R-Type client with ECS)
 add_subdirectory(app)
 
+# Mario platformer game
+add_subdirectory(mario)
+
 # Server
 add_subdirectory(Server)
 
