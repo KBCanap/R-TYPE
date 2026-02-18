@@ -172,9 +172,8 @@ set_target_properties(lua PROPERTIES
 # ==== Sol2 ====
 CPMFindPackage(
   NAME sol2
-  VERSION 3.3.0
   GITHUB_REPOSITORY ThePhD/sol2
-  GIT_TAG v3.3.0
+  GIT_TAG develop
   OPTIONS "SOL2_EXAMPLES OFF"
 )
 
@@ -188,44 +187,8 @@ add_subdirectory(app)
 # Mario platformer game
 add_subdirectory(mario)
 
-# ==== Main targets ====
 # Server
-set(SERVER_SOURCES
-    Server/src/main.cpp
-    Server/src/StartServer.cpp
-    Server/src/GameSession.cpp
-    Server/src/ClientState.cpp
-    Server/src/Protocole.cpp
-    Server/src/Tcpserver.cpp
-    Server/src/UdpServer.cpp
-    Server/src/MessageQueue.cpp
-    Server/src/GameServerLoop.cpp
-    Server/src/UdpProtocole.cpp
-    Server/src/GameLogic.cpp
-    Server/src/GameLogicPlayer.cpp
-    Server/src/GameLogicEntities.cpp
-    Server/src/GameLogicCombat.cpp
-    Server/src/GameLogicSystems.cpp
-    Server/src/GameLogicSnapshot.cpp
-    ecs/src/registery.cpp
-)
-
-add_executable(r-type_server ${SERVER_SOURCES})
-target_include_directories(r-type_server PRIVATE
-  Server/include
-)
-target_link_libraries(r-type_server PRIVATE
-  asio_interface
-)
-
-# Warning and debug configuration
-setup_target_warnings(r-type_server)
-target_compile_definitions(r-type_server PRIVATE
-  $<$<CONFIG:Debug>:DEBUG>
-  $<$<CONFIG:Debug>:RTYPE_DEBUG>
-)
-
-# Client is now handled by the app module
+add_subdirectory(Server)
 
 # ==== Unit tests (optional) ====
 if(RTYPE_BUILD_TESTS)
@@ -262,13 +225,6 @@ if(RTYPE_BUILD_TESTS)
 
   message(STATUS "Unit tests enabled")
 endif()
-
-# ==== Optimizations by configuration (fixed for multi-config) ====
-# Avoid CMAKE_BUILD_TYPE here and use generator expressions:
-# Release: -O3 -DNDEBUG only
-target_compile_options(r-type_server PRIVATE
-  $<$<CONFIG:Release>:-O3 -DNDEBUG>
-)
 
 # ==== Installation (for packaging/deployment) ====
 include(GNUInstallDirs)
