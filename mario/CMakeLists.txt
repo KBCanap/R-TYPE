@@ -41,28 +41,12 @@ target_include_directories(r-type_mario PRIVATE
 # Lier avec les bibliothèques nécessaires
 target_link_libraries(r-type_mario PRIVATE
     ecs
+    sfml_interface
 )
 
 # Lier avec ASIO
 if(TARGET asio_interface)
     target_link_libraries(r-type_mario PRIVATE asio_interface)
-endif()
-
-# Lier avec SFML
-if(sfml-graphics_FOUND)
-    target_link_libraries(r-type_mario PRIVATE
-        sfml-graphics
-        sfml-window
-        sfml-system
-        sfml-audio
-        sfml-network
-    )
-else()
-    target_link_libraries(r-type_mario PRIVATE
-        ${SFML_LIBRARIES}
-    )
-    target_include_directories(r-type_mario PRIVATE ${SFML_INCLUDE_DIRS})
-    target_compile_options(r-type_mario PRIVATE ${SFML_CFLAGS_OTHER})
 endif()
 
 # Fonction de configuration des warnings (définie dans le CMakeLists principal)
