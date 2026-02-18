@@ -256,7 +256,7 @@ std::string Protocol::parseUsername(const std::vector<uint8_t> &data) {
     username_len = ntohs(username_len);
 
     std::cout << "USERNAME LENGTH: " << username_len << std::endl;
-    if (data.size() < 2 + username_len)
+    if (data.size() < static_cast<size_t>(2 + username_len))
         return "";
 
     return std::string(data.begin() + 2, data.begin() + 2 + username_len);
@@ -428,6 +428,8 @@ bool Protocol::isValidMessageType(uint8_t type) {
 }
 
 bool Protocol::isValidDataLength(MessageType type, uint32_t length) {
+    (void)type;
+    (void)length;
     return true;
 }
 

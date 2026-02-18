@@ -28,6 +28,7 @@ void GameServerLoop::setupSignalHandlers() {
 }
 
 void GameServerLoop::signalHandler(int signal) {
+    (void)signal;
     if (instance) {
         instance->stop();
     }

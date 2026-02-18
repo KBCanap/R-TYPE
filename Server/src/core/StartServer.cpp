@@ -242,7 +242,7 @@ void StartServer::handleCreateLobby(uint32_t client_id,
     uint8_t max_players = data[0];
     uint16_t name_len = ntohs(*reinterpret_cast<const uint16_t *>(&data[1]));
 
-    if (data.size() < 3 + name_len) {
+    if (data.size() < static_cast<size_t>(3 + name_len)) {
         sendError(client_id, ProtocolError::PROTOCOL_VIOLATION);
         return;
     }
@@ -502,8 +502,8 @@ uint16_t StartServer::allocateUdpPort() {
 
     while (_udp_port_allocations.find(port) != _udp_port_allocations.end()) {
         port++;
-        if (port > 65535) {
-            return 0; // No ports available
+        if (port == 0) {
+            return 0; // No ports available (wrapped around)
         }
     }
 

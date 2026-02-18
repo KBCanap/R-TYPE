@@ -6,6 +6,8 @@
 void GameLogic::inputSystem(registry &reg, sparse_array<InputState> &inputs,
                             sparse_array<Velocity> &velocities,
                             sparse_array<PlayerComponent> &players, float dt) {
+    (void)reg;
+    (void)dt;
     const float MOVE_SPEED = 0.5f;
 
     for (size_t i = 0; i < players.size(); ++i) {
@@ -68,6 +70,10 @@ void GameLogic::weaponSystem(registry &reg, sparse_array<Weapon> &weapons,
                              sparse_array<InputState> &inputs,
                              sparse_array<PlayerComponent> &players,
                              float game_time) {
+    (void)reg;
+    (void)positions;
+    (void)inputs;
+    (void)players;
     for (size_t i = 0; i < weapons.size(); ++i) {
         auto &weapon_opt = weapons[i];
         if (weapon_opt) {
@@ -81,6 +87,8 @@ void GameLogic::weaponSystem(registry &reg, sparse_array<Weapon> &weapons,
 void GameLogic::projectileSystem(registry &reg,
                                  sparse_array<Projectile> &projectiles,
                                  sparse_array<Position> &positions, float dt) {
+    (void)reg;
+    (void)positions;
     for (size_t i = 0; i < projectiles.size(); ++i) {
         auto &proj_opt = projectiles[i];
         if (proj_opt) {
@@ -282,6 +290,7 @@ void GameLogic::collisionSystem(
     sparse_array<PlayerComponent> &players, sparse_array<Enemy> &enemies,
     sparse_array<Health> &healths, sparse_array<Score> &scores,
     sparse_array<NetworkComponent> &network_comps, float dt) {
+    (void)dt;
 
     processProjectileCollisions(reg, positions, hitboxes, projectiles, players,
                                 enemies, healths, scores, network_comps);
@@ -293,6 +302,7 @@ void GameLogic::collisionSystem(
 void GameLogic::healthSystem(registry &reg, sparse_array<Health> &healths,
                              sparse_array<NetworkComponent> &network_comps,
                              float dt) {
+    (void)reg;
     for (size_t i = 0; i < healths.size(); ++i) {
         auto &health_opt = healths[i];
         if (health_opt) {
@@ -313,6 +323,7 @@ void GameLogic::healthSystem(registry &reg, sparse_array<Health> &healths,
 void GameLogic::enemyAISystem(registry &reg, sparse_array<Enemy> &enemies,
                               sparse_array<Position> &positions,
                               sparse_array<Velocity> &velocities, float dt) {
+    (void)reg;
     for (size_t i = 0; i < enemies.size(); ++i) {
         auto &enemy_opt = enemies[i];
         if (!enemy_opt)
@@ -338,4 +349,10 @@ void GameLogic::bossAISystem(registry &reg, sparse_array<Boss> &bosses,
                              sparse_array<Position> &positions,
                              sparse_array<Velocity> &velocities,
                              sparse_array<Health> &healths, float dt) {
+    (void)reg;
+    (void)bosses;
+    (void)positions;
+    (void)velocities;
+    (void)healths;
+    (void)dt;
 }
