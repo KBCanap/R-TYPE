@@ -31,6 +31,9 @@ void UDPServer::start_receive() {
                 auto existing_client = findClientByEndpoint(remote_endpoint_);
 
                 if (existing_client) {
+                    // Update last activity timestamp
+                    existing_client->last_activity = std::chrono::steady_clock::now();
+
                     UdpClientMessage msg;
                     msg.client_id = existing_client->id;
                     msg.client_endpoint = existing_client->endpoint_str;
@@ -47,6 +50,7 @@ void UDPServer::start_receive() {
                     client->endpoint = remote_endpoint_;
                     client->endpoint_str = endpointToString(remote_endpoint_);
                     client->is_active = true;
+                    client->last_activity = std::chrono::steady_clock::now();
                     registerClient(client_id, client);
                     UdpClientMessage msg;
                     msg.client_id = client->id;
@@ -54,7 +58,6 @@ void UDPServer::start_receive() {
                     msg.message = std::string(buf->data(), len);
                     enqueueMessage(msg);
                 } else {
-                    // Max clients reached - ignore new client
                     std::cerr << "Max clients reached (" << max_clients_
                               << "). Ignoring new client from "
                               << endpointToString(remote_endpoint_)
@@ -93,4 +96,33 @@ bool UDPServer::sendToClient(uint32_t client_id, const std::string &message) {
 
 void UDPServer::disconnectClient(uint32_t client_id) {
     unregisterClient(client_id);
+}
+
+void UDPServer::checkAndDisconnectInactiveClients(std::chrono::seconds timeout) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto now = std::chrono::steady_clock::now();
+    std::vector<uint32_t> inactive_clients;
+
+    for (const auto &[client_id, client] : clients_) {
+        if (client->is_active) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+                now - client->last_activity);
+
+            if (elapsed >= timeout) {
+                std::cout << "Client " << client_id << " (" << client->endpoint_str
+                          << ") timed out after " << elapsed.count()
+                          << " seconds of inactivity" << std::endl;
+                inactive_clients.push_back(client_id);
+            }
+        }
+    }
+
+    // Disconnect inactive clients (must be done outside the iteration)
+    for (uint32_t client_id : inactive_clients) {
+        auto it = clients_.find(client_id);
+        if (it != clients_.end()) {
+            it->second->is_active = false;
+            clients_.erase(client_id);
+        }
+    }
 }

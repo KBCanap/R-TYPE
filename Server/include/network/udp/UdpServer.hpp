@@ -10,6 +10,7 @@
 
 #include "AUdpServer.hpp"
 #include <asio.hpp>
+#include <chrono>
 #include <cstdint>
 #include <string>
 #include <thread>
@@ -24,6 +25,7 @@ class UDPServer : public AUdpServer {
 
     uint32_t getMaxClients() const { return max_clients_; }
     uint32_t getCurrentClientCount() const;
+    void checkAndDisconnectInactiveClients(std::chrono::seconds timeout);
 
   private:
     void start_receive();

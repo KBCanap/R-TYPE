@@ -10,6 +10,7 @@
 
 #include "IUdpServer.hpp"
 #include <asio.hpp>
+#include <chrono>
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -20,6 +21,7 @@ struct UdpClientInfo {
     asio::ip::udp::endpoint endpoint;
     std::string endpoint_str;
     bool is_active;
+    std::chrono::steady_clock::time_point last_activity;
 };
 
 /**

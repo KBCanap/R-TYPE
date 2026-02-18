@@ -77,6 +77,15 @@ void GameServerLoop::run() {
         }
 
         if (_in_game) {
+            // Check and disconnect inactive clients (10 seconds timeout)
+            _udp_server->checkAndDisconnectInactiveClients(std::chrono::seconds(10));
+
+            // Check if all players have disconnected
+            if (_udp_server->getCurrentClientCount() == 0) {
+                _running = false;
+                break;
+            }
+
             processMessages();
 
             auto now = std::chrono::steady_clock::now();
