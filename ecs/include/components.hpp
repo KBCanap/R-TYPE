@@ -132,6 +132,10 @@ struct weapon {
 
     render::IntRect projectile_sprite_rect;
 
+    // Laser powerup boost
+    float damage_boost_timer = 0.0f;
+    float base_projectile_damage = 20.0f;
+
     // Custom fire function (overridable per weapon)
     std::function<void(registry &, const position &, bool)> fire_function;
 
@@ -152,6 +156,19 @@ struct weapon {
           projectile_sprite_rect(sprite_rect), fire_function(nullptr) {}
 
     void fire(registry &r, const position &shooter_pos, bool is_friendly);
+};
+
+struct beam {
+    float duration;
+    float elapsed;
+    float damage_per_sec;
+    float height;
+    bool friendly;
+    size_t owner_idx;
+    beam(float dur = 5.0f, float dps = 50.0f, float h = 20.0f,
+         bool fr = true, size_t owner = 0)
+        : duration(dur), elapsed(0.0f), damage_per_sec(dps),
+          height(h), friendly(fr), owner_idx(owner) {}
 };
 
 struct animation {
@@ -266,6 +283,7 @@ struct ai_movement_pattern {
                                       float speed = 120.0f);
     static ai_movement_pattern circle(float radius = 40.0f,
                                       float speed = 100.0f);
+    static ai_movement_pattern random_straight(float speed = 350.0f);
 };
 
 struct ai_input {

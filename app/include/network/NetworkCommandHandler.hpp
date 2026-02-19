@@ -12,6 +12,7 @@
 #include <mutex>
 #include <optional>
 #include <unordered_map>
+#include <unordered_set>
 
 // Handles network commands and manages entity creation/updates
 class NetworkCommandHandler : public network::INetworkCommandHandler {
@@ -60,11 +61,37 @@ class NetworkCommandHandler : public network::INetworkCommandHandler {
      */
     bool hasVictory() const { return victory_received_.load(); }
 
+    /**
+     * @brief Check if beam is active for an entity
+     * @param net_id Network ID to check
+     * @return true if beam is active
+     */
+    bool isBeamActive(uint32_t net_id) const {
+        return beam_active_net_ids_.count(net_id) > 0;
+    }
+
+    /**
+     * @brief Get all entities that currently have an active beam
+     * @return Vector of ECS entity handles with active beams
+     */
+    std::vector<entity> getBeamActiveEntities() const {
+        std::vector<entity> result;
+        std::lock_guard<std::mutex> lock(net_id_mutex_);
+        for (uint32_t nid : beam_active_net_ids_) {
+            auto it = net_id_to_entity_.find(nid);
+            if (it != net_id_to_entity_.end()) {
+                result.push_back(it->second);
+            }
+        }
+        return result;
+    }
+
   private:
     entity createPlayerEntity(const network::CreateEntityCommand &cmd);
     entity createEnemyEntity(const network::CreateEntityCommand &cmd);
     entity createEnemyLevel2Entity(const network::CreateEntityCommand &cmd);
     entity createEnemyLevel2SpreadEntity(const network::CreateEntityCommand &cmd);
+    entity createEnemyKamikazeEntity(const network::CreateEntityCommand &cmd);
 
     /**
      * @brief Create boss entity from command
@@ -95,4 +122,7 @@ class NetworkCommandHandler : public network::INetworkCommandHandler {
 
     // Track power-up entities for collection detection
     std::unordered_map<uint32_t, int> powerup_net_id_to_type_;  // net_id -> type (0=shield, 1=spread)
+
+    // Track which player entities have an active beam (laser powerup)
+    std::unordered_set<uint32_t> beam_active_net_ids_;
 };

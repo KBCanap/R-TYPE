@@ -112,3 +112,35 @@ entity PowerupManager::spawnSpreadPowerup(float x, float y) {
 
     return powerup;
 }
+
+entity PowerupManager::spawnLaserPowerup(float x, float y) {
+    auto powerup = _registry.spawn_entity();
+
+    _registry.add_component<component::position>(powerup,
+                                                 component::position(x, y));
+
+    _registry.add_component<component::velocity>(
+        powerup, component::velocity(-100.0f, 0.0f));
+
+    // Animated sprite from r-typesheet2.gif at (229, 452), 16x16 frames
+    _registry.add_component<component::drawable>(
+        powerup, component::drawable("assets/sprites/r-typesheet2.gif",
+                                     render::IntRect(229, 452, 16, 16), 2.0f,
+                                     "laser_powerup"));
+
+    // Animation with 8 frames, 18px stride, 0.15s per frame
+    auto &anim = _registry.add_component<component::animation>(
+        powerup, component::animation(0.15f, true));
+
+    int laser_x_positions[] = {229, 247, 265, 283, 301, 319, 337, 355};
+    for (int i = 0; i < 8; ++i) {
+        anim->frames.push_back(
+            render::IntRect(laser_x_positions[i], 452, 16, 16));
+    }
+
+    _registry.add_component<component::hitbox>(
+        powerup,
+        component::hitbox(32.0f, 32.0f, 0.0f, 0.0f)); // 16*2 scale
+
+    return powerup;
+}

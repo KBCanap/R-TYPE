@@ -6,6 +6,7 @@
 */
 
 #include "game/EnemyManager.hpp"
+#include "GameConstants.hpp"
 #include "entity.hpp"
 #include "lua_compat_fix.hpp"
 #include <cmath>
@@ -237,6 +238,54 @@ entity EnemyManager::spawnEnemyLevel2Spread() {
     anim->frames.push_back(render::IntRect(0, 0, 34, 31));
     anim->frames.push_back(render::IntRect(34, 0, 32, 31));
     anim->frames.push_back(render::IntRect(66, 0, 33, 31));
+
+    return enemy;
+}
+
+entity EnemyManager::spawnEnemyKamikaze() {
+    auto enemy = _registry.spawn_entity();
+    render::Vector2u window_size = _window.getSize();
+    float spawn_y =
+        (0.16f + (rand() % 68) / 100.0f) * static_cast<float>(window_size.y);
+    float spawn_x = static_cast<float>(window_size.x);
+
+    // r-typesheet8.gif : 266x68, 2 rangees de 8 frames (33x34 chacune)
+    _registry.add_component<component::drawable>(
+        enemy, component::drawable("assets/sprites/r-typesheet8.gif",
+                                   render::IntRect(0, 0, 33, 34), 2.0f,
+                                   "enemy_kamikaze"));
+
+    _registry.add_component<component::position>(
+        enemy, component::position(spawn_x, spawn_y));
+    _registry.add_component<component::velocity>(enemy,
+                                                 component::velocity(0.f, 0.f));
+
+    // Pas d'arme : il explose au contact
+    _registry.add_component<component::health>(
+        enemy, component::health(game::ENEMY_KAMIKAZE_HP));
+
+    // Mouvement rapide en ligne droite aleatoire
+    component::ai_movement_pattern movement_pattern =
+        component::ai_movement_pattern::straight(350.0f);
+
+    // fire_interval elevee : il ne tire jamais (pas d'arme de toute facon)
+    _registry.add_component<component::ai_input>(
+        enemy, component::ai_input(false, 999.0f, movement_pattern));
+
+    // Hitbox
+    _registry.add_component<component::hitbox>(
+        enemy, component::hitbox(66.0f, 68.0f, 0.0f, 0.0f));
+
+    // Animation : 16 frames (8 rangee haut + 8 rangee bas), 0.1s par frame
+    auto &anim = _registry.add_component<component::animation>(
+        enemy, component::animation(0.1f, true));
+
+    // Rangee du haut (y=0)
+    for (int i = 0; i < 8; ++i)
+        anim->frames.push_back(render::IntRect(i * 33, 0, 33, 34));
+    // Rangee du bas (y=34)
+    for (int i = 0; i < 8; ++i)
+        anim->frames.push_back(render::IntRect(i * 33, 34, 33, 34));
 
     return enemy;
 }

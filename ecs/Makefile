@@ -364,6 +364,30 @@ src/systems/audio_system.cpp.s:
 	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/audio_system.cpp.s
 .PHONY : src/systems/audio_system.cpp.s
 
+src/systems/beam_system.o: src/systems/beam_system.cpp.o
+.PHONY : src/systems/beam_system.o
+
+# target to build an object file
+src/systems/beam_system.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/beam_system.cpp.o
+.PHONY : src/systems/beam_system.cpp.o
+
+src/systems/beam_system.i: src/systems/beam_system.cpp.i
+.PHONY : src/systems/beam_system.i
+
+# target to preprocess a source file
+src/systems/beam_system.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/beam_system.cpp.i
+.PHONY : src/systems/beam_system.cpp.i
+
+src/systems/beam_system.s: src/systems/beam_system.cpp.s
+.PHONY : src/systems/beam_system.s
+
+# target to generate assembly for a file
+src/systems/beam_system.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f ecs/CMakeFiles/ecs.dir/build.make ecs/CMakeFiles/ecs.dir/src/systems/beam_system.cpp.s
+.PHONY : src/systems/beam_system.cpp.s
+
 src/systems/collision_system.o: src/systems/collision_system.cpp.o
 .PHONY : src/systems/collision_system.o
 
@@ -688,6 +712,9 @@ help:
 	@echo "... src/systems/audio_system.o"
 	@echo "... src/systems/audio_system.i"
 	@echo "... src/systems/audio_system.s"
+	@echo "... src/systems/beam_system.o"
+	@echo "... src/systems/beam_system.i"
+	@echo "... src/systems/beam_system.s"
 	@echo "... src/systems/collision_system.o"
 	@echo "... src/systems/collision_system.i"
 	@echo "... src/systems/collision_system.s"

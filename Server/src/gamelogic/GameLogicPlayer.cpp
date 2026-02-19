@@ -1,4 +1,5 @@
 #include "gamelogic/GameLogic.hpp"
+#include "../../ecs/include/GameConstants.hpp"
 #include <algorithm>
 
 entity GameLogic::createPlayer(uint client_id, uint net_id, float x, float y) {
@@ -134,6 +135,59 @@ void GameLogic::processPlayerShooting(float dt) {
 
         if (weapon.fire_timer > 0.0f) {
             weapon.fire_timer -= dt;
+        }
+
+        if (weapon.damage_boost_timer > 0.0f) {
+            weapon.damage_boost_timer -= dt;
+
+            Position &pos = pos_opt.value();
+            auto &healths = _registry->get_components<Health>();
+            auto &enemy_positions = _registry->get_components<Position>();
+            auto &enemy_hitboxes = _registry->get_components<Hitbox>();
+            auto &enemies_comp = _registry->get_components<Enemy>();
+            auto &bosses_comp = _registry->get_components<Boss>();
+
+            float beam_y_center = pos.y;
+            float beam_half_h = (game::BEAM_HEIGHT / 600.0f) / 2.0f;
+
+            for (size_t e = 0; e < enemy_positions.size(); ++e) {
+                if (!enemy_positions[e])
+                    continue;
+                bool is_enemy = (e < enemies_comp.size() && enemies_comp[e]) ||
+                                (e < bosses_comp.size() && bosses_comp[e]);
+                if (!is_enemy)
+                    continue;
+                if (!healths[e] || healths[e].value().current_hp <= 0)
+                    continue;
+                if (healths[e].value().invulnerability_timer > 0.0f)
+                    continue;
+
+                Position &epos = enemy_positions[e].value();
+                if (epos.x <= pos.x)
+                    continue;
+
+                float eh = 0.0f;
+                if (e < enemy_hitboxes.size() && enemy_hitboxes[e]) {
+                    eh = enemy_hitboxes[e].value().height / 600.0f;
+                } else {
+                    eh = 0.05f;
+                }
+
+                bool y_overlap = (beam_y_center - beam_half_h < epos.y + eh) &&
+                                 (beam_y_center + beam_half_h > epos.y);
+
+                if (y_overlap) {
+                    int dmg = static_cast<int>(game::BEAM_DPS * dt);
+                    if (dmg < 1) dmg = 1;
+                    healths[e].value().current_hp -= dmg;
+                    auto &enet = network_comps[e];
+                    if (enet) enet.value().needs_update = true;
+                }
+            }
+
+            weapon.damage_boost_timer = std::max(0.0f, weapon.damage_boost_timer);
+            input.shoot = false;
+            continue;
         }
 
         if (input.shoot && weapon.fire_timer <= 0.0f) {

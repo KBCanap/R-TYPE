@@ -12,6 +12,7 @@ WorldSnapshot GameLogic::generateSnapshot() {
     auto &healths = _registry->get_components<Health>();
     auto &shields = _registry->get_components<Shield>();
     auto &scores = _registry->get_components<Score>();
+    auto &weapons = _registry->get_components<Weapon>();
     auto &network_comps = _registry->get_components<NetworkComponent>();
 
     for (size_t i = 0; i < network_comps.size(); ++i) {
@@ -32,6 +33,7 @@ WorldSnapshot GameLogic::generateSnapshot() {
             entity_snap.health = healths[ent] ? healths[ent].value().current_hp : 0;
             entity_snap.shield = shields[ent] ? shields[ent].value().current_shield : 0;
             entity_snap.score = scores[ent] ? scores[ent].value().current_score : 0;
+            entity_snap.beam_active = (ent < weapons.size() && weapons[ent] && weapons[ent].value().damage_boost_timer > 0.0f);
             entity_snap.tick = _current_tick;
 
             snapshot.entities.push_back(entity_snap);
@@ -80,7 +82,8 @@ std::vector<EntitySnapshot> GameLogic::getDeltaSnapshot(uint last_acked_tick) {
                                         std::pow(entity.pos.y - old.pos.y, 2));
 
             should_send = (pos_delta > POS_THRESHOLD || entity.health != old.health ||
-                          entity.shield != old.shield || entity.score != old.score);
+                          entity.shield != old.shield || entity.score != old.score ||
+                          entity.beam_active != old.beam_active);
         }
 
         if (should_send) {
