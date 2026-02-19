@@ -196,29 +196,29 @@ r-type_mario/fast:
 	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f mario/CMakeFiles/r-type_mario.dir/build.make mario/CMakeFiles/r-type_mario.dir/build
 .PHONY : r-type_mario/fast
 
-__/app/src/audio_manager.o: __/app/src/audio_manager.cpp.o
-.PHONY : __/app/src/audio_manager.o
+__/app/src/game/AudioManager.o: __/app/src/game/AudioManager.cpp.o
+.PHONY : __/app/src/game/AudioManager.o
 
 # target to build an object file
-__/app/src/audio_manager.cpp.o:
-	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f mario/CMakeFiles/r-type_mario.dir/build.make mario/CMakeFiles/r-type_mario.dir/__/app/src/audio_manager.cpp.o
-.PHONY : __/app/src/audio_manager.cpp.o
+__/app/src/game/AudioManager.cpp.o:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f mario/CMakeFiles/r-type_mario.dir/build.make mario/CMakeFiles/r-type_mario.dir/__/app/src/game/AudioManager.cpp.o
+.PHONY : __/app/src/game/AudioManager.cpp.o
 
-__/app/src/audio_manager.i: __/app/src/audio_manager.cpp.i
-.PHONY : __/app/src/audio_manager.i
+__/app/src/game/AudioManager.i: __/app/src/game/AudioManager.cpp.i
+.PHONY : __/app/src/game/AudioManager.i
 
 # target to preprocess a source file
-__/app/src/audio_manager.cpp.i:
-	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f mario/CMakeFiles/r-type_mario.dir/build.make mario/CMakeFiles/r-type_mario.dir/__/app/src/audio_manager.cpp.i
-.PHONY : __/app/src/audio_manager.cpp.i
+__/app/src/game/AudioManager.cpp.i:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f mario/CMakeFiles/r-type_mario.dir/build.make mario/CMakeFiles/r-type_mario.dir/__/app/src/game/AudioManager.cpp.i
+.PHONY : __/app/src/game/AudioManager.cpp.i
 
-__/app/src/audio_manager.s: __/app/src/audio_manager.cpp.s
-.PHONY : __/app/src/audio_manager.s
+__/app/src/game/AudioManager.s: __/app/src/game/AudioManager.cpp.s
+.PHONY : __/app/src/game/AudioManager.s
 
 # target to generate assembly for a file
-__/app/src/audio_manager.cpp.s:
-	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f mario/CMakeFiles/r-type_mario.dir/build.make mario/CMakeFiles/r-type_mario.dir/__/app/src/audio_manager.cpp.s
-.PHONY : __/app/src/audio_manager.cpp.s
+__/app/src/game/AudioManager.cpp.s:
+	cd /home/ariles/delivery/R-TYPE && $(MAKE) $(MAKESILENT) -f mario/CMakeFiles/r-type_mario.dir/build.make mario/CMakeFiles/r-type_mario.dir/__/app/src/game/AudioManager.cpp.s
+.PHONY : __/app/src/game/AudioManager.cpp.s
 
 __/app/src/render/RenderFactory.o: __/app/src/render/RenderFactory.cpp.o
 .PHONY : __/app/src/render/RenderFactory.o
@@ -499,9 +499,9 @@ help:
 	@echo "... package_source"
 	@echo "... rebuild_cache"
 	@echo "... r-type_mario"
-	@echo "... __/app/src/audio_manager.o"
-	@echo "... __/app/src/audio_manager.i"
-	@echo "... __/app/src/audio_manager.s"
+	@echo "... __/app/src/game/AudioManager.o"
+	@echo "... __/app/src/game/AudioManager.i"
+	@echo "... __/app/src/game/AudioManager.s"
 	@echo "... __/app/src/render/RenderFactory.o"
 	@echo "... __/app/src/render/RenderFactory.i"
 	@echo "... __/app/src/render/RenderFactory.s"

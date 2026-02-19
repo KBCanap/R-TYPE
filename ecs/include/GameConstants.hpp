@@ -19,6 +19,8 @@ constexpr int BOSS_PROJECTILE_DAMAGE = 30;
 constexpr int PLAYER_MAX_HP = 100;
 constexpr int ENEMY_BASE_HP = 25;
 constexpr int ENEMY_SPREAD_HP = 35;
+constexpr int ENEMY_KAMIKAZE_HP = 15;
+constexpr int KAMIKAZE_CONTACT_DAMAGE = 50; // double enemy shot damage (25)
 constexpr int BOSS_BASE_HP = 1000;
 
 // Shield values
@@ -30,6 +32,11 @@ constexpr int SCORE_PER_SECOND = 1;
 constexpr int SCORE_ENEMY_KILL = 5;
 constexpr int SCORE_SPREAD_ENEMY_KILL = 10;
 constexpr int BOSS_SPAWN_THRESHOLD = 300;  // Boss every 300 points in endless mode
+
+// Laser beam powerup
+constexpr float BEAM_DPS = 1000.0f;      // damage per second (5x normal weapon DPS)
+constexpr float BEAM_HEIGHT = 30.0f;     // visual height in pixels
+constexpr float LASER_DURATION = 5.0f;
 
 // Weapon values
 constexpr float PLAYER_FIRE_RATE = 8.0f;    // shots/sec

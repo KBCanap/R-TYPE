@@ -15,6 +15,11 @@ function apply_pattern()
         local triangle_wave = math.abs((frequency * pattern_time + phase_offset) % 2.0 - 1.0) * 2.0 - 1.0
         vy = amplitude * triangle_wave
 
+    elseif pattern_type == "random_straight" then
+        -- phase_offset stores the fixed random angle (radians) chosen at spawn
+        vx = -math.abs(math.cos(phase_offset)) * base_speed
+        vy = math.sin(phase_offset) * base_speed
+
     elseif pattern_type == "circle" then
         if not start_x then start_x = pos_x end
         if not start_y then start_y = pos_y end

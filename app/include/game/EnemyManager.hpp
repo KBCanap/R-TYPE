@@ -18,6 +18,7 @@ class EnemyManager {
     entity spawnEnemy();
     entity spawnEnemyLevel2();
     entity spawnEnemyLevel2Spread();
+    entity spawnEnemyKamikaze();
     void updateEnemyPositions(std::vector<entity> &enemies);
     void cleanupOffscreenEnemies(std::vector<entity> &enemies);
 

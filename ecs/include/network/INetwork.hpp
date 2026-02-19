@@ -89,7 +89,9 @@ enum class EntityType : uint8_t {
     ENEMY_LEVEL2_SPREAD = 0x09, // Level 2 spread enemy (r-typesheet11.gif)
     BOSS_LEVEL2_PART1 = 0x0A,   // Level 2 boss left part (r-typesheet38.gif)
     BOSS_LEVEL2_PART2 = 0x0B,   // Level 2 boss center part (r-typesheet38.gif)
-    BOSS_LEVEL2_PART3 = 0x0C    // Level 2 boss right part (r-typesheet38.gif)
+    BOSS_LEVEL2_PART3 = 0x0C,   // Level 2 boss right part (r-typesheet38.gif)
+    ENEMY_KAMIKAZE = 0x0D,      // Kamikaze enemy (r-typesheet8.gif)
+    POWERUP_LASER = 0x0E        // Laser power-up
 };
 
 /**
@@ -171,6 +173,7 @@ struct EntityUpdateData {
     float position_x;
     float position_y;
     uint32_t score;
+    uint8_t flags = 0;
 };
 
 /**
