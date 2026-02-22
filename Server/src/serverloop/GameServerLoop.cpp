@@ -174,6 +174,8 @@ void GameServerLoop::processMessages() {
                     // Powerups
                     else if (snap.entity_type == "powerup_shield") type = EntityType::POWERUP_SHIELD;
                     else if (snap.entity_type == "powerup_spread") type = EntityType::POWERUP_SPREAD;
+                    else if (snap.entity_type == "powerup_companion") type = EntityType::POWERUP_COMPANION;
+                    else if (snap.entity_type == "companion") type = EntityType::COMPANION;
 
                     entities.push_back({snap.net_id, type,
                                         static_cast<uint32_t>(snap.health),
@@ -258,6 +260,8 @@ void GameServerLoop::broadcastEntityUpdates() {
         // Powerups
         else if (new_ent.entity_type == "powerup_shield") type = EntityType::POWERUP_SHIELD;
         else if (new_ent.entity_type == "powerup_spread") type = EntityType::POWERUP_SPREAD;
+        else if (new_ent.entity_type == "powerup_companion") type = EntityType::POWERUP_COMPANION;
+        else if (new_ent.entity_type == "companion") type = EntityType::COMPANION;
 
         // Bosses
         else if (new_ent.entity_type == "boss") type = EntityType::BOSS;
@@ -310,6 +314,10 @@ void GameServerLoop::broadcastEntityUpdates() {
             type = EntityType::POWERUP_SHIELD;
         } else if (snap.entity_type == "powerup_spread") {
             type = EntityType::POWERUP_SPREAD;
+        } else if (snap.entity_type == "powerup_companion") {
+            type = EntityType::POWERUP_COMPANION;
+        } else if (snap.entity_type == "companion") {
+            type = EntityType::COMPANION;
         }
 
         entities.push_back({snap.net_id, type,

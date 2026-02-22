@@ -78,6 +78,43 @@ static void handle_spread_powerup_collision(registry &r, size_t player_idx) {
     }
 }
 
+static void handle_companion_powerup_collision(registry &r, size_t player_idx) {
+    sparse_array<component::position> &positions =
+        r.get_components<component::position>();
+
+    if (player_idx >= positions.size() || !positions[player_idx])
+        return;
+
+    entity companion_ent = r.spawn_entity();
+    float cx = positions[player_idx]->x + 80.0f;
+    float cy = positions[player_idx]->y - 40.0f;
+
+    r.add_component<component::position>(companion_ent,
+                                         component::position(cx, cy));
+
+    // Right sprite from r-typesheet27.gif (active companion state)
+    r.add_component<component::drawable>(
+        companion_ent,
+        component::drawable("assets/sprites/r-typesheet27.gif",
+                            render::IntRect(34, 0, 34, 34), 1.5f, "companion"));
+
+    // Weapon: fire at 1/3 of single player rate (2.0/3 ≈ 0.67/s), friendly
+    r.add_component<component::weapon>(
+        companion_ent,
+        component::weapon(2.0f / 3.0f, true, 1, 0.0f,
+                          component::projectile_pattern::straight(), 25.0f,
+                          500.0f, 5.0f, false, 1, false, 3, 0.1f,
+                          render::IntRect(60, 353, 12, 12)));
+
+    // Always-fire AI input (no movement, just triggers weapon_system)
+    r.add_component<component::ai_input>(companion_ent,
+                                          component::ai_input(true, 1.0f));
+
+    // Companion component to track which player to follow
+    r.add_component<component::companion>(companion_ent,
+                                           component::companion(player_idx));
+}
+
 static void award_enemy_kill_score(sparse_array<component::score> &scores,
                                    sparse_array<component::drawable> &drawables,
                                    int points) {
@@ -184,6 +221,8 @@ process_powerup_collision(registry &r, size_t player_idx, size_t powerup_idx,
             handle_shield_powerup_collision(r, player_idx);
         } else if (powerup_tag == "spread_powerup") {
             handle_spread_powerup_collision(r, player_idx);
+        } else if (powerup_tag == "companion_powerup") {
+            handle_companion_powerup_collision(r, player_idx);
         }
         entities_to_kill.push_back(powerup_idx);
         return true;
@@ -263,6 +302,10 @@ process_player_powerup_collisions(registry &r, size_t player_idx,
         process_powerup_collision(r, player_idx, powerup_idx, player_box,
                                   positions, drawables, hitboxes,
                                   "spread_powerup", entities_to_kill);
+
+        process_powerup_collision(r, player_idx, powerup_idx, player_box,
+                                  positions, drawables, hitboxes,
+                                  "companion_powerup", entities_to_kill);
     }
 }
 

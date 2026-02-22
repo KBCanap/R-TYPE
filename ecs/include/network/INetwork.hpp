@@ -89,7 +89,9 @@ enum class EntityType : uint8_t {
     ENEMY_LEVEL2_SPREAD = 0x09, // Level 2 spread enemy (r-typesheet11.gif)
     BOSS_LEVEL2_PART1 = 0x0A,   // Level 2 boss left part (r-typesheet38.gif)
     BOSS_LEVEL2_PART2 = 0x0B,   // Level 2 boss center part (r-typesheet38.gif)
-    BOSS_LEVEL2_PART3 = 0x0C    // Level 2 boss right part (r-typesheet38.gif)
+    BOSS_LEVEL2_PART3 = 0x0C,   // Level 2 boss right part (r-typesheet38.gif)
+    POWERUP_COMPANION = 0x0D,   // Companion power-up pickup (r-typesheet27.gif left)
+    COMPANION = 0x0E            // Active companion following player (r-typesheet27.gif right)
 };
 
 /**

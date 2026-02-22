@@ -356,3 +356,57 @@ void GameLogic::bossAISystem(registry &reg, sparse_array<Boss> &bosses,
     (void)healths;
     (void)dt;
 }
+
+void GameLogic::updateCompanions(float dt) {
+    auto &positions = _registry->get_components<Position>();
+    auto &companions = _registry->get_components<CompanionComponent>();
+    auto &network_comps = _registry->get_components<NetworkComponent>();
+
+    std::vector<uint> dead_clients;
+
+    for (auto &[client_id, companion_ent] : _player_companions) {
+        if (!companions[companion_ent]) {
+            dead_clients.push_back(client_id);
+            continue;
+        }
+
+        auto player_it = _client_to_entity.find(client_id);
+        if (player_it == _client_to_entity.end()) {
+            dead_clients.push_back(client_id);
+            continue;
+        }
+
+        entity player_ent = player_it->second;
+        if (!positions[player_ent] || !positions[companion_ent])
+            continue;
+
+        // Follow player: top-right offset (normalized screen coordinates)
+        Position &player_pos = positions[player_ent].value();
+        Position &companion_pos = positions[companion_ent].value();
+        companion_pos.x = player_pos.x + 0.05f;
+        companion_pos.y = player_pos.y - 0.04f;
+
+        if (network_comps[companion_ent])
+            network_comps[companion_ent].value().needs_update = true;
+
+        // Auto-fire at 1/3 player fire rate
+        CompanionComponent &comp = companions[companion_ent].value();
+        comp.shoot_timer -= dt;
+        if (comp.shoot_timer <= 0.0f) {
+            comp.shoot_timer = comp.shoot_interval;
+            spawnProjectile(companion_pos.x + 0.02f, companion_pos.y, true, 25);
+        }
+    }
+
+    // Clean up companions whose player disconnected
+    for (uint cid : dead_clients) {
+        auto it = _player_companions.find(cid);
+        if (it == _player_companions.end())
+            continue;
+        entity c = it->second;
+        if (network_comps[c])
+            _destroyed_net_ids.push_back(network_comps[c].value().net_id);
+        _registry->kill_entity(c);
+        _player_companions.erase(it);
+    }
+}

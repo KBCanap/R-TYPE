@@ -243,13 +243,16 @@ void GameLogic::spawnPowerUp() {
     entity powerup = _registry->spawn_entity();
 
     std::uniform_real_distribution<float> y_dist(0.1f, 0.9f);
-    std::uniform_int_distribution<int> type_dist(0, 1);
+    std::uniform_int_distribution<int> type_dist(0, 2);
 
     float spawn_y = y_dist(_rng);
     int type = type_dist(_rng);
     uint net_id = generateNetId();
 
-    std::string entity_type = (type == 0) ? "powerup_shield" : "powerup_spread";
+    std::string entity_type;
+    if (type == 0) entity_type = "powerup_shield";
+    else if (type == 1) entity_type = "powerup_spread";
+    else entity_type = "powerup_companion";
 
     _registry->add_component(powerup, Position{0.95f, spawn_y});
     _registry->add_component(powerup, Velocity{-0.125f, 0.0f});
@@ -259,4 +262,36 @@ void GameLogic::spawnPowerUp() {
 
     _powerups.push_back(powerup);
     _new_entities.push_back({net_id, entity_type, 0.95f, spawn_y, 0, 0});
+}
+
+void GameLogic::spawnCompanionForPlayer(entity player_ent, uint client_id) {
+    // Only one companion per player
+    if (_player_companions.count(client_id))
+        return;
+
+    auto &positions = _registry->get_components<Position>();
+    if (!positions[player_ent])
+        return;
+
+    Position &player_pos = positions[player_ent].value();
+    entity companion = _registry->spawn_entity();
+    uint net_id = generateNetId();
+
+    // Offset: top-right of player (normalized 0-1 coordinates)
+    float cx = player_pos.x + 0.05f;
+    float cy = player_pos.y - 0.04f;
+
+    // Companion fires at 1/3 of player's fire rate
+    auto &weapons = _registry->get_components<Weapon>();
+    float fire_rate = 8.0f;
+    if (weapons[player_ent])
+        fire_rate = weapons[player_ent].value().fire_rate;
+
+    _registry->add_component(companion, Position{cx, cy});
+    _registry->add_component(companion, Velocity{0.0f, 0.0f});
+    _registry->add_component(companion, CompanionComponent{client_id, 0.0f, 3.0f / fire_rate});
+    _registry->add_component(companion, NetworkComponent{net_id, true, "companion"});
+
+    _player_companions.emplace(client_id, companion);
+    _new_entities.push_back({net_id, "companion", cx, cy, 0, 0});
 }

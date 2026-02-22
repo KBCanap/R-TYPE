@@ -462,14 +462,40 @@ void Game::update(float dt) {
             float random_y =
                 static_cast<float>(std::rand() % (window_size.y - 100) + 50);
 
-            // Randomly choose between shield and spread powerup
-            if (std::rand() % 2 == 0) {
+            // Randomly choose between shield, spread, and companion powerup
+            int powerup_roll = std::rand() % 3;
+            if (powerup_roll == 0) {
                 _powerupManager.spawnShieldPowerup(
                     static_cast<float>(window_size.x) - 50.0f, random_y);
-            } else {
+            } else if (powerup_roll == 1) {
                 _powerupManager.spawnSpreadPowerup(
                     static_cast<float>(window_size.x) - 50.0f, random_y);
+            } else {
+                _powerupManager.spawnCompanionPowerup(
+                    static_cast<float>(window_size.x) - 50.0f, random_y);
             }
+        }
+    }
+
+    // Companion follow update: keep companion entity top-right of player
+    if (_player) {
+        auto &companions = _registry.get_components<component::companion>();
+        auto &positions = _registry.get_components<component::position>();
+        auto &ai_inputs = _registry.get_components<component::ai_input>();
+        size_t player_idx = static_cast<size_t>(*_player);
+
+        for (size_t i = 0; i < companions.size(); ++i) {
+            if (!companions[i]) continue;
+            if (companions[i]->player_idx != player_idx) continue;
+            if (i >= positions.size() || !positions[i]) continue;
+            if (player_idx >= positions.size() || !positions[player_idx]) continue;
+
+            positions[i]->x = positions[player_idx]->x + 80.0f;
+            positions[i]->y = positions[player_idx]->y - 40.0f;
+
+            // Ensure always-fire flag stays set
+            if (i < ai_inputs.size() && ai_inputs[i])
+                ai_inputs[i]->fire = true;
         }
     }
 

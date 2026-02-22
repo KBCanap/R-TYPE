@@ -61,6 +61,14 @@ void NetworkCommandHandler::onCreateEntity(
         new_entity = createPowerUpEntity(cmd);
         break;
 
+    case network::EntityType::POWERUP_COMPANION:
+        new_entity = createPowerUpCompanionEntity(cmd);
+        break;
+
+    case network::EntityType::COMPANION:
+        new_entity = createActiveCompanionEntity(cmd);
+        break;
+
     default:
         std::cerr << "[CLIENT] Unknown entity type: "
                   << static_cast<int>(cmd.entity_type) << std::endl;
@@ -732,6 +740,53 @@ entity NetworkCommandHandler::createPowerUpEntity(
     }
 
     return powerup;
+}
+
+entity NetworkCommandHandler::createPowerUpCompanionEntity(
+    const network::CreateEntityCommand &cmd) {
+    auto pickup = registry_.spawn_entity();
+
+    render::Vector2u window_size = window_.getSize();
+    float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+    float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
+    registry_.add_component<component::position>(
+        pickup, component::position(pixel_x, pixel_y));
+    registry_.add_component<component::velocity>(
+        pickup, component::velocity(-100.0f, 0.0f));
+    registry_.add_component<component::hitbox>(
+        pickup, component::hitbox(42.0f, 34.0f, 0.0f, 0.0f));
+
+    // Left sprite from r-typesheet27.gif (68x34, two sprites of 34x34 each)
+    render::IntRect sprite_rect(0, 0, 34, 34);
+    registry_.add_component<component::drawable>(
+        pickup, component::drawable("assets/sprites/r-typesheet27.gif",
+                                   sprite_rect, 1.5f, "companion_powerup"));
+
+    // Track for collection detection (type 2 = companion)
+    powerup_net_id_to_type_[cmd.net_id] = 2;
+
+    return pickup;
+}
+
+entity NetworkCommandHandler::createActiveCompanionEntity(
+    const network::CreateEntityCommand &cmd) {
+    auto companion = registry_.spawn_entity();
+
+    render::Vector2u window_size = window_.getSize();
+    float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+    float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
+    registry_.add_component<component::position>(
+        companion, component::position(pixel_x, pixel_y));
+
+    // Right sprite from r-typesheet27.gif
+    render::IntRect sprite_rect(34, 0, 34, 34);
+    registry_.add_component<component::drawable>(
+        companion, component::drawable("assets/sprites/r-typesheet27.gif",
+                                      sprite_rect, 1.5f, "companion"));
+
+    return companion;
 }
 
 void NetworkCommandHandler::onRawTCPMessage(const network::TCPMessage &msg) {

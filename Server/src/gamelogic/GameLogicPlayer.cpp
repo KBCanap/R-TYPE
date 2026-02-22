@@ -20,6 +20,16 @@ entity GameLogic::createPlayer(uint client_id, uint net_id, float x, float y) {
 }
 
 void GameLogic::removePlayer(uint client_id) {
+    // Clean up companion if this player had one
+    auto comp_it = _player_companions.find(client_id);
+    if (comp_it != _player_companions.end()) {
+        auto &net_comps = _registry->get_components<NetworkComponent>();
+        if (net_comps[comp_it->second])
+            _destroyed_net_ids.push_back(net_comps[comp_it->second].value().net_id);
+        _registry->kill_entity(comp_it->second);
+        _player_companions.erase(comp_it);
+    }
+
     auto it = _client_to_entity.find(client_id);
     if (it != _client_to_entity.end()) {
         _registry->kill_entity(it->second);

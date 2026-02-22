@@ -284,6 +284,12 @@ void GameLogic::applyPowerUpToPlayer(entity player_ent, PowerUpType type) {
             weapon_opt.value().projectile_count = 3;
             weapon_opt.value().spread_angle = 15.0f;
         }
+    } else if (type == PowerUpType::COMPANION) {
+        auto &players = _registry->get_components<PlayerComponent>();
+        if (players[player_ent]) {
+            uint client_id = players[player_ent].value().client_id;
+            spawnCompanionForPlayer(player_ent, client_id);
+        }
     }
 }
 
