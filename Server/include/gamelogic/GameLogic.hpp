@@ -106,11 +106,17 @@ struct Boss {
 };
 
 // Power-up types
-enum class PowerUpType : uint8_t { SHIELD = 0, SPREAD = 1, LASER = 2 };
+enum class PowerUpType : uint8_t { SHIELD = 0, SPREAD = 1, LASER = 2, COMPANION = 3 };
 
 struct PowerUp {
     PowerUpType type;
     float lifetime = 30.0f;  // Power-up disappears after 30 seconds
+};
+
+struct CompanionComponent {
+    uint client_id;        // Owner player's client_id
+    float shoot_timer;     // Countdown to next shot
+    float shoot_interval;  // Seconds between shots (3x slower than player)
 };
 
 struct Shield {
@@ -294,6 +300,9 @@ class GameLogic {
     float _powerup_spawn_timer;
     float _powerup_spawn_interval;
 
+    // Companions (one per player, keyed by client_id)
+    std::unordered_map<uint, entity> _player_companions;
+
     // Random number generation
     std::mt19937 _rng;
     uint _next_net_id;
@@ -361,8 +370,17 @@ class GameLogic {
      * @param damage Damage dealt on hit */
     void spawnProjectileAtAngle(float x, float y, float angle, bool is_player_projectile, int damage);
 
-    /** @brief Spawns a power-up (shield or spread) */
+    /** @brief Spawns a power-up (shield, spread, or companion) */
     void spawnPowerUp();
+
+    /** @brief Spawns a companion entity for the given player
+     * @param player_ent Player entity that collected the companion power-up
+     * @param client_id  Client ID of the owning player */
+    void spawnCompanionForPlayer(entity player_ent, uint client_id);
+
+    /** @brief Updates all active companions: follow player, auto-fire
+     * @param dt Delta time in seconds */
+    void updateCompanions(float dt);
 
     /** @brief Processes player weapon firing
      * @param dt Delta time in seconds */

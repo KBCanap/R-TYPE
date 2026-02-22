@@ -144,3 +144,23 @@ entity PowerupManager::spawnLaserPowerup(float x, float y) {
 
     return powerup;
 }
+
+entity PowerupManager::spawnCompanionPowerup(float x, float y) {
+    auto powerup = _registry.spawn_entity();
+
+    _registry.add_component<component::position>(powerup,
+                                                 component::position(x, y));
+    _registry.add_component<component::velocity>(
+        powerup, component::velocity(-100.0f, 0.0f));
+
+    // Left sprite from r-typesheet27.gif (68x34, two 34x34 sprites side by side)
+    _registry.add_component<component::drawable>(
+        powerup, component::drawable("assets/sprites/r-typesheet27.gif",
+                                    render::IntRect(0, 0, 34, 34), 1.5f,
+                                    "companion_powerup"));
+
+    _registry.add_component<component::hitbox>(
+        powerup, component::hitbox(51.0f, 51.0f, 0.0f, 0.0f));
+
+    return powerup;
+}

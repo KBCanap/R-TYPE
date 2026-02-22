@@ -104,6 +104,8 @@ class NetworkCommandHandler : public network::INetworkCommandHandler {
     entity createBossLevel2Part3Entity(const network::CreateEntityCommand &cmd);
     entity createProjectileEntity(const network::CreateEntityCommand &cmd);
     entity createPowerUpEntity(const network::CreateEntityCommand &cmd);
+    entity createPowerUpCompanionEntity(const network::CreateEntityCommand &cmd);
+    entity createActiveCompanionEntity(const network::CreateEntityCommand &cmd);
 
     registry &registry_;
     render::IRenderWindow &window_;

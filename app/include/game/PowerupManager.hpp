@@ -17,6 +17,7 @@ class PowerupManager {
     entity spawnShieldPowerup(float x, float y);
     entity spawnSpreadPowerup(float x, float y);
     entity spawnLaserPowerup(float x, float y);
+    entity spawnCompanionPowerup(float x, float y);
 
   private:
     registry &_registry;

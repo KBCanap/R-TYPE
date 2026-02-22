@@ -66,6 +66,7 @@ void GameLogic::update(float deltaTime) {
         processEnemyShooting(FIXED_TIMESTEP);
         processBossShooting(FIXED_TIMESTEP);
         processPowerUpCollisions();
+        updateCompanions(FIXED_TIMESTEP);
 
         updateTotalScore();
 

@@ -294,6 +294,12 @@ void GameLogic::applyPowerUpToPlayer(entity player_ent, PowerUpType type) {
         if (weapon_opt) {
             weapon_opt.value().damage_boost_timer = game::LASER_DURATION;
         }
+    } else if (type == PowerUpType::COMPANION) {
+        auto &players = _registry->get_components<PlayerComponent>();
+        if (players[player_ent]) {
+            uint client_id = players[player_ent].value().client_id;
+            spawnCompanionForPlayer(player_ent, client_id);
+        }
     }
 }
 

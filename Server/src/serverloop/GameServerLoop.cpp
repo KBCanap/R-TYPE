@@ -24,6 +24,8 @@ static EntityType entityTypeFromString(const std::string &type_str) {
         {"powerup_shield", EntityType::POWERUP_SHIELD},
         {"powerup_spread", EntityType::POWERUP_SPREAD},
         {"powerup_laser", EntityType::POWERUP_LASER},
+        {"powerup_companion", EntityType::POWERUP_COMPANION},
+        {"companion", EntityType::COMPANION},
     };
 
     auto it = lookup.find(type_str);

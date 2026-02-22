@@ -373,4 +373,11 @@ struct pow_block {
     pow_block(int hits = 3) : hits_remaining(hits), shake_timer(0.0f), shaking(false) {}
 };
 
+// Companion entity: follows the player and auto-fires
+struct companion {
+    size_t player_idx; // Index of the player entity to follow
+
+    companion(size_t player_idx = 0) : player_idx(player_idx) {}
+};
+
 } // namespace component
