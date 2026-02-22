@@ -35,18 +35,19 @@ struct drawable {
     float scale;
     std::string tag;
     std::string texture_path;
+    bool flip_x;
 
     drawable(render::Color color = render::Color::White(), float size = 50.0f)
         : color(color), size(size), texture(nullptr), sprite(nullptr),
           sprite_rect(), use_sprite(false), scale(1.0f), tag(""),
-          texture_path("") {}
+          texture_path(""), flip_x(false) {}
 
     drawable(const std::string &tex_path,
              render::IntRect rect = render::IntRect(), float scale = 2.0f,
              const std::string &tag = "")
         : color(render::Color::White()), size(50.0f), texture(nullptr),
           sprite(nullptr), sprite_rect(rect), use_sprite(true), scale(scale),
-          tag(tag), texture_path(tex_path) {}
+          tag(tag), texture_path(tex_path), flip_x(false) {}
 };
 
 struct controllable {
@@ -131,6 +132,10 @@ struct weapon {
 
     render::IntRect projectile_sprite_rect;
 
+    // Laser powerup boost
+    float damage_boost_timer = 0.0f;
+    float base_projectile_damage = 20.0f;
+
     // Custom fire function (overridable per weapon)
     std::function<void(registry &, const position &, bool)> fire_function;
 
@@ -151,6 +156,19 @@ struct weapon {
           projectile_sprite_rect(sprite_rect), fire_function(nullptr) {}
 
     void fire(registry &r, const position &shooter_pos, bool is_friendly);
+};
+
+struct beam {
+    float duration;
+    float elapsed;
+    float damage_per_sec;
+    float height;
+    bool friendly;
+    size_t owner_idx;
+    beam(float dur = 5.0f, float dps = 50.0f, float h = 20.0f,
+         bool fr = true, size_t owner = 0)
+        : duration(dur), elapsed(0.0f), damage_per_sec(dps),
+          height(h), friendly(fr), owner_idx(owner) {}
 };
 
 struct animation {
@@ -265,6 +283,7 @@ struct ai_movement_pattern {
                                       float speed = 120.0f);
     static ai_movement_pattern circle(float radius = 40.0f,
                                       float speed = 100.0f);
+    static ai_movement_pattern random_straight(float speed = 350.0f);
 };
 
 struct ai_input {
@@ -305,6 +324,60 @@ struct shield {
 
     shield(int shield_points = 0, int max = 50)
         : current_shield(shield_points), max_shield(max) {}
+};
+
+struct gravity {
+    float acceleration;
+    float max_velocity;
+    float jump_strength;
+    bool on_ground;
+
+    gravity(float accel = 1500.0f, float max_vel = 1000.0f,
+            float jump = 0.0f)
+        : acceleration(accel), max_velocity(max_vel), jump_strength(jump),
+          on_ground(false) {}
+};
+
+struct platform_tag {
+    platform_tag() = default;
+};
+
+struct dead {
+    float death_time;
+    float death_jump_velocity;
+    bool ignore_platforms;
+
+    dead(float death_time_val = 0.0f, float jump_vel = -800.0f)
+        : death_time(death_time_val), death_jump_velocity(jump_vel),
+          ignore_platforms(true) {}
+};
+
+struct enemy_stunned {
+    bool stunned;
+    float knockback_velocity;
+    float stun_timer;
+    float recovery_time;
+    bool angry;  // Recovered enemies move faster
+
+    enemy_stunned(bool is_stunned = false, float knockback = 0.0f,
+                  float recovery = 5.0f)
+        : stunned(is_stunned), knockback_velocity(knockback), stun_timer(0.0f),
+          recovery_time(recovery), angry(false) {}
+};
+
+struct pow_block {
+    int hits_remaining;
+    float shake_timer;
+    bool shaking;
+
+    pow_block(int hits = 3) : hits_remaining(hits), shake_timer(0.0f), shaking(false) {}
+};
+
+// Companion entity: follows the player and auto-fires
+struct companion {
+    size_t player_idx; // Index of the player entity to follow
+
+    companion(size_t player_idx = 0) : player_idx(player_idx) {}
 };
 
 } // namespace component

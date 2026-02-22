@@ -1,4 +1,5 @@
 #include "../include/components.hpp"
+#include "../include/lua_compat_fix.hpp"
 #include <cmath>
 #include <iostream>
 #include <sol/sol.hpp>

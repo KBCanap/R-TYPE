@@ -6,14 +6,12 @@
 */
 
 #include "../../include/systems.hpp"
+#include "../../include/GameConstants.hpp"
 #include <algorithm>
+#include <string>
 #include <vector>
 
 namespace systems {
-
-// ===============================
-// STRUCTURES AND BASIC HELPERS
-// ===============================
 
 struct HitboxDimensions {
     float width, height, left, top;
@@ -57,10 +55,6 @@ static bool check_aabb_collision(float left1, float top1, float width1,
            (top1 < top2 + height2) && (top1 + height1 > top2);
 }
 
-// ===============================
-// POWERUP HELPERS
-// ===============================
-
 static void handle_shield_powerup_collision(registry &r, size_t player_idx) {
     sparse_array<component::shield> &shields =
         r.get_components<component::shield>();
@@ -85,9 +79,61 @@ static void handle_spread_powerup_collision(registry &r, size_t player_idx) {
     }
 }
 
-// ===============================
-// DAMAGE HELPERS
-// ===============================
+static void handle_laser_powerup_collision(registry &r, size_t player_idx) {
+    auto &weapons = r.get_components<component::weapon>();
+    auto &positions = r.get_components<component::position>();
+
+    if (player_idx < weapons.size() && weapons[player_idx]) {
+        weapons[player_idx]->fire_function = [](registry &, const component::position &, bool) {};
+        weapons[player_idx]->damage_boost_timer = game::LASER_DURATION;
+    }
+
+    if (player_idx < positions.size() && positions[player_idx]) {
+        entity beam_ent = r.spawn_entity();
+        r.add_component<component::position>(
+            beam_ent, component::position(positions[player_idx]->x, positions[player_idx]->y));
+        r.add_component<component::beam>(
+            beam_ent, component::beam(game::LASER_DURATION, game::BEAM_DPS,
+                                      game::BEAM_HEIGHT, true, player_idx));
+    }
+}
+
+static void handle_companion_powerup_collision(registry &r, size_t player_idx) {
+    sparse_array<component::position> &positions =
+        r.get_components<component::position>();
+
+    if (player_idx >= positions.size() || !positions[player_idx])
+        return;
+
+    entity companion_ent = r.spawn_entity();
+    float cx = positions[player_idx]->x + 80.0f;
+    float cy = positions[player_idx]->y - 40.0f;
+
+    r.add_component<component::position>(companion_ent,
+                                         component::position(cx, cy));
+
+    // Right sprite from r-typesheet27.gif (active companion state)
+    r.add_component<component::drawable>(
+        companion_ent,
+        component::drawable("assets/sprites/r-typesheet27.gif",
+                            render::IntRect(34, 0, 34, 34), 1.5f, "companion"));
+
+    // Weapon: fire at 1/3 of single player rate (2.0/3 ≈ 0.67/s), friendly
+    r.add_component<component::weapon>(
+        companion_ent,
+        component::weapon(2.0f / 3.0f, true, 1, 0.0f,
+                          component::projectile_pattern::straight(), 25.0f,
+                          500.0f, 5.0f, false, 1, false, 3, 0.1f,
+                          render::IntRect(60, 353, 12, 12)));
+
+    // Always-fire AI input (no movement, just triggers weapon_system)
+    r.add_component<component::ai_input>(companion_ent,
+                                          component::ai_input(true, 1.0f));
+
+    // Companion component to track which player to follow
+    r.add_component<component::companion>(companion_ent,
+                                           component::companion(player_idx));
+}
 
 static void award_enemy_kill_score(sparse_array<component::score> &scores,
                                    sparse_array<component::drawable> &drawables,
@@ -127,10 +173,6 @@ static void handle_entity_damage(
         }
     }
 }
-
-// ===============================
-// SPECIALIZED COLLISION LOGIC
-// ===============================
 
 static void handle_projectile_hit(
     size_t target_idx, const component::position &target_pos,
@@ -199,6 +241,10 @@ process_powerup_collision(registry &r, size_t player_idx, size_t powerup_idx,
             handle_shield_powerup_collision(r, player_idx);
         } else if (powerup_tag == "spread_powerup") {
             handle_spread_powerup_collision(r, player_idx);
+        } else if (powerup_tag == "laser_powerup") {
+            handle_laser_powerup_collision(r, player_idx);
+        } else if (powerup_tag == "companion_powerup") {
+            handle_companion_powerup_collision(r, player_idx);
         }
         entities_to_kill.push_back(powerup_idx);
         return true;
@@ -206,10 +252,6 @@ process_powerup_collision(registry &r, size_t player_idx, size_t powerup_idx,
 
     return false;
 }
-
-// ===============================
-// MAIN COLLISION PROCESSORS
-// ===============================
 
 static bool process_projectile_collision(
     size_t proj_idx, size_t target_idx,
@@ -275,19 +317,26 @@ process_player_powerup_collisions(registry &r, size_t player_idx,
     size_t max_entities = std::min(positions.size(), drawables.size());
 
     for (size_t powerup_idx = 0; powerup_idx < max_entities; ++powerup_idx) {
-        // Shield powerup
         process_powerup_collision(r, player_idx, powerup_idx, player_box,
                                   positions, drawables, hitboxes, "powerup",
                                   entities_to_kill);
 
-        // Spread powerup
         process_powerup_collision(r, player_idx, powerup_idx, player_box,
                                   positions, drawables, hitboxes,
                                   "spread_powerup", entities_to_kill);
+
+        process_powerup_collision(r, player_idx, powerup_idx, player_box,
+                                  positions, drawables, hitboxes,
+                                  "laser_powerup", entities_to_kill);
+
+        process_powerup_collision(r, player_idx, powerup_idx, player_box,
+                                  positions, drawables, hitboxes,
+                                  "companion_powerup", entities_to_kill);
     }
 }
 
 static void process_player_enemy_collisions(
+    registry &r,
     sparse_array<component::position> &positions,
     sparse_array<component::drawable> &drawables,
     sparse_array<component::hitbox> &hitboxes,
@@ -295,8 +344,13 @@ static void process_player_enemy_collisions(
     std::vector<size_t> &entities_to_kill,
     std::vector<std::pair<float, float>> &explosion_positions) {
 
-    const int COLLISION_DAMAGE = 50;
+    const int COLLISION_DAMAGE = game::CONTACT_DAMAGE;
     size_t max_entities = std::min(positions.size(), drawables.size());
+
+    sparse_array<component::velocity> &velocities = r.get_components<component::velocity>();
+    sparse_array<component::gravity> &gravities = r.get_components<component::gravity>();
+    sparse_array<component::enemy_stunned> &stunneds = r.get_components<component::enemy_stunned>();
+    sparse_array<component::dead> &deads = r.get_components<component::dead>();
 
     for (size_t player_idx = 0; player_idx < max_entities; ++player_idx) {
         std::optional<component::position> &player_pos = positions[player_idx];
@@ -305,6 +359,10 @@ static void process_player_enemy_collisions(
         std::optional<component::hitbox> &player_hitbox = hitboxes[player_idx];
 
         if (!is_valid_player(player_pos, player_drawable) || !player_hitbox)
+            continue;
+
+        bool player_already_dead = (player_idx < deads.size()) && deads[player_idx];
+        if (player_already_dead)
             continue;
 
         float player_left = player_pos->x + player_hitbox->offset_x;
@@ -333,22 +391,73 @@ static void process_player_enemy_collisions(
                 player_hitbox->height, enemy_left, enemy_top,
                 enemy_hitbox->width, enemy_hitbox->height);
 
-            if (collision) {
-                handle_entity_damage(player_idx, COLLISION_DAMAGE, healths,
-                                     positions, entities_to_kill,
-                                     explosion_positions);
-                handle_entity_damage(enemy_idx, COLLISION_DAMAGE, healths,
-                                     positions, entities_to_kill,
-                                     explosion_positions);
+            if (!collision)
+                continue;
+
+            // Mario platformer collision logic
+            bool has_gravity = (player_idx < gravities.size()) && gravities[player_idx];
+            bool has_velocity = (player_idx < velocities.size()) && velocities[player_idx];
+            bool is_platformer = has_gravity && has_velocity;
+
+            if (is_platformer) {
+                std::optional<component::velocity> &player_vel = velocities[player_idx];
+                std::optional<component::velocity> &enemy_vel = velocities[enemy_idx];
+                std::optional<component::enemy_stunned> &enemy_stunned = stunneds[enemy_idx];
+
+                if (enemy_stunned && enemy_stunned->stunned) {
+                    float player_center_x = player_pos->x + player_hitbox->width / 2.0f;
+                    float enemy_center_x = enemy_pos->x + enemy_hitbox->width / 2.0f;
+                    float knockback_dir = (enemy_center_x > player_center_x) ? 1.0f : -1.0f;
+
+                    enemy_stunned->knockback_velocity = knockback_dir * 600.0f;
+                    if (player_vel) player_vel->vx = -knockback_dir * 100.0f;
+                } else {
+                    float player_bottom = player_top + player_hitbox->height;
+                    float stomp_threshold = enemy_top + enemy_hitbox->height * 0.5f;
+
+                    bool is_stomping = player_vel && player_vel->vy > 0.0f &&
+                                      player_bottom >= enemy_top &&
+                                      player_bottom <= stomp_threshold;
+
+                    if (is_stomping) {
+                        if (enemy_stunned) {
+                            enemy_stunned->stunned = true;
+                            enemy_stunned->knockback_velocity = 0.0f;
+                            enemy_stunned->stun_timer = 0.0f;
+                        }
+                        if (enemy_vel) {
+                            enemy_vel->vx = 0.0f;
+                            enemy_vel->vy = 0.0f;
+                        }
+                        if (player_vel) {
+                            player_vel->vy = -500.0f;
+                        }
+                    } else {
+                        r.add_component<component::dead>(
+                            entity(player_idx), component::dead(0.0f, -800.0f));
+                        if (player_vel) {
+                            player_vel->vy = -800.0f;
+                            player_vel->vx = 0.0f;
+                        }
+                    }
+                }
                 break;
             }
+
+            // Default R-Type collision logic
+            int player_damage = COLLISION_DAMAGE;
+            if (enemy_drawable->tag == "enemy_kamikaze")
+                player_damage = game::KAMIKAZE_CONTACT_DAMAGE;
+            handle_entity_damage(player_idx, player_damage, healths,
+                                 positions, entities_to_kill,
+                                 explosion_positions);
+            handle_entity_damage(enemy_idx, COLLISION_DAMAGE, healths,
+                                 positions, entities_to_kill,
+                                 explosion_positions);
+            break;
         }
     }
 }
-
-// ===============================
-// MAIN SYSTEM
-// ===============================
 
 void collision_system(registry &r, sparse_array<component::position> &positions,
                       sparse_array<component::drawable> &drawables,
@@ -362,7 +471,7 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
     sparse_array<component::health> &healths =
         r.get_components<component::health>();
 
-    // Process projectile collisions
+    // Projectile collisions
     for (size_t proj_idx = 0; proj_idx < projectiles.size(); ++proj_idx) {
         std::optional<component::projectile> &projectile =
             projectiles[proj_idx];
@@ -385,7 +494,7 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
         }
     }
 
-    // Process player-powerup collisions
+    // Player-powerup collisions
     size_t max_entities = std::min(positions.size(), drawables.size());
     for (size_t player_idx = 0; player_idx < max_entities; ++player_idx) {
         std::optional<component::position> &player_pos = positions[player_idx];
@@ -404,11 +513,11 @@ void collision_system(registry &r, sparse_array<component::position> &positions,
                                           entities_to_kill);
     }
 
-    // Process player-enemy collisions
-    process_player_enemy_collisions(positions, drawables, hitboxes, healths,
+    // Player-enemy collisions
+    process_player_enemy_collisions(r, positions, drawables, hitboxes, healths,
                                     entities_to_kill, explosion_positions);
 
-    // Cleanup and effects
+    // Cleanup
     std::sort(entities_to_kill.begin(), entities_to_kill.end());
     entities_to_kill.erase(
         std::unique(entities_to_kill.begin(), entities_to_kill.end()),

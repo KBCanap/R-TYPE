@@ -5,7 +5,7 @@
 ** input_system
 */
 
-#include "../../app/include/key_bindings.hpp"
+#include "../../app/include/ui/KeyBindings.hpp"
 #include "../../include/systems.hpp"
 #include "../include/render/IRenderWindow.hpp"
 #include <set>

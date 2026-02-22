@@ -6,7 +6,9 @@
 */
 
 #include "../include/components.hpp"
+#include "../include/lua_compat_fix.hpp"
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include <sol/sol.hpp>
 
@@ -95,6 +97,15 @@ ai_movement_pattern ai_movement_pattern::zigzag(float amplitude,
 ai_movement_pattern ai_movement_pattern::circle(float radius, float speed) {
     ai_movement_pattern pattern("circle", radius, 0.02f);
     pattern.base_speed = speed;
+    return pattern;
+}
+
+ai_movement_pattern ai_movement_pattern::random_straight(float speed) {
+    ai_movement_pattern pattern("random_straight");
+    pattern.base_speed = speed;
+    // Angle aleatoire entre -50 et +50 degres (toujours vers la gauche)
+    float angle_deg = -50.0f + static_cast<float>(rand() % 101);
+    pattern.phase_offset = angle_deg * static_cast<float>(M_PI) / 180.0f;
     return pattern;
 }
 

@@ -107,7 +107,7 @@ rebuild_cache/fast: rebuild_cache
 
 # Special rule for the target list_install_components
 list_install_components:
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Available install components are: \"Runtime\" \"Unspecified\""
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Available install components are: \"Runtime\" \"Unspecified\" \"bin\" \"devel\""
 .PHONY : list_install_components
 
 # Special rule for the target list_install_components
@@ -178,21 +178,438 @@ preinstall/fast:
 
 # clear depends
 depend:
+	$(CMAKE_COMMAND) -P /home/ariles/delivery/R-TYPE/CMakeFiles/VerifyGlobs.cmake
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named r-type_server
+# Target rules for targets named sfml-system
 
 # Build rule for target.
-r-type_server: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 r-type_server
-.PHONY : r-type_server
+sfml-system: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 sfml-system
+.PHONY : sfml-system
 
 # fast build rule for target.
-r-type_server/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/build
-.PHONY : r-type_server/fast
+sfml-system/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sfml-build/src/SFML/System/CMakeFiles/sfml-system.dir/build.make _deps/sfml-build/src/SFML/System/CMakeFiles/sfml-system.dir/build
+.PHONY : sfml-system/fast
+
+#=============================================================================
+# Target rules for targets named sfml-window
+
+# Build rule for target.
+sfml-window: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 sfml-window
+.PHONY : sfml-window
+
+# fast build rule for target.
+sfml-window/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sfml-build/src/SFML/Window/CMakeFiles/sfml-window.dir/build.make _deps/sfml-build/src/SFML/Window/CMakeFiles/sfml-window.dir/build
+.PHONY : sfml-window/fast
+
+#=============================================================================
+# Target rules for targets named sfml-network
+
+# Build rule for target.
+sfml-network: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 sfml-network
+.PHONY : sfml-network
+
+# fast build rule for target.
+sfml-network/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sfml-build/src/SFML/Network/CMakeFiles/sfml-network.dir/build.make _deps/sfml-build/src/SFML/Network/CMakeFiles/sfml-network.dir/build
+.PHONY : sfml-network/fast
+
+#=============================================================================
+# Target rules for targets named sfml-graphics
+
+# Build rule for target.
+sfml-graphics: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 sfml-graphics
+.PHONY : sfml-graphics
+
+# fast build rule for target.
+sfml-graphics/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sfml-build/src/SFML/Graphics/CMakeFiles/sfml-graphics.dir/build.make _deps/sfml-build/src/SFML/Graphics/CMakeFiles/sfml-graphics.dir/build
+.PHONY : sfml-graphics/fast
+
+#=============================================================================
+# Target rules for targets named sfml-audio
+
+# Build rule for target.
+sfml-audio: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 sfml-audio
+.PHONY : sfml-audio
+
+# fast build rule for target.
+sfml-audio/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sfml-build/src/SFML/Audio/CMakeFiles/sfml-audio.dir/build.make _deps/sfml-build/src/SFML/Audio/CMakeFiles/sfml-audio.dir/build
+.PHONY : sfml-audio/fast
+
+#=============================================================================
+# Target rules for targets named Experimental
+
+# Build rule for target.
+Experimental: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Experimental
+.PHONY : Experimental
+
+# fast build rule for target.
+Experimental/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/Experimental.dir/build.make _deps/sol2-build/CMakeFiles/Experimental.dir/build
+.PHONY : Experimental/fast
+
+#=============================================================================
+# Target rules for targets named Nightly
+
+# Build rule for target.
+Nightly: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Nightly
+.PHONY : Nightly
+
+# fast build rule for target.
+Nightly/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/Nightly.dir/build.make _deps/sol2-build/CMakeFiles/Nightly.dir/build
+.PHONY : Nightly/fast
+
+#=============================================================================
+# Target rules for targets named Continuous
+
+# Build rule for target.
+Continuous: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Continuous
+.PHONY : Continuous
+
+# fast build rule for target.
+Continuous/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/Continuous.dir/build.make _deps/sol2-build/CMakeFiles/Continuous.dir/build
+.PHONY : Continuous/fast
+
+#=============================================================================
+# Target rules for targets named NightlyMemoryCheck
+
+# Build rule for target.
+NightlyMemoryCheck: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 NightlyMemoryCheck
+.PHONY : NightlyMemoryCheck
+
+# fast build rule for target.
+NightlyMemoryCheck/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/NightlyMemoryCheck.dir/build.make _deps/sol2-build/CMakeFiles/NightlyMemoryCheck.dir/build
+.PHONY : NightlyMemoryCheck/fast
+
+#=============================================================================
+# Target rules for targets named NightlyStart
+
+# Build rule for target.
+NightlyStart: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 NightlyStart
+.PHONY : NightlyStart
+
+# fast build rule for target.
+NightlyStart/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/NightlyStart.dir/build.make _deps/sol2-build/CMakeFiles/NightlyStart.dir/build
+.PHONY : NightlyStart/fast
+
+#=============================================================================
+# Target rules for targets named NightlyUpdate
+
+# Build rule for target.
+NightlyUpdate: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 NightlyUpdate
+.PHONY : NightlyUpdate
+
+# fast build rule for target.
+NightlyUpdate/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/NightlyUpdate.dir/build.make _deps/sol2-build/CMakeFiles/NightlyUpdate.dir/build
+.PHONY : NightlyUpdate/fast
+
+#=============================================================================
+# Target rules for targets named NightlyConfigure
+
+# Build rule for target.
+NightlyConfigure: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 NightlyConfigure
+.PHONY : NightlyConfigure
+
+# fast build rule for target.
+NightlyConfigure/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/NightlyConfigure.dir/build.make _deps/sol2-build/CMakeFiles/NightlyConfigure.dir/build
+.PHONY : NightlyConfigure/fast
+
+#=============================================================================
+# Target rules for targets named NightlyBuild
+
+# Build rule for target.
+NightlyBuild: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 NightlyBuild
+.PHONY : NightlyBuild
+
+# fast build rule for target.
+NightlyBuild/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/NightlyBuild.dir/build.make _deps/sol2-build/CMakeFiles/NightlyBuild.dir/build
+.PHONY : NightlyBuild/fast
+
+#=============================================================================
+# Target rules for targets named NightlyTest
+
+# Build rule for target.
+NightlyTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 NightlyTest
+.PHONY : NightlyTest
+
+# fast build rule for target.
+NightlyTest/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/NightlyTest.dir/build.make _deps/sol2-build/CMakeFiles/NightlyTest.dir/build
+.PHONY : NightlyTest/fast
+
+#=============================================================================
+# Target rules for targets named NightlyCoverage
+
+# Build rule for target.
+NightlyCoverage: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 NightlyCoverage
+.PHONY : NightlyCoverage
+
+# fast build rule for target.
+NightlyCoverage/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/NightlyCoverage.dir/build.make _deps/sol2-build/CMakeFiles/NightlyCoverage.dir/build
+.PHONY : NightlyCoverage/fast
+
+#=============================================================================
+# Target rules for targets named NightlyMemCheck
+
+# Build rule for target.
+NightlyMemCheck: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 NightlyMemCheck
+.PHONY : NightlyMemCheck
+
+# fast build rule for target.
+NightlyMemCheck/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/NightlyMemCheck.dir/build.make _deps/sol2-build/CMakeFiles/NightlyMemCheck.dir/build
+.PHONY : NightlyMemCheck/fast
+
+#=============================================================================
+# Target rules for targets named NightlySubmit
+
+# Build rule for target.
+NightlySubmit: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 NightlySubmit
+.PHONY : NightlySubmit
+
+# fast build rule for target.
+NightlySubmit/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/NightlySubmit.dir/build.make _deps/sol2-build/CMakeFiles/NightlySubmit.dir/build
+.PHONY : NightlySubmit/fast
+
+#=============================================================================
+# Target rules for targets named ExperimentalStart
+
+# Build rule for target.
+ExperimentalStart: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ExperimentalStart
+.PHONY : ExperimentalStart
+
+# fast build rule for target.
+ExperimentalStart/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ExperimentalStart.dir/build.make _deps/sol2-build/CMakeFiles/ExperimentalStart.dir/build
+.PHONY : ExperimentalStart/fast
+
+#=============================================================================
+# Target rules for targets named ExperimentalUpdate
+
+# Build rule for target.
+ExperimentalUpdate: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ExperimentalUpdate
+.PHONY : ExperimentalUpdate
+
+# fast build rule for target.
+ExperimentalUpdate/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ExperimentalUpdate.dir/build.make _deps/sol2-build/CMakeFiles/ExperimentalUpdate.dir/build
+.PHONY : ExperimentalUpdate/fast
+
+#=============================================================================
+# Target rules for targets named ExperimentalConfigure
+
+# Build rule for target.
+ExperimentalConfigure: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ExperimentalConfigure
+.PHONY : ExperimentalConfigure
+
+# fast build rule for target.
+ExperimentalConfigure/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ExperimentalConfigure.dir/build.make _deps/sol2-build/CMakeFiles/ExperimentalConfigure.dir/build
+.PHONY : ExperimentalConfigure/fast
+
+#=============================================================================
+# Target rules for targets named ExperimentalBuild
+
+# Build rule for target.
+ExperimentalBuild: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ExperimentalBuild
+.PHONY : ExperimentalBuild
+
+# fast build rule for target.
+ExperimentalBuild/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ExperimentalBuild.dir/build.make _deps/sol2-build/CMakeFiles/ExperimentalBuild.dir/build
+.PHONY : ExperimentalBuild/fast
+
+#=============================================================================
+# Target rules for targets named ExperimentalTest
+
+# Build rule for target.
+ExperimentalTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ExperimentalTest
+.PHONY : ExperimentalTest
+
+# fast build rule for target.
+ExperimentalTest/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ExperimentalTest.dir/build.make _deps/sol2-build/CMakeFiles/ExperimentalTest.dir/build
+.PHONY : ExperimentalTest/fast
+
+#=============================================================================
+# Target rules for targets named ExperimentalCoverage
+
+# Build rule for target.
+ExperimentalCoverage: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ExperimentalCoverage
+.PHONY : ExperimentalCoverage
+
+# fast build rule for target.
+ExperimentalCoverage/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ExperimentalCoverage.dir/build.make _deps/sol2-build/CMakeFiles/ExperimentalCoverage.dir/build
+.PHONY : ExperimentalCoverage/fast
+
+#=============================================================================
+# Target rules for targets named ExperimentalMemCheck
+
+# Build rule for target.
+ExperimentalMemCheck: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ExperimentalMemCheck
+.PHONY : ExperimentalMemCheck
+
+# fast build rule for target.
+ExperimentalMemCheck/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ExperimentalMemCheck.dir/build.make _deps/sol2-build/CMakeFiles/ExperimentalMemCheck.dir/build
+.PHONY : ExperimentalMemCheck/fast
+
+#=============================================================================
+# Target rules for targets named ExperimentalSubmit
+
+# Build rule for target.
+ExperimentalSubmit: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ExperimentalSubmit
+.PHONY : ExperimentalSubmit
+
+# fast build rule for target.
+ExperimentalSubmit/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ExperimentalSubmit.dir/build.make _deps/sol2-build/CMakeFiles/ExperimentalSubmit.dir/build
+.PHONY : ExperimentalSubmit/fast
+
+#=============================================================================
+# Target rules for targets named ContinuousStart
+
+# Build rule for target.
+ContinuousStart: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ContinuousStart
+.PHONY : ContinuousStart
+
+# fast build rule for target.
+ContinuousStart/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ContinuousStart.dir/build.make _deps/sol2-build/CMakeFiles/ContinuousStart.dir/build
+.PHONY : ContinuousStart/fast
+
+#=============================================================================
+# Target rules for targets named ContinuousUpdate
+
+# Build rule for target.
+ContinuousUpdate: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ContinuousUpdate
+.PHONY : ContinuousUpdate
+
+# fast build rule for target.
+ContinuousUpdate/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ContinuousUpdate.dir/build.make _deps/sol2-build/CMakeFiles/ContinuousUpdate.dir/build
+.PHONY : ContinuousUpdate/fast
+
+#=============================================================================
+# Target rules for targets named ContinuousConfigure
+
+# Build rule for target.
+ContinuousConfigure: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ContinuousConfigure
+.PHONY : ContinuousConfigure
+
+# fast build rule for target.
+ContinuousConfigure/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ContinuousConfigure.dir/build.make _deps/sol2-build/CMakeFiles/ContinuousConfigure.dir/build
+.PHONY : ContinuousConfigure/fast
+
+#=============================================================================
+# Target rules for targets named ContinuousBuild
+
+# Build rule for target.
+ContinuousBuild: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ContinuousBuild
+.PHONY : ContinuousBuild
+
+# fast build rule for target.
+ContinuousBuild/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ContinuousBuild.dir/build.make _deps/sol2-build/CMakeFiles/ContinuousBuild.dir/build
+.PHONY : ContinuousBuild/fast
+
+#=============================================================================
+# Target rules for targets named ContinuousTest
+
+# Build rule for target.
+ContinuousTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ContinuousTest
+.PHONY : ContinuousTest
+
+# fast build rule for target.
+ContinuousTest/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ContinuousTest.dir/build.make _deps/sol2-build/CMakeFiles/ContinuousTest.dir/build
+.PHONY : ContinuousTest/fast
+
+#=============================================================================
+# Target rules for targets named ContinuousCoverage
+
+# Build rule for target.
+ContinuousCoverage: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ContinuousCoverage
+.PHONY : ContinuousCoverage
+
+# fast build rule for target.
+ContinuousCoverage/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ContinuousCoverage.dir/build.make _deps/sol2-build/CMakeFiles/ContinuousCoverage.dir/build
+.PHONY : ContinuousCoverage/fast
+
+#=============================================================================
+# Target rules for targets named ContinuousMemCheck
+
+# Build rule for target.
+ContinuousMemCheck: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ContinuousMemCheck
+.PHONY : ContinuousMemCheck
+
+# fast build rule for target.
+ContinuousMemCheck/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ContinuousMemCheck.dir/build.make _deps/sol2-build/CMakeFiles/ContinuousMemCheck.dir/build
+.PHONY : ContinuousMemCheck/fast
+
+#=============================================================================
+# Target rules for targets named ContinuousSubmit
+
+# Build rule for target.
+ContinuousSubmit: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ContinuousSubmit
+.PHONY : ContinuousSubmit
+
+# fast build rule for target.
+ContinuousSubmit/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/sol2-build/CMakeFiles/ContinuousSubmit.dir/build.make _deps/sol2-build/CMakeFiles/ContinuousSubmit.dir/build
+.PHONY : ContinuousSubmit/fast
 
 #=============================================================================
 # Target rules for targets named ecs
@@ -220,293 +637,31 @@ r-type_app/fast:
 	$(MAKE) $(MAKESILENT) -f app/CMakeFiles/r-type_app.dir/build.make app/CMakeFiles/r-type_app.dir/build
 .PHONY : r-type_app/fast
 
-Server/src/ClientState.o: Server/src/ClientState.cpp.o
-.PHONY : Server/src/ClientState.o
-
-# target to build an object file
-Server/src/ClientState.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/ClientState.cpp.o
-.PHONY : Server/src/ClientState.cpp.o
-
-Server/src/ClientState.i: Server/src/ClientState.cpp.i
-.PHONY : Server/src/ClientState.i
-
-# target to preprocess a source file
-Server/src/ClientState.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/ClientState.cpp.i
-.PHONY : Server/src/ClientState.cpp.i
-
-Server/src/ClientState.s: Server/src/ClientState.cpp.s
-.PHONY : Server/src/ClientState.s
-
-# target to generate assembly for a file
-Server/src/ClientState.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/ClientState.cpp.s
-.PHONY : Server/src/ClientState.cpp.s
-
-Server/src/GameLogic.o: Server/src/GameLogic.cpp.o
-.PHONY : Server/src/GameLogic.o
-
-# target to build an object file
-Server/src/GameLogic.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogic.cpp.o
-.PHONY : Server/src/GameLogic.cpp.o
-
-Server/src/GameLogic.i: Server/src/GameLogic.cpp.i
-.PHONY : Server/src/GameLogic.i
-
-# target to preprocess a source file
-Server/src/GameLogic.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogic.cpp.i
-.PHONY : Server/src/GameLogic.cpp.i
-
-Server/src/GameLogic.s: Server/src/GameLogic.cpp.s
-.PHONY : Server/src/GameLogic.s
-
-# target to generate assembly for a file
-Server/src/GameLogic.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameLogic.cpp.s
-.PHONY : Server/src/GameLogic.cpp.s
-
-Server/src/GameServerLoop.o: Server/src/GameServerLoop.cpp.o
-.PHONY : Server/src/GameServerLoop.o
-
-# target to build an object file
-Server/src/GameServerLoop.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameServerLoop.cpp.o
-.PHONY : Server/src/GameServerLoop.cpp.o
-
-Server/src/GameServerLoop.i: Server/src/GameServerLoop.cpp.i
-.PHONY : Server/src/GameServerLoop.i
-
-# target to preprocess a source file
-Server/src/GameServerLoop.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameServerLoop.cpp.i
-.PHONY : Server/src/GameServerLoop.cpp.i
-
-Server/src/GameServerLoop.s: Server/src/GameServerLoop.cpp.s
-.PHONY : Server/src/GameServerLoop.s
-
-# target to generate assembly for a file
-Server/src/GameServerLoop.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameServerLoop.cpp.s
-.PHONY : Server/src/GameServerLoop.cpp.s
-
-Server/src/GameSession.o: Server/src/GameSession.cpp.o
-.PHONY : Server/src/GameSession.o
-
-# target to build an object file
-Server/src/GameSession.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameSession.cpp.o
-.PHONY : Server/src/GameSession.cpp.o
-
-Server/src/GameSession.i: Server/src/GameSession.cpp.i
-.PHONY : Server/src/GameSession.i
-
-# target to preprocess a source file
-Server/src/GameSession.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameSession.cpp.i
-.PHONY : Server/src/GameSession.cpp.i
-
-Server/src/GameSession.s: Server/src/GameSession.cpp.s
-.PHONY : Server/src/GameSession.s
-
-# target to generate assembly for a file
-Server/src/GameSession.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/GameSession.cpp.s
-.PHONY : Server/src/GameSession.cpp.s
-
-Server/src/MessageQueue.o: Server/src/MessageQueue.cpp.o
-.PHONY : Server/src/MessageQueue.o
-
-# target to build an object file
-Server/src/MessageQueue.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/MessageQueue.cpp.o
-.PHONY : Server/src/MessageQueue.cpp.o
-
-Server/src/MessageQueue.i: Server/src/MessageQueue.cpp.i
-.PHONY : Server/src/MessageQueue.i
-
-# target to preprocess a source file
-Server/src/MessageQueue.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/MessageQueue.cpp.i
-.PHONY : Server/src/MessageQueue.cpp.i
-
-Server/src/MessageQueue.s: Server/src/MessageQueue.cpp.s
-.PHONY : Server/src/MessageQueue.s
-
-# target to generate assembly for a file
-Server/src/MessageQueue.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/MessageQueue.cpp.s
-.PHONY : Server/src/MessageQueue.cpp.s
-
-Server/src/Protocole.o: Server/src/Protocole.cpp.o
-.PHONY : Server/src/Protocole.o
-
-# target to build an object file
-Server/src/Protocole.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/Protocole.cpp.o
-.PHONY : Server/src/Protocole.cpp.o
-
-Server/src/Protocole.i: Server/src/Protocole.cpp.i
-.PHONY : Server/src/Protocole.i
-
-# target to preprocess a source file
-Server/src/Protocole.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/Protocole.cpp.i
-.PHONY : Server/src/Protocole.cpp.i
-
-Server/src/Protocole.s: Server/src/Protocole.cpp.s
-.PHONY : Server/src/Protocole.s
-
-# target to generate assembly for a file
-Server/src/Protocole.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/Protocole.cpp.s
-.PHONY : Server/src/Protocole.cpp.s
-
-Server/src/StartServer.o: Server/src/StartServer.cpp.o
-.PHONY : Server/src/StartServer.o
-
-# target to build an object file
-Server/src/StartServer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/StartServer.cpp.o
-.PHONY : Server/src/StartServer.cpp.o
-
-Server/src/StartServer.i: Server/src/StartServer.cpp.i
-.PHONY : Server/src/StartServer.i
-
-# target to preprocess a source file
-Server/src/StartServer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/StartServer.cpp.i
-.PHONY : Server/src/StartServer.cpp.i
-
-Server/src/StartServer.s: Server/src/StartServer.cpp.s
-.PHONY : Server/src/StartServer.s
-
-# target to generate assembly for a file
-Server/src/StartServer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/StartServer.cpp.s
-.PHONY : Server/src/StartServer.cpp.s
-
-Server/src/Tcpserver.o: Server/src/Tcpserver.cpp.o
-.PHONY : Server/src/Tcpserver.o
-
-# target to build an object file
-Server/src/Tcpserver.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/Tcpserver.cpp.o
-.PHONY : Server/src/Tcpserver.cpp.o
-
-Server/src/Tcpserver.i: Server/src/Tcpserver.cpp.i
-.PHONY : Server/src/Tcpserver.i
-
-# target to preprocess a source file
-Server/src/Tcpserver.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/Tcpserver.cpp.i
-.PHONY : Server/src/Tcpserver.cpp.i
-
-Server/src/Tcpserver.s: Server/src/Tcpserver.cpp.s
-.PHONY : Server/src/Tcpserver.s
-
-# target to generate assembly for a file
-Server/src/Tcpserver.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/Tcpserver.cpp.s
-.PHONY : Server/src/Tcpserver.cpp.s
-
-Server/src/UdpProtocole.o: Server/src/UdpProtocole.cpp.o
-.PHONY : Server/src/UdpProtocole.o
-
-# target to build an object file
-Server/src/UdpProtocole.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/UdpProtocole.cpp.o
-.PHONY : Server/src/UdpProtocole.cpp.o
-
-Server/src/UdpProtocole.i: Server/src/UdpProtocole.cpp.i
-.PHONY : Server/src/UdpProtocole.i
-
-# target to preprocess a source file
-Server/src/UdpProtocole.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/UdpProtocole.cpp.i
-.PHONY : Server/src/UdpProtocole.cpp.i
-
-Server/src/UdpProtocole.s: Server/src/UdpProtocole.cpp.s
-.PHONY : Server/src/UdpProtocole.s
-
-# target to generate assembly for a file
-Server/src/UdpProtocole.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/UdpProtocole.cpp.s
-.PHONY : Server/src/UdpProtocole.cpp.s
-
-Server/src/UdpServer.o: Server/src/UdpServer.cpp.o
-.PHONY : Server/src/UdpServer.o
-
-# target to build an object file
-Server/src/UdpServer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/UdpServer.cpp.o
-.PHONY : Server/src/UdpServer.cpp.o
-
-Server/src/UdpServer.i: Server/src/UdpServer.cpp.i
-.PHONY : Server/src/UdpServer.i
-
-# target to preprocess a source file
-Server/src/UdpServer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/UdpServer.cpp.i
-.PHONY : Server/src/UdpServer.cpp.i
-
-Server/src/UdpServer.s: Server/src/UdpServer.cpp.s
-.PHONY : Server/src/UdpServer.s
-
-# target to generate assembly for a file
-Server/src/UdpServer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/UdpServer.cpp.s
-.PHONY : Server/src/UdpServer.cpp.s
-
-Server/src/main.o: Server/src/main.cpp.o
-.PHONY : Server/src/main.o
-
-# target to build an object file
-Server/src/main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/main.cpp.o
-.PHONY : Server/src/main.cpp.o
-
-Server/src/main.i: Server/src/main.cpp.i
-.PHONY : Server/src/main.i
-
-# target to preprocess a source file
-Server/src/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/main.cpp.i
-.PHONY : Server/src/main.cpp.i
-
-Server/src/main.s: Server/src/main.cpp.s
-.PHONY : Server/src/main.s
-
-# target to generate assembly for a file
-Server/src/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/Server/src/main.cpp.s
-.PHONY : Server/src/main.cpp.s
-
-ecs/src/registery.o: ecs/src/registery.cpp.o
-.PHONY : ecs/src/registery.o
-
-# target to build an object file
-ecs/src/registery.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/ecs/src/registery.cpp.o
-.PHONY : ecs/src/registery.cpp.o
-
-ecs/src/registery.i: ecs/src/registery.cpp.i
-.PHONY : ecs/src/registery.i
-
-# target to preprocess a source file
-ecs/src/registery.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/ecs/src/registery.cpp.i
-.PHONY : ecs/src/registery.cpp.i
-
-ecs/src/registery.s: ecs/src/registery.cpp.s
-.PHONY : ecs/src/registery.s
-
-# target to generate assembly for a file
-ecs/src/registery.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/r-type_server.dir/build.make CMakeFiles/r-type_server.dir/ecs/src/registery.cpp.s
-.PHONY : ecs/src/registery.cpp.s
+#=============================================================================
+# Target rules for targets named r-type_mario
+
+# Build rule for target.
+r-type_mario: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 r-type_mario
+.PHONY : r-type_mario
+
+# fast build rule for target.
+r-type_mario/fast:
+	$(MAKE) $(MAKESILENT) -f mario/CMakeFiles/r-type_mario.dir/build.make mario/CMakeFiles/r-type_mario.dir/build
+.PHONY : r-type_mario/fast
+
+#=============================================================================
+# Target rules for targets named r-type_server
+
+# Build rule for target.
+r-type_server: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 r-type_server
+.PHONY : r-type_server
+
+# fast build rule for target.
+r-type_server/fast:
+	$(MAKE) $(MAKESILENT) -f Server/CMakeFiles/r-type_server.dir/build.make Server/CMakeFiles/r-type_server.dir/build
+.PHONY : r-type_server/fast
 
 # Help Target
 help:
@@ -522,45 +677,43 @@ help:
 	@echo "... package"
 	@echo "... package_source"
 	@echo "... rebuild_cache"
+	@echo "... Continuous"
+	@echo "... ContinuousBuild"
+	@echo "... ContinuousConfigure"
+	@echo "... ContinuousCoverage"
+	@echo "... ContinuousMemCheck"
+	@echo "... ContinuousStart"
+	@echo "... ContinuousSubmit"
+	@echo "... ContinuousTest"
+	@echo "... ContinuousUpdate"
+	@echo "... Experimental"
+	@echo "... ExperimentalBuild"
+	@echo "... ExperimentalConfigure"
+	@echo "... ExperimentalCoverage"
+	@echo "... ExperimentalMemCheck"
+	@echo "... ExperimentalStart"
+	@echo "... ExperimentalSubmit"
+	@echo "... ExperimentalTest"
+	@echo "... ExperimentalUpdate"
+	@echo "... Nightly"
+	@echo "... NightlyBuild"
+	@echo "... NightlyConfigure"
+	@echo "... NightlyCoverage"
+	@echo "... NightlyMemCheck"
+	@echo "... NightlyMemoryCheck"
+	@echo "... NightlyStart"
+	@echo "... NightlySubmit"
+	@echo "... NightlyTest"
+	@echo "... NightlyUpdate"
 	@echo "... ecs"
 	@echo "... r-type_app"
+	@echo "... r-type_mario"
 	@echo "... r-type_server"
-	@echo "... Server/src/ClientState.o"
-	@echo "... Server/src/ClientState.i"
-	@echo "... Server/src/ClientState.s"
-	@echo "... Server/src/GameLogic.o"
-	@echo "... Server/src/GameLogic.i"
-	@echo "... Server/src/GameLogic.s"
-	@echo "... Server/src/GameServerLoop.o"
-	@echo "... Server/src/GameServerLoop.i"
-	@echo "... Server/src/GameServerLoop.s"
-	@echo "... Server/src/GameSession.o"
-	@echo "... Server/src/GameSession.i"
-	@echo "... Server/src/GameSession.s"
-	@echo "... Server/src/MessageQueue.o"
-	@echo "... Server/src/MessageQueue.i"
-	@echo "... Server/src/MessageQueue.s"
-	@echo "... Server/src/Protocole.o"
-	@echo "... Server/src/Protocole.i"
-	@echo "... Server/src/Protocole.s"
-	@echo "... Server/src/StartServer.o"
-	@echo "... Server/src/StartServer.i"
-	@echo "... Server/src/StartServer.s"
-	@echo "... Server/src/Tcpserver.o"
-	@echo "... Server/src/Tcpserver.i"
-	@echo "... Server/src/Tcpserver.s"
-	@echo "... Server/src/UdpProtocole.o"
-	@echo "... Server/src/UdpProtocole.i"
-	@echo "... Server/src/UdpProtocole.s"
-	@echo "... Server/src/UdpServer.o"
-	@echo "... Server/src/UdpServer.i"
-	@echo "... Server/src/UdpServer.s"
-	@echo "... Server/src/main.o"
-	@echo "... Server/src/main.i"
-	@echo "... Server/src/main.s"
-	@echo "... ecs/src/registery.o"
-	@echo "... ecs/src/registery.i"
-	@echo "... ecs/src/registery.s"
+	@echo "... sfml-audio"
+	@echo "... sfml-graphics"
+	@echo "... sfml-network"
+	@echo "... sfml-system"
+	@echo "... sfml-window"
 .PHONY : help
 
 
@@ -572,6 +725,7 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
+	$(CMAKE_COMMAND) -P /home/ariles/delivery/R-TYPE/CMakeFiles/VerifyGlobs.cmake
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

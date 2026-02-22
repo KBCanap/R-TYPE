@@ -6,6 +6,7 @@
 */
 
 #include "../../include/systems.hpp"
+#include <iostream>
 
 namespace systems {
 
@@ -24,11 +25,18 @@ void score_system(registry &r, sparse_array<component::score> &scores,
             score->survival_time - score->last_time_point_awarded;
         bool should_award = (time_since_award >= SCORE_INTERVAL);
 
-        // Branchless score update
-        score->current_score += should_award;
-        score->last_time_point_awarded = should_award
-                                             ? score->survival_time
-                                             : score->last_time_point_awarded;
+        if (should_award) {
+            score->current_score += 1;
+            score->last_time_point_awarded = score->survival_time;
+
+            // Debug log every time score is awarded
+            static int award_count = 0;
+            award_count++;
+            if (award_count % 5 == 1) {  // Log every 5 seconds
+                std::cout << "[SCORE DEBUG] Player " << i << " - Score: " << score->current_score
+                          << " Survival: " << score->survival_time << "s" << std::endl;
+            }
+        }
     }
 }
 
