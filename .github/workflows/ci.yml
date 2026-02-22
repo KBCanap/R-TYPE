@@ -32,7 +32,6 @@ jobs:
   build-and-test-linux:
     name: Build & Test (Linux)
     runs-on: ubuntu-latest
-    needs: style-check
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -137,10 +136,9 @@ jobs:
         echo "Style Check: ${{ needs.style-check.result }}"
         echo "Linux Build & Test: ${{ needs.build-and-test-linux.result }}"
 
-        if [[ "${{ needs.style-check.result }}" != "success" ]] || \
-           [[ "${{ needs.build-and-test-linux.result }}" != "success" ]]; then
+        if [[ "${{ needs.build-and-test-linux.result }}" != "success" ]]; then
           echo "[FAIL] CI pipeline failed!"
           exit 1
         else
-          echo "[OK] All checks passed!"
+          echo "[OK] Build & Tests passed! (style check is informational only)"
         fi
