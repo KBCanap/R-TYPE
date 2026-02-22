@@ -78,6 +78,8 @@ struct Weapon {
     int damage;
     int projectile_count = 1;   // For spread weapon
     float spread_angle = 0.0f;  // For spread weapon (degrees)
+    float damage_boost_timer = 0.0f;
+    int base_damage = 25;
 };
 
 struct Projectile {
@@ -104,7 +106,7 @@ struct Boss {
 };
 
 // Power-up types
-enum class PowerUpType : uint8_t { SHIELD = 0, SPREAD = 1, COMPANION = 2 };
+enum class PowerUpType : uint8_t { SHIELD = 0, SPREAD = 1, LASER = 2, COMPANION = 3 };
 
 struct PowerUp {
     PowerUpType type;
@@ -153,6 +155,7 @@ struct EntitySnapshot {
     int shield;
     int score;
     uint tick;
+    bool beam_active = false;
 };
 
 struct WorldSnapshot {
@@ -329,6 +332,9 @@ class GameLogic {
 
     /** @brief Spawns level 2 enemy (spread or normal) */
     void spawnEnemyLevel2();
+
+    /** @brief Spawns kamikaze enemy (fast, no shooting, high contact damage) */
+    void spawnEnemyKamikaze();
 
     /** @brief Spawns boss based on current level */
     void spawnBoss();

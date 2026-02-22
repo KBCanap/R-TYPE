@@ -132,6 +132,9 @@ UdpProtocole::createEntityUpdate(const std::vector<Entity> &entities,
         uint32_t score_network = htonl(entity.score);
         std::memcpy(ptr, &score_network, 4);
         ptr += 4;
+
+        *ptr = entity.flags;
+        ptr += 1;
     }
 
     return createMessage(UdpMessageType::ENTITY_UPDATE, sequence_num, data);

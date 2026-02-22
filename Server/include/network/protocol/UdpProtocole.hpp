@@ -28,6 +28,7 @@ struct Entity {
     float position_x;
     float position_y;
     uint32_t score;
+    uint8_t flags = 0;
 };
 
 class UdpProtocole {

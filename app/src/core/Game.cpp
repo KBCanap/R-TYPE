@@ -14,6 +14,7 @@
 #include "network/NetworkComponents.hpp"
 #include "network/NetworkSystem.hpp"
 #include "systems.hpp"
+#include "GameConstants.hpp"
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
@@ -213,6 +214,7 @@ void Game::update(float dt) {
         auto &hitboxes = _registry.get_components<component::hitbox>();
         systems::collision_system(_registry, positions, drawables, projectiles,
                                   hitboxes);
+        systems::beam_system(_registry, _window, dt);
     }
 
     auto &healths = _registry.get_components<component::health>();
@@ -388,19 +390,21 @@ void Game::update(float dt) {
                     boss_y - (wave_spacing * (_bossWaveEnemyCount - 1) / 2.0f);
 
                 for (int i = 0; i < _bossWaveEnemyCount; ++i) {
-                    entity enemy =
-                        _enemyManager.spawnEnemyLevel2(); // Default spawn
-
+                    entity enemy(0);
                     if (_endlessMode) {
-                        // Endless mode: mix all enemy types
-                        int enemyType = std::rand() % 3;
+                        // Endless mode: mix all enemy types (+ kamikaze)
+                        int enemyType = std::rand() % 4;
                         if (enemyType == 0) {
                             enemy = _enemyManager.spawnEnemy();
                         } else if (enemyType == 1) {
                             enemy = _enemyManager.spawnEnemyLevel2();
-                        } else {
+                        } else if (enemyType == 2) {
                             enemy = _enemyManager.spawnEnemyLevel2Spread();
+                        } else {
+                            enemy = _enemyManager.spawnEnemyKamikaze();
                         }
+                    } else {
+                        enemy = _enemyManager.spawnEnemyLevel2(); // Default
                     }
 
                     // Position enemies starting from boss position in a
@@ -422,26 +426,37 @@ void Game::update(float dt) {
                 _enemySpawnTimer = 0.f;
 
                 if (_endlessMode) {
-                    // Endless mode: spawn all types randomly
-                    int enemyType = std::rand() % 3;
+                    // Endless mode: spawn all types randomly (+ kamikaze)
+                    int enemyType = std::rand() % 4;
                     if (enemyType == 0) {
                         _enemies.push_back(_enemyManager.spawnEnemy());
                     } else if (enemyType == 1) {
                         _enemies.push_back(_enemyManager.spawnEnemyLevel2());
-                    } else {
+                    } else if (enemyType == 2) {
                         _enemies.push_back(
                             _enemyManager.spawnEnemyLevel2Spread());
+                    } else {
+                        _enemies.push_back(_enemyManager.spawnEnemyKamikaze());
                     }
                 } else {
                     // Spawn appropriate enemy based on level
                     if (_currentLevel == 1) {
-                        _enemies.push_back(_enemyManager.spawnEnemy());
+                        // 25% chance of kamikaze in level 1
+                        if (std::rand() % 4 == 0) {
+                            _enemies.push_back(
+                                _enemyManager.spawnEnemyKamikaze());
+                        } else {
+                            _enemies.push_back(_enemyManager.spawnEnemy());
+                        }
                     } else {
-                        // Level 2: randomly spawn either normal or spread enemy
-                        if (std::rand() % 3 ==
-                            0) { // 33% chance for spread enemy
+                        // Level 2: normal, spread or kamikaze
+                        int roll = std::rand() % 4;
+                        if (roll == 0) {
                             _enemies.push_back(
                                 _enemyManager.spawnEnemyLevel2Spread());
+                        } else if (roll == 1) {
+                            _enemies.push_back(
+                                _enemyManager.spawnEnemyKamikaze());
                         } else {
                             _enemies.push_back(
                                 _enemyManager.spawnEnemyLevel2());
@@ -462,13 +477,16 @@ void Game::update(float dt) {
             float random_y =
                 static_cast<float>(std::rand() % (window_size.y - 100) + 50);
 
-            // Randomly choose between shield, spread, and companion powerup
-            int powerup_roll = std::rand() % 3;
+            // Randomly choose between shield, spread, laser, and companion powerup
+            int powerup_roll = std::rand() % 4;
             if (powerup_roll == 0) {
                 _powerupManager.spawnShieldPowerup(
                     static_cast<float>(window_size.x) - 50.0f, random_y);
             } else if (powerup_roll == 1) {
                 _powerupManager.spawnSpreadPowerup(
+                    static_cast<float>(window_size.x) - 50.0f, random_y);
+            } else if (powerup_roll == 2) {
+                _powerupManager.spawnLaserPowerup(
                     static_cast<float>(window_size.x) - 50.0f, random_y);
             } else {
                 _powerupManager.spawnCompanionPowerup(
@@ -508,6 +526,29 @@ void Game::render(float dt) {
     auto &positions = _registry.get_components<component::position>();
     auto &drawables = _registry.get_components<component::drawable>();
     systems::render_system(_registry, positions, drawables, _window, dt);
+
+    {
+        auto &beams = _registry.get_components<component::beam>();
+        auto &beam_positions = _registry.get_components<component::position>();
+        render::Vector2u win_size = _window.getSize();
+        float window_width = static_cast<float>(win_size.x);
+
+        for (size_t i = 0; i < beams.size(); ++i) {
+            if (!beams[i] || !beam_positions[i])
+                continue;
+            drawBeamAt(beam_positions[i]->x, beam_positions[i]->y, beams[i]->height, window_width);
+        }
+
+        if (_isMultiplayer && _networkCommandHandler) {
+            auto beam_entities = _networkCommandHandler->getBeamActiveEntities();
+            for (entity ent : beam_entities) {
+                if (ent < beam_positions.size() && beam_positions[ent]) {
+                    drawBeamAt(beam_positions[ent]->x, beam_positions[ent]->y,
+                               game::BEAM_HEIGHT, window_width);
+                }
+            }
+        }
+    }
 
     if (_isMultiplayer && _networkCommandHandler) {
         uint32_t my_net_id = _networkCommandHandler->getAssignedPlayerNetId();
@@ -565,6 +606,25 @@ void Game::render(float dt) {
     _victoryMenu.render();
 
     _window.display();
+}
+
+void Game::drawBeamAt(float px, float py, float beam_h, float window_width) {
+    float beam_x = px + 60.0f;
+    float y_center = py + 17.0f;
+    float beam_w = window_width - beam_x;
+    if (beam_w <= 0.0f)
+        return;
+
+    auto outer = _window.createRectangleShape(render::Vector2f(beam_w, beam_h));
+    outer->setPosition(beam_x, y_center - beam_h / 2.0f);
+    outer->setFillColor(render::Color(0, 255, 255, 200));
+    _window.draw(*outer);
+
+    float core_h = beam_h * 0.4f;
+    auto inner = _window.createRectangleShape(render::Vector2f(beam_w, core_h));
+    inner->setPosition(beam_x, y_center - core_h / 2.0f);
+    inner->setFillColor(render::Color(255, 255, 255, 240));
+    _window.draw(*inner);
 }
 
 void Game::renderPlayerInfo(entity player_entity) {
@@ -797,7 +857,7 @@ void Game::updateMultiplayer(float dt) {
     if (_networkManager) {
         systems::network_system(dt);
 
-        // Vérifier l'état de connexion
+        // Check connection state
         auto connectionState = _networkManager->getConnectionState();
         if (connectionState == network::ConnectionState::ERROR ||
             connectionState == network::ConnectionState::DISCONNECTED) {
@@ -820,6 +880,24 @@ void Game::updateMultiplayer(float dt) {
             if (backgrounds[i]->offset_x <=
                 -backgrounds[i]->texture->getSize().x) {
                 backgrounds[i]->offset_x = 0;
+            }
+        }
+    }
+
+    if (_networkCommandHandler) {
+        uint32_t my_net_id = _networkCommandHandler->getAssignedPlayerNetId();
+        auto my_entity = _networkCommandHandler->findEntityByNetId(my_net_id);
+        if (my_entity) {
+            auto &weapons = _registry.get_components<component::weapon>();
+            if (*my_entity < weapons.size() && weapons[*my_entity]) {
+                auto &w = *weapons[*my_entity];
+                if (w.damage_boost_timer > 0.0f) {
+                    w.damage_boost_timer -= dt;
+                    if (w.damage_boost_timer <= 0.0f) {
+                        w.damage_boost_timer = 0.0f;
+                        w.fire_function = nullptr;
+                    }
+                }
             }
         }
     }

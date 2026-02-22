@@ -8,6 +8,7 @@
 #include "../../include/systems.hpp"
 #include "../../include/GameConstants.hpp"
 #include <algorithm>
+#include <string>
 #include <vector>
 
 namespace systems {
@@ -75,6 +76,25 @@ static void handle_spread_powerup_collision(registry &r, size_t player_idx) {
     if (player_idx < weapons.size() && weapons[player_idx]) {
         weapons[player_idx]->projectile_count = 3;
         weapons[player_idx]->spread_angle = 15.0f;
+    }
+}
+
+static void handle_laser_powerup_collision(registry &r, size_t player_idx) {
+    auto &weapons = r.get_components<component::weapon>();
+    auto &positions = r.get_components<component::position>();
+
+    if (player_idx < weapons.size() && weapons[player_idx]) {
+        weapons[player_idx]->fire_function = [](registry &, const component::position &, bool) {};
+        weapons[player_idx]->damage_boost_timer = game::LASER_DURATION;
+    }
+
+    if (player_idx < positions.size() && positions[player_idx]) {
+        entity beam_ent = r.spawn_entity();
+        r.add_component<component::position>(
+            beam_ent, component::position(positions[player_idx]->x, positions[player_idx]->y));
+        r.add_component<component::beam>(
+            beam_ent, component::beam(game::LASER_DURATION, game::BEAM_DPS,
+                                      game::BEAM_HEIGHT, true, player_idx));
     }
 }
 
@@ -221,6 +241,8 @@ process_powerup_collision(registry &r, size_t player_idx, size_t powerup_idx,
             handle_shield_powerup_collision(r, player_idx);
         } else if (powerup_tag == "spread_powerup") {
             handle_spread_powerup_collision(r, player_idx);
+        } else if (powerup_tag == "laser_powerup") {
+            handle_laser_powerup_collision(r, player_idx);
         } else if (powerup_tag == "companion_powerup") {
             handle_companion_powerup_collision(r, player_idx);
         }
@@ -302,6 +324,10 @@ process_player_powerup_collisions(registry &r, size_t player_idx,
         process_powerup_collision(r, player_idx, powerup_idx, player_box,
                                   positions, drawables, hitboxes,
                                   "spread_powerup", entities_to_kill);
+
+        process_powerup_collision(r, player_idx, powerup_idx, player_box,
+                                  positions, drawables, hitboxes,
+                                  "laser_powerup", entities_to_kill);
 
         process_powerup_collision(r, player_idx, powerup_idx, player_box,
                                   positions, drawables, hitboxes,
@@ -419,7 +445,10 @@ static void process_player_enemy_collisions(
             }
 
             // Default R-Type collision logic
-            handle_entity_damage(player_idx, COLLISION_DAMAGE, healths,
+            int player_damage = COLLISION_DAMAGE;
+            if (enemy_drawable->tag == "enemy_kamikaze")
+                player_damage = game::KAMIKAZE_CONTACT_DAMAGE;
+            handle_entity_damage(player_idx, player_damage, healths,
                                  positions, entities_to_kill,
                                  explosion_positions);
             handle_entity_damage(enemy_idx, COLLISION_DAMAGE, healths,

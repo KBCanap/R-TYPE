@@ -70,6 +70,8 @@ void score_system(registry &r, sparse_array<component::score> &scores,
 void health_system(registry &r, sparse_array<component::health> &healths,
                    float dt);
 
+void beam_system(registry &r, render::IRenderWindow &window, float dt);
+
 // Mario platformer systems
 void gravity_system(registry &r, sparse_array<component::gravity> &gravities,
                     sparse_array<component::velocity> &velocities, float dt);

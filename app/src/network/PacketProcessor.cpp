@@ -8,7 +8,7 @@
 #include "network/PacketProcessor.hpp"
 #include <arpa/inet.h>
 #include <cstring>
-#include <iostream> // Pour std::cerr et std::cout
+#include <iostream>
 
 namespace network {
 
@@ -168,15 +168,15 @@ std::vector<EntityUpdateData>
 PacketProcessor::parseEntityUpdate(const std::vector<uint8_t> &data) {
     std::vector<EntityUpdateData> updates;
 
-    // ENTITY_UPDATE_SIZE = 25 bytes per entity
-    if (data.size() % 25 != 0) {
+    // ENTITY_UPDATE_SIZE = 26 bytes per entity
+    if (data.size() % 26 != 0) {
         return updates;
     }
 
-    size_t num_entities = data.size() / 25;
+    size_t num_entities = data.size() / 26;
 
     for (size_t i = 0; i < num_entities; ++i) {
-        size_t offset = i * 25;
+        size_t offset = i * 26;
         EntityUpdateData update;
 
         uint32_t net_id_network;
@@ -211,6 +211,9 @@ PacketProcessor::parseEntityUpdate(const std::vector<uint8_t> &data) {
         uint32_t score_network;
         std::memcpy(&score_network, &data[offset], 4);
         update.score = ntohl(score_network);
+        offset += 4;
+
+        update.flags = data[offset];
 
         updates.push_back(update);
     }

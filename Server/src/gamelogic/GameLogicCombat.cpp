@@ -1,4 +1,5 @@
 #include "gamelogic/GameLogic.hpp"
+#include "../../ecs/include/GameConstants.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -17,6 +18,10 @@ void GameLogic::processEnemyShooting(float dt) {
         Position &pos = pos_opt.value();
 
         if (enemy.enemy_type >= 100)
+            continue;
+
+        // Kamikaze enemies never shoot
+        if (enemy.enemy_type == 20)
             continue;
 
         enemy.shoot_timer += dt;
@@ -283,6 +288,11 @@ void GameLogic::applyPowerUpToPlayer(entity player_ent, PowerUpType type) {
         if (weapon_opt) {
             weapon_opt.value().projectile_count = 3;
             weapon_opt.value().spread_angle = 15.0f;
+        }
+    } else if (type == PowerUpType::LASER) {
+        auto &weapon_opt = weapons[player_ent];
+        if (weapon_opt) {
+            weapon_opt.value().damage_boost_timer = game::LASER_DURATION;
         }
     } else if (type == PowerUpType::COMPANION) {
         auto &players = _registry->get_components<PlayerComponent>();

@@ -1,4 +1,5 @@
 ﻿#include "network/NetworkCommandHandler.hpp"
+#include "GameConstants.hpp"
 #include "systems.hpp"
 #include <atomic>
 #include <cmath>
@@ -35,6 +36,10 @@ void NetworkCommandHandler::onCreateEntity(
         new_entity = createEnemyLevel2SpreadEntity(cmd);
         break;
 
+    case network::EntityType::ENEMY_KAMIKAZE:
+        new_entity = createEnemyKamikazeEntity(cmd);
+        break;
+
     case network::EntityType::BOSS:
         new_entity = createBossEntity(cmd);
         break;
@@ -58,6 +63,7 @@ void NetworkCommandHandler::onCreateEntity(
 
     case network::EntityType::POWERUP_SHIELD:
     case network::EntityType::POWERUP_SPREAD:
+    case network::EntityType::POWERUP_LASER:
         new_entity = createPowerUpEntity(cmd);
         break;
 
@@ -202,6 +208,15 @@ void NetworkCommandHandler::onUpdateEntity(
         network_states[ent]->last_position.y = cmd.position_y;
         network_states[ent]->interpolation_time = 0.0f;
     }
+
+    // Track beam state for all player entities
+    if (cmd.entity_type == network::EntityType::PLAYER) {
+        if (cmd.flags & 0x01) {
+            beam_active_net_ids_.insert(cmd.net_id);
+        } else {
+            beam_active_net_ids_.erase(cmd.net_id);
+        }
+    }
 }
 
 void NetworkCommandHandler::onDestroyEntity(
@@ -223,7 +238,7 @@ void NetworkCommandHandler::onDestroyEntity(
         const std::string &tag = drawables[ent]->tag;
         if (tag == "enemy" || tag == "enemy_zigzag" || tag == "boss") {
             // Server handles all score updates - just create visual effects
-        } else if (tag == "powerup" || tag == "spread_powerup") {
+        } else if (tag == "powerup" || tag == "spread_powerup" || tag == "laser_powerup") {
             // Power-up was destroyed - check if our player collected it
             auto powerup_it = powerup_net_id_to_type_.find(cmd.net_id);
             if (powerup_it != powerup_net_id_to_type_.end()) {
@@ -265,6 +280,12 @@ void NetworkCommandHandler::onDestroyEntity(
                                 weapons[*my_entity]->projectile_count = 3;
                                 weapons[*my_entity]->spread_angle = 15.0f;
                             }
+                        } else if (powerup_type == 2) {
+                            // Laser beam - suppress firing, server handles DPS
+                            if (*my_entity < weapons.size() && weapons[*my_entity]) {
+                                weapons[*my_entity]->damage_boost_timer = game::LASER_DURATION;
+                                weapons[*my_entity]->fire_function = [](registry &, const component::position &, bool) {};
+                            }
                         }
                     }
                 }
@@ -279,6 +300,7 @@ void NetworkCommandHandler::onDestroyEntity(
         std::lock_guard<std::mutex> lock(net_id_mutex_);
         net_id_to_entity_.erase(cmd.net_id);
     }
+    beam_active_net_ids_.erase(cmd.net_id);
 }
 
 void NetworkCommandHandler::onFullStateSync(
@@ -481,6 +503,49 @@ entity NetworkCommandHandler::createEnemyLevel2SpreadEntity(
     return enemy;
 }
 
+entity NetworkCommandHandler::createEnemyKamikazeEntity(
+    const network::CreateEntityCommand &cmd) {
+    auto enemy = registry_.spawn_entity();
+
+    render::Vector2u window_size = window_.getSize();
+    float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
+    float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
+
+    registry_.add_component<component::position>(
+        enemy, component::position(pixel_x, pixel_y));
+
+    registry_.add_component<component::velocity>(
+        enemy, component::velocity(0.0f, 0.0f));
+
+    // Kamikaze sprite: r-typesheet8.gif, 33x34 frames, scale 2.0
+    registry_.add_component<component::drawable>(
+        enemy, component::drawable("assets/sprites/r-typesheet8.gif",
+                                   render::IntRect(0, 0, 33, 34), 2.0f,
+                                   "enemy_kamikaze"));
+
+    registry_.add_component<component::hitbox>(
+        enemy, component::hitbox(66.0f, 68.0f, 0.0f, 0.0f));
+
+    registry_.add_component<component::health>(enemy,
+                                               component::health(cmd.health));
+
+    // Kamikaze: no firing, fast straight movement
+    component::ai_movement_pattern movement_pattern =
+        component::ai_movement_pattern::straight(350.0f);
+    registry_.add_component<component::ai_input>(
+        enemy, component::ai_input(false, 999.0f, movement_pattern));
+
+    // Animation: 16 frames (8 top row y=0, 8 bottom row y=34), 33x34 each
+    auto &anim = registry_.add_component<component::animation>(
+        enemy, component::animation(0.1f, true));
+    for (int i = 0; i < 8; ++i)
+        anim->frames.push_back(render::IntRect(i * 33, 0, 33, 34));
+    for (int i = 0; i < 8; ++i)
+        anim->frames.push_back(render::IntRect(i * 33, 34, 33, 34));
+
+    return enemy;
+}
+
 entity NetworkCommandHandler::createBossEntity(
     const network::CreateEntityCommand &cmd) {
     auto boss = registry_.spawn_entity();
@@ -677,7 +742,13 @@ entity NetworkCommandHandler::createPowerUpEntity(
     float pixel_x = cmd.position_x * static_cast<float>(window_size.x);
     float pixel_y = cmd.position_y * static_cast<float>(window_size.y);
 
-    int powerup_type = (cmd.entity_type == network::EntityType::POWERUP_SHIELD) ? 0 : 1;
+    int powerup_type;
+    if (cmd.entity_type == network::EntityType::POWERUP_SHIELD)
+        powerup_type = 0;
+    else if (cmd.entity_type == network::EntityType::POWERUP_SPREAD)
+        powerup_type = 1;
+    else
+        powerup_type = 2;
 
     registry_.add_component<component::position>(
         powerup, component::position(pixel_x, pixel_y));
@@ -717,7 +788,7 @@ entity NetworkCommandHandler::createPowerUpEntity(
         powerup_anim->frames.push_back(render::IntRect(373, 34, 19, 17));
         powerup_anim->frames.push_back(render::IntRect(396, 34, 21, 17));
         powerup_anim->frames.push_back(render::IntRect(421, 34, 19, 17));
-    } else {
+    } else if (powerup_type == 1) {
         // Spread power-up - exact frames from solo powerup_manager.cpp
         sprite_rect = render::IntRect(119, 68, 28, 23);
         tag = "spread_powerup";  // Must match solo mode tag for collision detection
@@ -736,6 +807,23 @@ entity NetworkCommandHandler::createPowerUpEntity(
         for (int i = 0; i < 6; ++i) {
             int x_pos = start_x + i * (frame_width + separation);
             powerup_anim->frames.push_back(render::IntRect(x_pos, 68, 28, 23));
+        }
+    } else {
+        // Laser power-up
+        sprite_rect = render::IntRect(229, 452, 16, 16);
+        tag = "laser_powerup";
+        registry_.add_component<component::hitbox>(
+            powerup, component::hitbox(32.0f, 32.0f, 0.0f, 0.0f));
+
+        registry_.add_component<component::drawable>(
+            powerup, component::drawable(texture_path, sprite_rect, 2.0f, tag));
+
+        // Animation with 8 frames, 18px stride, 0.15s per frame
+        auto &powerup_anim = registry_.add_component<component::animation>(
+            powerup, component::animation(0.15f, true));
+        int laser_x_positions[] = {229, 247, 265, 283, 301, 319, 337, 355};
+        for (int i = 0; i < 8; ++i) {
+            powerup_anim->frames.push_back(render::IntRect(laser_x_positions[i], 452, 16, 16));
         }
     }
 
@@ -886,9 +974,9 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
     }
 
     case network::UDPMessageType::ENTITY_UPDATE: {
-        if (packet.payload.size() == 0 || packet.payload.size() % 25 != 0) {
+        if (packet.payload.size() == 0 || packet.payload.size() % 26 != 0) {
             std::cerr << "Invalid ENTITY_UPDATE size: " << packet.payload.size()
-                      << " (must be multiple of 25)" << std::endl;
+                      << " (must be multiple of 26)" << std::endl;
             break;
         }
 
@@ -904,6 +992,7 @@ void NetworkCommandHandler::onRawUDPPacket(const network::UDPPacket &packet) {
             cmd.position_x = update.position_x;
             cmd.position_y = update.position_y;
             cmd.score = update.score;
+            cmd.flags = update.flags;
 
             onUpdateEntity(cmd);
         }

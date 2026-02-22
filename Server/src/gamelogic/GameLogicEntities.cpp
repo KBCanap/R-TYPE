@@ -1,4 +1,5 @@
 #include "gamelogic/GameLogic.hpp"
+#include "../../ecs/include/GameConstants.hpp"
 #include <cmath>
 
 void GameLogic::spawnEnemy() {
@@ -12,6 +13,13 @@ void GameLogic::spawnEnemy() {
 }
 
 void GameLogic::spawnEnemyLevel1() {
+    // 25% chance to spawn kamikaze instead
+    std::uniform_int_distribution<int> kamikaze_dist(0, 3);
+    if (kamikaze_dist(_rng) == 0) {
+        spawnEnemyKamikaze();
+        return;
+    }
+
     entity enemy = _registry->spawn_entity();
 
     std::uniform_int_distribution<int> type_dist(0, 3);
@@ -38,6 +46,13 @@ void GameLogic::spawnEnemyLevel1() {
 }
 
 void GameLogic::spawnEnemyLevel2() {
+    // 25% chance to spawn kamikaze instead
+    std::uniform_int_distribution<int> kamikaze_dist(0, 3);
+    if (kamikaze_dist(_rng) == 0) {
+        spawnEnemyKamikaze();
+        return;
+    }
+
     entity enemy = _registry->spawn_entity();
 
     std::uniform_int_distribution<int> type_dist(0, 9);
@@ -74,6 +89,25 @@ void GameLogic::spawnEnemyLevel2() {
 
     _enemies.push_back(enemy);
     _new_entities.push_back({net_id, entity_type, 0.95f, spawn_y, hp, 0});
+}
+
+void GameLogic::spawnEnemyKamikaze() {
+    entity enemy = _registry->spawn_entity();
+
+    std::uniform_real_distribution<float> y_dist(0.1f, 0.9f);
+
+    float spawn_y = y_dist(_rng);
+    uint net_id = generateNetId();
+
+    _registry->add_component(enemy, Position{0.95f, spawn_y});
+    _registry->add_component(enemy, Velocity{-0.35f, 0.0f});
+    _registry->add_component(enemy, Enemy{20, 0.0f, 5, 0.0f, 999.0f});
+    _registry->add_component(enemy, Health{game::ENEMY_KAMIKAZE_HP, game::ENEMY_KAMIKAZE_HP, 0.0f});
+    _registry->add_component(enemy, Hitbox{66.0f, 68.0f, 0.0f, 0.0f});
+    _registry->add_component(enemy, NetworkComponent{net_id, true, "enemy_kamikaze"});
+
+    _enemies.push_back(enemy);
+    _new_entities.push_back({net_id, "enemy_kamikaze", 0.95f, spawn_y, game::ENEMY_KAMIKAZE_HP, 0});
 }
 
 void GameLogic::checkBossSpawn() {
@@ -243,16 +277,21 @@ void GameLogic::spawnPowerUp() {
     entity powerup = _registry->spawn_entity();
 
     std::uniform_real_distribution<float> y_dist(0.1f, 0.9f);
-    std::uniform_int_distribution<int> type_dist(0, 2);
+    std::uniform_int_distribution<int> type_dist(0, 3);
 
     float spawn_y = y_dist(_rng);
     int type = type_dist(_rng);
     uint net_id = generateNetId();
 
     std::string entity_type;
-    if (type == 0) entity_type = "powerup_shield";
-    else if (type == 1) entity_type = "powerup_spread";
-    else entity_type = "powerup_companion";
+    if (type == 0)
+        entity_type = "powerup_shield";
+    else if (type == 1)
+        entity_type = "powerup_spread";
+    else if (type == 2)
+        entity_type = "powerup_laser";
+    else
+        entity_type = "powerup_companion";
 
     _registry->add_component(powerup, Position{0.95f, spawn_y});
     _registry->add_component(powerup, Velocity{-0.125f, 0.0f});

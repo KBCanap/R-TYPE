@@ -214,8 +214,6 @@ void GameLogic::processContactCollisions(
     sparse_array<Enemy> &enemies, sparse_array<Health> &healths,
     sparse_array<NetworkComponent> &network_comps) {
 
-    const int CONTACT_DAMAGE = game::CONTACT_DAMAGE;
-
     for (size_t player_idx = 0; player_idx < players.size(); ++player_idx) {
         auto &player_opt = players[player_idx];
         if (!player_opt || !player_opt.value().is_active)
@@ -262,10 +260,19 @@ void GameLogic::processContactCollisions(
                 player_pos.y + player_h > enemy_pos.y;
 
             if (collision) {
-                int remaining_damage = applyDamageWithShield(reg, player_idx, CONTACT_DAMAGE);
+                // Kamikaze enemies deal double contact damage
+                auto &net_comps = reg.get_components<NetworkComponent>();
+                int contact_damage = game::CONTACT_DAMAGE;
+                if (enemy_idx < net_comps.size() && net_comps[enemy_idx]) {
+                    if (net_comps[enemy_idx].value().entity_type == "enemy_kamikaze") {
+                        contact_damage = game::KAMIKAZE_CONTACT_DAMAGE;
+                    }
+                }
+
+                int remaining_damage = applyDamageWithShield(reg, player_idx, contact_damage);
 
                 player_health_opt.value().current_hp -= remaining_damage;
-                enemy_health_opt.value().current_hp -= CONTACT_DAMAGE;
+                enemy_health_opt.value().current_hp -= contact_damage;
 
                 player_health_opt.value().invulnerability_timer = 0.5f;
 

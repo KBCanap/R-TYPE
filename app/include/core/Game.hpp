@@ -119,6 +119,7 @@ class Game {
      * @brief Render player health information
      * @param player_entity The player entity to render info for
      */
+    void drawBeamAt(float px, float py, float beam_h, float window_width);
     void renderPlayerInfo(entity player_entity);
 
     /**

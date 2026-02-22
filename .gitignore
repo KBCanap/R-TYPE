@@ -86,7 +86,18 @@ _install/
 # ==========================================
 .cpmcache/
 /.cpm-cache/
-/.cache/CPM/
+/.cache/
+_deps/
+cpm-package-lock.cmake
+lib/
+
+# ==========================================
+# CMake generated Makefiles (subdirectories)
+# ==========================================
+Makefile
+app/Makefile
+Server/Makefile
+mario/Makefile
 
 # ==========================================
 # Logs
@@ -104,3 +115,4 @@ _install/
 # Binary
 # ==========================================
 r-type_*
+rtype_tests

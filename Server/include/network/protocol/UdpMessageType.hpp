@@ -36,8 +36,10 @@ enum EntityType : uint8_t {
     BOSS_LEVEL2_PART1 = 0x0A,   // Level 2 boss left part (r-typesheet38.gif)
     BOSS_LEVEL2_PART2 = 0x0B,   // Level 2 boss center part (r-typesheet38.gif)
     BOSS_LEVEL2_PART3 = 0x0C,   // Level 2 boss right part (r-typesheet38.gif)
-    POWERUP_COMPANION = 0x0D,   // Companion power-up pickup (r-typesheet27.gif left)
-    COMPANION = 0x0E            // Active companion following player (r-typesheet27.gif right)
+    ENEMY_KAMIKAZE = 0x0D,      // Kamikaze enemy (r-typesheet8.gif)
+    POWERUP_LASER = 0x0E,       // Laser power-up
+    POWERUP_COMPANION = 0x0F,   // Companion power-up pickup (r-typesheet27.gif left)
+    COMPANION = 0x10            // Active companion following player (r-typesheet27.gif right)
 };
 
 // Player input event types
@@ -55,7 +57,7 @@ enum Direction : uint8_t {
 // Constants
 static constexpr std::size_t UDP_HEADER_SIZE = 8;
 static constexpr std::size_t ENTITY_CREATE_SIZE = 21;
-static constexpr std::size_t ENTITY_UPDATE_SIZE = 25;
+static constexpr std::size_t ENTITY_UPDATE_SIZE = 26;
 static constexpr std::size_t ENTITY_DESTROY_SIZE = 4;
 
 // UDP Header structure
@@ -83,6 +85,7 @@ struct EntityUpdateData {
     float position_x;
     float position_y;
     uint32_t score;
+    uint8_t flags;
 } __attribute__((packed));
 
 struct PlayerInputData {
